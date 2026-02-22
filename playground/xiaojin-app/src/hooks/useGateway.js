@@ -237,6 +237,12 @@ export const useGateway = () => {
       // 处理聊天事件（支持流式 delta 和 final）
       if (message.type === 'event' && message.event === 'chat') {
         const payload = message.payload;
+        
+        // 只处理属于本 session 的消息，忽略其他 session（如 Telegram）的消息
+        const msgSession = payload?.sessionKey || payload?.session;
+        if (msgSession && msgSession !== GATEWAY_CONFIG.sessionKey) {
+          return;
+        }
 
         if (payload?.state === 'delta') {
           // 流式增量：提取当前累积文本
