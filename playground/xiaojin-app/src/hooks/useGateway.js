@@ -368,16 +368,18 @@ export const useGateway = () => {
   /**
    * 发送聊天消息
    */
-  const sendMessage = useCallback(async (text) => {
+  const sendMessage = useCallback(async (text, sessionKeyOverride = null) => {
     try {
+      const actualSessionKey = sessionKeyOverride || GATEWAY_CONFIG.sessionKey;
+      console.log(`[Session] 发送消息到会话: ${actualSessionKey}`);
       const result = await sendRequest('chat.send', {
-        sessionKey: GATEWAY_CONFIG.sessionKey,
+        sessionKey: actualSessionKey,
         message: text,
         idempotencyKey: generateId(),
       });
       return result;
     } catch (err) {
-      console.error('[Gateway] 发送消息失败:', err.message);
+      console.error('[Session] 发送消息失败:', err.message);
       throw err;
     }
   }, [sendRequest]);

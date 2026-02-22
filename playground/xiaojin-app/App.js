@@ -26,6 +26,7 @@ import { useShake } from './src/hooks/useShake';
 import { preloadSounds, playSound, unloadSounds } from './src/services/soundEffects';
 import { DEFAULT_VOICE_ID, LAOJIN_VOICE_ID } from './src/config/apiKeys';
 import { speakWithOpenAI } from './src/services/ttsService';
+import { GATEWAY_CONFIG } from './src/config/gateway';
 
 import appJson from './app.json';
 
@@ -92,6 +93,11 @@ export default function App() {
   const [laojinTarget, setLaojinTarget] = useState(null);
   // 老金模式激活前用户选择的声音（用于退出时恢复）
   const previousVoiceIdRef = useRef(null);
+
+  // 根据老金模式状态计算当前 sessionKey
+  const currentSessionKey = isLaojinMode
+    ? `${GATEWAY_CONFIG.sessionKey}-laojin-${laojinTarget || 'guest'}`
+    : GATEWAY_CONFIG.sessionKey;
 
   // 用 ref 跟踪是否已经为当前流式回复创建了助手消息占位
   const streamingMsgAddedRef = useRef(false);
@@ -299,6 +305,15 @@ export default function App() {
         setSelectedVoiceId(LAOJIN_VOICE_ID);
         setIsLaojinMode(true);
         setLaojinTarget(modeSwitch.target);
+        // 切换 session：清空当前消息，显示系统提示
+        const targetName = modeSwitch.target || '未指定';
+        console.log(`[Session] 切换到老金模式 session，对话者: ${targetName}`);
+        setMessages([{
+          text: `已进入老金模式，对话者：${targetName}`,
+          isUser: false,
+          isSystem: true,
+          timestamp: Date.now(),
+        }]);
         // 播放确认语音（用老金的声音）
         speakWithOpenAI('好的，已切换到老金模式', {
           voiceId: LAOJIN_VOICE_ID,
@@ -317,6 +332,14 @@ export default function App() {
         setIsLaojinMode(false);
         setLaojinTarget(null);
         previousVoiceIdRef.current = null;
+        // 切换回默认 session：清空当前消息，显示系统提示
+        console.log(`[Session] 切换回默认 session: ${GATEWAY_CONFIG.sessionKey}`);
+        setMessages([{
+          text: '已退出老金模式',
+          isUser: false,
+          isSystem: true,
+          timestamp: Date.now(),
+        }]);
         // 播放确认语音（用恢复后的声音）
         speakWithOpenAI('好的，已退出老金模式', {
           voiceId: restoredVoice,
@@ -416,14 +439,15 @@ export default function App() {
 
     try {
       setIsThinking(true);
-      await sendMessage(messageToSend);
+      console.log(`[Session] 使用 session: ${currentSessionKey}`);
+      await sendMessage(messageToSend, currentSessionKey);
     } catch (error) {
       console.error('Send message error:', error);
       playSound('error');
       Alert.alert('发送失败', error.message);
       setIsThinking(false);
     }
-  }, [sendMessage, isConversationActive, isLaojinMode, laojinTarget]);
+  }, [sendMessage, isConversationActive, isLaojinMode, laojinTarget, currentSessionKey]);
 
   const handleAssistantFinal = useCallback(async (text) => {
     setIsThinking(false);
