@@ -4,7 +4,7 @@
  * 原始文字仍显示在聊天界面，口语化版本仅用于 TTS 朗读
  */
 
-import { OPENAI_CONFIG } from '../config/openai';
+import { OPENAI_CONFIG } from '../config/apiKeys';
 
 const SYSTEM_PROMPT = '将以下文字转换为适合语音朗读的口语化中文。去掉 emoji、代码块、列表符号、markdown 格式。用自然的口语表达，简洁明了。如果内容包含技术细节或代码，用通俗语言描述。直接输出转换后的文字，不要加任何前缀。';
 

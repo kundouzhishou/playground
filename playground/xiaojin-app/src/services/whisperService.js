@@ -6,7 +6,7 @@
 
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
-import { OPENAI_CONFIG } from '../config/openai';
+import { OPENAI_CONFIG } from '../config/apiKeys';
 
 // 录音实例
 let recording = null;
