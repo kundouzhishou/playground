@@ -55,10 +55,32 @@ function detectModeSwitch(text) {
   for (const pattern of activatePatterns) {
     const match = text.match(pattern);
     if (match) {
-      // 如果有捕获组，提取对话者名字
-      const target = match[1] ? match[1].trim() : null;
-      console.log('[LaojinMode] 检测到激活指令，对话者:', target || '未指定');
-      return { action: 'activate', target };
+      // 从捕获组中提取关系和名字
+      // 示例："我儿子MC" → 关系=儿子, 名字=MC
+      // 示例："我朋友张垚" → 关系=朋友, 名字=张垚
+      // 示例："我老婆" → 关系=老婆, 名字=null
+      let relation = null;
+      let name = null;
+      const raw = match[1] ? match[1].trim() : null;
+      
+      if (raw) {
+        // 匹配"我+关系+名字"模式
+        const relationMatch = raw.match(/^(?:我)?(?:的)?(儿子|女儿|老婆|老公|妻子|丈夫|爸爸|妈妈|朋友|同事|哥哥|姐姐|弟弟|妹妹|爷爷|奶奶|外公|外婆|叔叔|阿姨|同学|室友|闺蜜|兄弟)(.*)$/);
+        if (relationMatch) {
+          relation = relationMatch[1];
+          name = relationMatch[2] ? relationMatch[2].trim() : null;
+        } else {
+          // 没有匹配到关系词，整段当作名字
+          name = raw;
+        }
+      }
+      
+      // 生成显示标签和 sessionKey 用的标识
+      const displayLabel = relation && name ? `${relation} ${name}` : (relation || name || '访客');
+      const sessionId = name || relation || 'guest';
+      
+      console.log('[LaojinMode] 检测到激活指令，关系:', relation, '名字:', name, '标识:', sessionId);
+      return { action: 'activate', target: sessionId, relation, name, displayLabel };
     }
   }
 
@@ -306,10 +328,10 @@ export default function App() {
         setIsLaojinMode(true);
         setLaojinTarget(modeSwitch.target);
         // 切换 session：清空当前消息，显示系统提示
-        const targetName = modeSwitch.target || '未指定';
-        console.log(`[Session] 切换到老金模式 session，对话者: ${targetName}`);
+        const displayLabel = modeSwitch.displayLabel || '访客';
+        console.log(`[Session] 切换到老金模式 session，对话者: ${displayLabel}`);
         setMessages([{
-          text: `已进入老金模式，对话者：${targetName}`,
+          text: `已进入老金模式，对话者：${displayLabel}`,
           isUser: false,
           isSystem: true,
           timestamp: Date.now(),
@@ -432,7 +454,7 @@ export default function App() {
     // 老金模式下，在消息前注入上下文提示
     let messageToSend = text;
     if (isLaojinMode) {
-      const contextPrefix = `[系统提示：当前与你对话的是${laojinTarget || '老金的家人'}，不是老金本人。请用老金的语气回复——温暖、直接、务实、不废话。你在代表老金说话。]\n\n`;
+      const contextPrefix = `[系统提示：当前与你对话的是老金的${laojinTarget || '家人'}，不是老金本人。请用老金的语气回复——温暖、直接、务实、不废话。你在代表老金说话。根据对话者的身份调整你的态度，比如对小孩要耐心温柔。]\n\n`;
       messageToSend = contextPrefix + text;
       console.log('[LaojinMode] 注入上下文前缀，对话者:', laojinTarget || '老金的家人');
     }
