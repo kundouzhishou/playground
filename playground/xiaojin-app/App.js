@@ -149,6 +149,7 @@ export default function App() {
     isListening,
     isSpeaking,
     recognizedText,
+    clearRecognizedText,
     partialText,
     error: speechError,
     speechSpeed,
@@ -293,6 +294,7 @@ export default function App() {
     if (recognizedText && !isListening) {
       // 去掉时间戳后缀（用于强制触发更新）
       const cleanText = recognizedText.replace(/\s+\d{13}$/, '');
+      clearRecognizedText(); // 立刻清空，防止重复触发
       if (!cleanText.trim()) return;
       // 检测结束关键词
       if (isConversationActive && checkExitKeyword(cleanText)) {
