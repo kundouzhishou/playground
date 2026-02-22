@@ -161,6 +161,17 @@ export const useSpeech = () => {
     }
   }, [clearSilenceTimer, startRecordingTimer, clearMeteringInterval]);
 
+  // 过滤无效识别结果
+  function isValidSpeech(text) {
+    if (!text || text.trim().length < 2) return false; // 太短
+    // 纯标点/空白
+    if (/^[\s\p{P}]+$/u.test(text.trim())) return false;
+    // 常见噪音词
+    const noiseWords = ['风声', '噪音', '嗯', '啊', '哦', '呃', '嗯嗯', '哈', '呵'];
+    if (noiseWords.includes(text.trim())) return false;
+    return true;
+  }
+
   /**
    * 停止录音并识别
    * 识别完成后进入 VAD 沉默窗口
@@ -182,14 +193,14 @@ export const useSpeech = () => {
       // 上传 Whisper 识别
       const text = await transcribeAudio(audioUri);
 
-      if (text && text.trim()) {
+      if (text && isValidSpeech(text)) {
         // 识别成功，立刻发送（不再等待 VAD 沉默窗口）
         rlog('VAD', '识别完成，立刻发送:', text.trim());
         setRecognizedText(text.trim() + ' ' + Date.now()); // 加时间戳确保每次都触发更新
         setPartialText('');
       } else {
+        rlog('STT', '过滤无效识别结果:', text);
         setPartialText('');
-        rlog('Speech', '未识别到有效文本');
       }
     } catch (e) {
       rlog('Speech', 'ERROR', '识别失败:', e);
