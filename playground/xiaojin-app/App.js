@@ -55,8 +55,8 @@ export default function App() {
 
   // 监听 Gateway 聊天消息（通过 lastMessage state）
   useEffect(() => {
-    if (lastMessage && lastMessage.state === 'final' && lastMessage.text) {
-      handleAssistantMessage(lastMessage.text);
+    if (lastMessage && lastMessage.state === 'final' && lastMessage.message?.content?.[0]?.text) {
+      handleAssistantMessage(lastMessage.message.content[0].text);
     }
   }, [lastMessage]);
 
