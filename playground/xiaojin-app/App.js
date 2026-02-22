@@ -29,7 +29,7 @@ export default function App() {
   const [isAutoMode, setIsAutoMode] = useState(true);
   const [isThinking, setIsThinking] = useState(false);
   const [isLongPressing, setIsLongPressing] = useState(false);
-  const [inputText, setInputText] = useState(''); // 文字输入框内容
+  const [inputText, setInputText] = useState('');
 
   // 用 ref 跟踪是否已经为当前流式回复创建了助手消息占位
   const streamingMsgAddedRef = useRef(false);
@@ -50,13 +50,15 @@ export default function App() {
     recognizedText,
     partialText,
     error: speechError,
+    speechSpeed,
+    setSpeechSpeed,
     startListening,
     stopListening,
     speak,
     stopSpeaking,
   } = useSpeech();
 
-  // 监听语音识别结果
+  // 监听语音识别结果（VAD 沉默窗口到期后触发）
   useEffect(() => {
     if (recognizedText && !isListening) {
       handleUserMessage(recognizedText);
@@ -68,14 +70,12 @@ export default function App() {
     if (isStreaming && streamingText) {
       setMessages((prev) => {
         if (!streamingMsgAddedRef.current) {
-          // 首次 delta：添加一条助手消息占位
           streamingMsgAddedRef.current = true;
           return [
             ...prev,
             { text: streamingText, isUser: false, timestamp: Date.now() },
           ];
         }
-        // 后续 delta：更新最后一条消息的文本
         const updated = [...prev];
         if (updated.length > 0) {
           updated[updated.length - 1] = {
@@ -85,7 +85,6 @@ export default function App() {
         }
         return updated;
       });
-      // 流式文本开始后关闭思考状态
       setIsThinking(false);
     }
   }, [isStreaming, streamingText]);
@@ -108,7 +107,6 @@ export default function App() {
   const handleUserMessage = useCallback(async (text) => {
     if (!text.trim()) return;
 
-    // 添加用户消息
     const userMessage = {
       text,
       isUser: true,
@@ -116,10 +114,8 @@ export default function App() {
     };
     setMessages((prev) => [...prev, userMessage]);
 
-    // 重置流式消息追踪
     streamingMsgAddedRef.current = false;
 
-    // 发送到 Gateway
     try {
       setIsThinking(true);
       await sendMessage(text);
@@ -136,7 +132,6 @@ export default function App() {
 
     setMessages((prev) => {
       if (streamingMsgAddedRef.current) {
-        // 流式消息已存在，更新为最终文本
         const updated = [...prev];
         if (updated.length > 0 && !updated[updated.length - 1].isUser) {
           updated[updated.length - 1] = {
@@ -146,7 +141,6 @@ export default function App() {
         }
         return updated;
       }
-      // 没有流式消息（直接 final），添加新消息
       return [
         ...prev,
         { text, isUser: false, timestamp: Date.now() },
@@ -155,35 +149,31 @@ export default function App() {
 
     streamingMsgAddedRef.current = false;
 
-    // 朗读回复
+    // 朗读回复（speak 内部会先做口语化转换）
     await speak(text);
   }, [speak]);
 
-  // 麦克风按钮：如果正在朗读则先停止朗读
+  // 改进 3：打断控制 — 按麦克风时自动停止 TTS 并开始录音
   const handleMicrophonePress = useCallback(() => {
-    // TTS 可打断：朗读时点击麦克风停止朗读
-    if (isSpeaking) {
-      stopSpeaking();
-      return;
-    }
-
     if (isAutoMode) {
       if (isListening) {
         stopListening();
       } else {
+        // 打断：如果正在朗读，先停止 TTS 再开始录音
+        if (isSpeaking) {
+          stopSpeaking();
+        }
         startListening('auto');
       }
     }
   }, [isAutoMode, isListening, isSpeaking, startListening, stopListening, stopSpeaking]);
 
   const handleMicrophoneLongPress = useCallback(() => {
-    // TTS 可打断
-    if (isSpeaking) {
-      stopSpeaking();
-      return;
-    }
-
     if (!isAutoMode) {
+      // 打断：如果正在朗读，先停止 TTS
+      if (isSpeaking) {
+        stopSpeaking();
+      }
       setIsLongPressing(true);
       startListening('manual');
     }
@@ -218,6 +208,14 @@ export default function App() {
     handleUserMessage(text);
   }, [inputText, handleUserMessage]);
 
+  // 语速调节
+  const handleSpeedChange = useCallback((delta) => {
+    setSpeechSpeed((prev) => {
+      const next = Math.round((prev + delta) * 10) / 10;
+      return Math.max(0.5, Math.min(2.0, next));
+    });
+  }, [setSpeechSpeed]);
+
   // 如果正在等待配对审批，显示配对界面
   const showPairing =
     gatewayStatus === GatewayStatus.WAITING_PAIRING ||
@@ -245,7 +243,6 @@ export default function App() {
       {/* 点击屏幕停止朗读 */}
       <TouchableWithoutFeedback onPress={handleScreenPress}>
         <View style={styles.chatArea}>
-          {/* 聊天记录 */}
           <ChatHistory
             messages={messages}
             isThinking={isThinking}
@@ -269,8 +266,8 @@ export default function App() {
           />
         </View>
 
-        {/* 实时识别文字显示 */}
-        {isListening && partialText ? (
+        {/* 实时识别文字 / 录音状态显示 */}
+        {partialText ? (
           <View style={styles.partialTextContainer}>
             <Text style={styles.partialText}>{partialText}</Text>
           </View>
@@ -315,6 +312,23 @@ export default function App() {
         <View style={styles.modeContainer}>
           <ModeSwitch isAutoMode={isAutoMode} onToggle={handleModeToggle} />
         </View>
+
+        {/* 语速调节 */}
+        <View style={styles.speedContainer}>
+          <TouchableOpacity
+            style={styles.speedButton}
+            onPress={() => handleSpeedChange(-0.1)}
+          >
+            <Text style={styles.speedButtonText}>−</Text>
+          </TouchableOpacity>
+          <Text style={styles.speedLabel}>语速 {speechSpeed.toFixed(1)}x</Text>
+          <TouchableOpacity
+            style={styles.speedButton}
+            onPress={() => handleSpeedChange(0.1)}
+          >
+            <Text style={styles.speedButtonText}>+</Text>
+          </TouchableOpacity>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -354,7 +368,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  // 实时识别文字
   partialTextContainer: {
     alignItems: 'center',
     marginBottom: 8,
@@ -369,7 +382,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
   },
-  // 文字输入框
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -409,5 +421,33 @@ const styles = StyleSheet.create({
   },
   modeContainer: {
     marginBottom: 8,
+  },
+  // 语速调节
+  speedContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 16,
+    paddingVertical: 6,
+  },
+  speedButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#2a2a2a',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  speedButtonText: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  speedLabel: {
+    color: '#999999',
+    fontSize: 13,
+    marginHorizontal: 16,
+    minWidth: 70,
+    textAlign: 'center',
   },
 });

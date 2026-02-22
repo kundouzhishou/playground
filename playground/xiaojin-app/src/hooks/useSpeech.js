@@ -1,106 +1,176 @@
 /**
- * 语音 Hook
- * 使用 @react-native-voice/voice 做语音识别
- * 使用 expo-speech 做语音合成（TTS）
+ * 语音 Hook（升级版）
+ * - Whisper 语音识别替代原生 Voice
+ * - OpenAI TTS 替代 expo-speech
+ * - VAD 累积发送：3 秒沉默窗口，多段文本拼接
+ * - 口语化转换：Agent 回复经 GPT-4o-mini 转换后朗读
+ * - 支持语速调节
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import Voice from '@react-native-voice/voice';
-import * as Speech from 'expo-speech';
+import {
+  startRecording,
+  stopRecording,
+  transcribeAudio,
+  cancelRecording,
+} from '../services/whisperService';
+import { speakWithOpenAI, stopOpenAITTS } from '../services/ttsService';
+import { formatForVoice } from '../services/voiceFormatter';
+
+// 沉默窗口时长（毫秒）
+const SILENCE_WINDOW_MS = 3000;
 
 export const useSpeech = () => {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [recognizedText, setRecognizedText] = useState('');
-  const [partialText, setPartialText] = useState(''); // 实时识别中间结果
+  const [partialText, setPartialText] = useState(''); // 录音中显示状态
   const [error, setError] = useState(null);
-  const listeningModeRef = useRef('auto'); // 'auto' or 'manual'
+  const [speechSpeed, setSpeechSpeed] = useState(1.0); // 语速（0.25-4.0）
 
+  // VAD 累积发送相关
+  const pendingTextsRef = useRef([]);
+  const silenceTimerRef = useRef(null);
+  // 录音时长计时器
+  const recordingTimerRef = useRef(null);
+  const recordingStartTimeRef = useRef(null);
+  // 模式
+  const listeningModeRef = useRef('auto');
+
+  // 清理
   useEffect(() => {
-    // 设置语音识别回调
-    Voice.onSpeechStart = () => {
-      setIsListening(true);
-      setError(null);
-    };
-
-    Voice.onSpeechEnd = () => {
-      setIsListening(false);
-    };
-
-    Voice.onSpeechResults = (e) => {
-      if (e.value && e.value.length > 0) {
-        setRecognizedText(e.value[0]);
-        setPartialText(''); // 最终结果出来后清空中间结果
-      }
-    };
-
-    // 实时识别中间结果
-    Voice.onSpeechPartialResults = (e) => {
-      if (e.value && e.value.length > 0) {
-        setPartialText(e.value[0]);
-      }
-    };
-
-    Voice.onSpeechError = (e) => {
-      console.error('[语音识别] 错误:', e);
-      setError(e.error?.message || '语音识别错误');
-      setIsListening(false);
-    };
-
     return () => {
-      Voice.destroy().then(Voice.removeAllListeners);
-      Speech.stop();
+      cancelRecording();
+      stopOpenAITTS();
+      clearSilenceTimer();
+      clearRecordingTimer();
     };
   }, []);
 
+  // 清除沉默计时器
+  const clearSilenceTimer = useCallback(() => {
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+  }, []);
+
+  // 清除录音时长计时器
+  const clearRecordingTimer = useCallback(() => {
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+  }, []);
+
+  // 启动录音时长显示
+  const startRecordingTimer = useCallback(() => {
+    recordingStartTimeRef.current = Date.now();
+    setPartialText('正在录音... 0s');
+    recordingTimerRef.current = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - recordingStartTimeRef.current) / 1000);
+      setPartialText(`正在录音... ${elapsed}s`);
+    }, 1000);
+  }, []);
+
+  /**
+   * 开始录音
+   */
   const startListening = useCallback(async (mode = 'auto') => {
     try {
       listeningModeRef.current = mode;
       setError(null);
-      setRecognizedText('');
-      setPartialText(''); // 清空中间结果
-      
-      await Voice.start('zh-CN');
-    } catch (e) {
-      console.error('[语音识别] 启动失败:', e);
-      setError('无法启动语音识别');
-    }
-  }, []);
+      // 清除沉默计时器（用户在沉默窗口内再次说话）
+      clearSilenceTimer();
 
+      await startRecording();
+      setIsListening(true);
+      startRecordingTimer();
+    } catch (e) {
+      console.error('[Whisper] 启动录音失败:', e);
+      setError('无法启动录音: ' + e.message);
+    }
+  }, [clearSilenceTimer, startRecordingTimer]);
+
+  /**
+   * 停止录音并识别
+   * 识别完成后进入 VAD 沉默窗口
+   */
   const stopListening = useCallback(async () => {
     try {
-      await Voice.stop();
       setIsListening(false);
-    } catch (e) {
-      console.error('[语音识别] 停止失败:', e);
-    }
-  }, []);
+      clearRecordingTimer();
+      setPartialText('识别中...');
 
+      const audioUri = await stopRecording();
+      if (!audioUri) {
+        setPartialText('');
+        return;
+      }
+
+      // 上传 Whisper 识别
+      const text = await transcribeAudio(audioUri);
+
+      if (text && text.trim()) {
+        // 将识别结果加入待发送队列
+        pendingTextsRef.current.push(text.trim());
+        console.log('[VAD] 累积文本段数:', pendingTextsRef.current.length);
+        setPartialText(`已识别: "${text.trim()}" (等待中...)`);
+
+        // 启动沉默计时器
+        clearSilenceTimer();
+        silenceTimerRef.current = setTimeout(() => {
+          // 沉默窗口到期，合并所有文本并发送
+          const allTexts = pendingTextsRef.current.join(' ');
+          pendingTextsRef.current = [];
+          console.log('[VAD] 沉默窗口到期，发送合并文本:', allTexts);
+          setRecognizedText(allTexts);
+          setPartialText('');
+        }, SILENCE_WINDOW_MS);
+      } else {
+        setPartialText('');
+        console.log('[Whisper] 未识别到有效文本');
+      }
+    } catch (e) {
+      console.error('[Whisper] 识别失败:', e);
+      setError('语音识别失败: ' + e.message);
+      setPartialText('');
+    }
+  }, [clearSilenceTimer, clearRecordingTimer]);
+
+  /**
+   * 使用 OpenAI TTS 朗读文本（先口语化转换）
+   */
   const speak = useCallback(async (text) => {
     try {
       setIsSpeaking(true);
-      
-      await Speech.speak(text, {
-        language: 'zh-CN',
-        pitch: 1.0,
-        rate: 0.9,
+
+      // 口语化转换
+      const voiceText = await formatForVoice(text);
+
+      // OpenAI TTS 朗读
+      await speakWithOpenAI(voiceText, {
+        speed: speechSpeed,
         onDone: () => {
           setIsSpeaking(false);
         },
-        onError: (error) => {
-          console.error('[TTS] 错误:', error);
+        onError: (err) => {
+          console.error('[TTS] 播放错误:', err);
           setIsSpeaking(false);
-        }
+        },
       });
     } catch (e) {
       console.error('[TTS] 失败:', e);
       setIsSpeaking(false);
     }
-  }, []);
+  }, [speechSpeed]);
 
+  /**
+   * 停止 TTS 播放
+   */
   const stopSpeaking = useCallback(async () => {
     try {
-      await Speech.stop();
+      await stopOpenAITTS();
       setIsSpeaking(false);
     } catch (e) {
       console.error('[TTS] 停止失败:', e);
@@ -113,9 +183,11 @@ export const useSpeech = () => {
     recognizedText,
     partialText,
     error,
+    speechSpeed,
+    setSpeechSpeed,
     startListening,
     stopListening,
     speak,
-    stopSpeaking
+    stopSpeaking,
   };
 };

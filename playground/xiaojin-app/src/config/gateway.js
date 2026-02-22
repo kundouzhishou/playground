@@ -8,7 +8,7 @@ export const GATEWAY_CONFIG = {
   token: '4ddec04aa0adfeb10a86592cc3fe2571cddaeb2220ddb0ea',
 
   // 默认会话标识
-  sessionKey: 'xiaojin-voice',
+  sessionKey: 'xiaojin-voice-v2',
 
   // 协议版本
   protocol: {

@@ -24,3 +24,6 @@ dist/
 # Logs
 logs
 *.log
+
+# OpenAI API Key 配置（包含敏感信息）
+src/config/openai.js
