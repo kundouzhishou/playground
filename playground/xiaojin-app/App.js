@@ -27,6 +27,7 @@ import { preloadSounds, playSound, unloadSounds } from './src/services/soundEffe
 import { DEFAULT_VOICE_ID, LAOJIN_VOICE_ID } from './src/config/apiKeys';
 import { speakWithOpenAI } from './src/services/ttsService';
 import { GATEWAY_CONFIG } from './src/config/gateway';
+import { useRemoteLogs, clearLogs } from './src/services/remoteLog';
 
 import Constants from 'expo-constants';
 import appJson from './app.json';
@@ -114,6 +115,8 @@ export default function App() {
   const [isConversationActive, setIsConversationActive] = useState(false);
   // 老金模式状态
   const [isLaojinMode, setIsLaojinMode] = useState(false);
+  // 调试日志
+  const debugLogs = useRemoteLogs();
   // 老金模式下的对话者名字
   const [laojinTarget, setLaojinTarget] = useState(null);
   // 老金模式激活前用户选择的声音（用于退出时恢复）
@@ -672,6 +675,26 @@ export default function App() {
                 }}
               >
                 <Text style={styles.updateButtonText}>🔄</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.updateButton}
+                onPress={() => {
+                  const recent = debugLogs.slice(-20);
+                  if (recent.length === 0) {
+                    Alert.alert('调试日志', '暂无日志');
+                  } else {
+                    Alert.alert(
+                      '调试日志 (最近20条)',
+                      recent.join('\n'),
+                      [
+                        { text: '清空', style: 'destructive', onPress: () => clearLogs() },
+                        { text: '关闭', style: 'cancel' },
+                      ]
+                    );
+                  }
+                }}
+              >
+                <Text style={styles.updateButtonText}>🐛</Text>
               </TouchableOpacity>
               {isConversationActive && (
                 <Text style={styles.conversationBadge}>● 对话中</Text>
