@@ -4,7 +4,7 @@
  */
 
 import { Audio } from 'expo-av';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { ELEVENLABS_CONFIG, DEFAULT_VOICE_ID } from '../config/apiKeys';
 import { rlog } from './remoteLog';
 
