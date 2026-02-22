@@ -246,10 +246,11 @@ export const useGateway = () => {
       if (message.type === 'event' && message.event === 'chat') {
         const payload = message.payload;
         
-        // 过滤非本 session 的消息（暂时用日志观察，不过滤）
+        // 过滤非本 session 的消息，只处理本 session 或无 session 标记的消息
         const msgSession = payload?.sessionKey || payload?.session;
-        console.log('[Gateway] chat event session:', msgSession, 'expected:', GATEWAY_CONFIG.sessionKey);
-        // TODO: 确认 sessionKey 格式后恢复过滤
+        if (msgSession && msgSession !== GATEWAY_CONFIG.sessionKey) {
+          return; // 忽略其他 session（如 Telegram）的消息
+        }
 
         if (payload?.state === 'delta') {
           // 流式增量：提取当前累积文本
