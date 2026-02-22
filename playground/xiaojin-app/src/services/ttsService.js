@@ -72,7 +72,7 @@ export async function speakWithOpenAI(text, { speed = 1.0, voiceId, onDone, onEr
 
     const tempFile = FileSystem.cacheDirectory + 'tts_output_' + Date.now() + '.mp3';
     await FileSystem.writeAsStringAsync(tempFile, base64Data, {
-      encoding: FileSystem.EncodingType.Base64,
+      encoding: 'base64',
     });
     rlog('TTS', '音频已保存:', tempFile);
 
