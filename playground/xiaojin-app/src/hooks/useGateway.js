@@ -357,7 +357,7 @@ export const useGateway = () => {
     try {
       const result = await sendRequest('chat.send', {
         sessionKey: GATEWAY_CONFIG.sessionKey,
-        text,
+        message: text,
         idempotencyKey: generateId(),
       });
       return result;
