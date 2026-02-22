@@ -670,7 +670,7 @@ export default function App() {
                   }
                 }}
               >
-                <Text style={styles.updateButtonText}>🐛</Text>
+                <Text style={styles.updateButtonText}>🐞</Text>
               </TouchableOpacity>
               {isConversationActive && (
                 <Text style={styles.conversationBadge}>● 对话中</Text>
