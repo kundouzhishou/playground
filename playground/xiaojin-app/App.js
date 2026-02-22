@@ -13,15 +13,18 @@ import {
   Animated,
 } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ChatHistory } from './src/components/ChatHistory';
 import { MicrophoneButton } from './src/components/MicrophoneButton';
 import { StatusBar } from './src/components/StatusBar';
 import { ModeSwitch } from './src/components/ModeSwitch';
 import { PairingScreen } from './src/components/PairingScreen';
+import { VoiceSelector } from './src/components/VoiceSelector';
 import { useGateway, GatewayStatus } from './src/hooks/useGateway';
 import { useSpeech } from './src/hooks/useSpeech';
 import { useShake } from './src/hooks/useShake';
 import { preloadSounds, playSound, unloadSounds } from './src/services/soundEffects';
+import { DEFAULT_VOICE_ID } from './src/config/apiKeys';
 
 import appJson from './app.json';
 
@@ -71,6 +74,8 @@ export default function App() {
     error: speechError,
     speechSpeed,
     setSpeechSpeed,
+    selectedVoiceId,
+    setSelectedVoiceId,
     startListening,
     stopListening,
     speak,
@@ -82,6 +87,24 @@ export default function App() {
     preloadSounds();
     return () => { unloadSounds(); };
   }, []);
+
+  // ========== 声音选择持久化 ==========
+  const VOICE_STORAGE_KEY = '@xiaojin_voice_id';
+
+  // 启动时从 AsyncStorage 读取上次选择的声音
+  useEffect(() => {
+    AsyncStorage.getItem(VOICE_STORAGE_KEY).then((stored) => {
+      setSelectedVoiceId(stored || DEFAULT_VOICE_ID);
+    }).catch(() => {
+      setSelectedVoiceId(DEFAULT_VOICE_ID);
+    });
+  }, []);
+
+  // 切换声音时保存到 AsyncStorage
+  const handleVoiceChange = useCallback((voiceId) => {
+    setSelectedVoiceId(voiceId);
+    AsyncStorage.setItem(VOICE_STORAGE_KEY, voiceId).catch(() => {});
+  }, [setSelectedVoiceId]);
 
   // ========== 呼吸灯动画 ==========
   const startBreathAnimation = useCallback((color) => {
@@ -577,7 +600,7 @@ export default function App() {
           <ModeSwitch isAutoMode={isAutoMode} onToggle={handleModeToggle} />
         </View>
 
-        {/* 语速调节 */}
+        {/* 语速调节 + 声音选择 */}
         <View style={styles.speedContainer}>
           <TouchableOpacity
             style={styles.speedButton}
@@ -592,6 +615,13 @@ export default function App() {
           >
             <Text style={styles.speedButtonText}>+</Text>
           </TouchableOpacity>
+
+          <View style={styles.voiceSelectorWrapper}>
+            <VoiceSelector
+              selectedVoiceId={selectedVoiceId || DEFAULT_VOICE_ID}
+              onVoiceChange={handleVoiceChange}
+            />
+          </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -754,5 +784,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     minWidth: 70,
     textAlign: 'center',
+  },
+  voiceSelectorWrapper: {
+    marginLeft: 12,
   },
 });
