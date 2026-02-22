@@ -3,22 +3,23 @@
  * 
  * 优先级：
  * 1. EAS 构建时通过 Constants.expoConfig.extra 注入
- * 2. OTA 打包时通过 process.env 内联（Metro bundler 加载 .env）
+ * 2. .env 文件通过 react-native-dotenv 在打包时内联
  */
 
 import Constants from 'expo-constants';
+import { OPENAI_API_KEY as ENV_OPENAI_KEY, ELEVENLABS_API_KEY as ENV_ELEVENLABS_KEY } from '@env';
 
 const extra = Constants.expoConfig?.extra || {};
 
 export const OPENAI_CONFIG = {
-  apiKey: extra.openaiApiKey || process.env.OPENAI_API_KEY || '',
+  apiKey: extra.openaiApiKey || ENV_OPENAI_KEY || '',
   whisperModel: 'whisper-1',
   ttsModel: 'tts-1-hd',
   miniModel: 'gpt-4o-mini',
 };
 
 export const ELEVENLABS_CONFIG = {
-  apiKey: extra.elevenlabsApiKey || process.env.ELEVENLABS_API_KEY || '',
+  apiKey: extra.elevenlabsApiKey || ENV_ELEVENLABS_KEY || '',
   modelId: 'eleven_multilingual_v2',
   stability: 0.75,
   similarityBoost: 0.75,
