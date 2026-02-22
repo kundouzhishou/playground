@@ -317,15 +317,18 @@ export default function App() {
   // ========== 监听语音识别结果 ==========
   useEffect(() => {
     if (recognizedText && !isListening) {
+      // 去掉时间戳后缀（用于强制触发更新）
+      const cleanText = recognizedText.replace(/\s+\d{13}$/, '');
+      if (!cleanText.trim()) return;
       // 检测结束关键词
-      if (isConversationActive && checkExitKeyword(recognizedText)) {
-        console.log('[Conversation] 检测到结束关键词:', recognizedText);
+      if (isConversationActive && checkExitKeyword(cleanText)) {
+        console.log('[Conversation] 检测到结束关键词:', cleanText);
         endConversation();
         return;
       }
 
       // 检测老金模式切换指令（在发送消息之前拦截）
-      const modeSwitch = detectModeSwitch(recognizedText);
+      const modeSwitch = detectModeSwitch(cleanText);
       if (modeSwitch.action === 'activate' && !isLaojinMode) {
         console.log('[LaojinMode] 激活老金模式');
         // 保存当前声音，切换到老金声音
@@ -378,7 +381,7 @@ export default function App() {
         return; // 不发送这条消息到 Gateway
       }
 
-      handleUserMessage(recognizedText);
+      handleUserMessage(cleanText);
     }
   }, [recognizedText, isListening]);
 
