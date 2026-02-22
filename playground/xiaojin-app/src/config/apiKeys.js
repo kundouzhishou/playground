@@ -1,9 +1,9 @@
 /**
  * API 配置统一管理
  * 
- * API keys 从 expo-constants 读取（通过 app.config.js 的 extra 字段注入）
- * EAS 构建时通过 EAS Secrets 环境变量注入
- * 本地开发时通过 .env 文件注入（或直接设置环境变量）
+ * 优先级：
+ * 1. EAS 构建时通过 Constants.expoConfig.extra 注入
+ * 2. OTA 打包时通过 process.env 内联（Metro bundler 加载 .env）
  */
 
 import Constants from 'expo-constants';
@@ -11,14 +11,14 @@ import Constants from 'expo-constants';
 const extra = Constants.expoConfig?.extra || {};
 
 export const OPENAI_CONFIG = {
-  apiKey: extra.openaiApiKey || '',
+  apiKey: extra.openaiApiKey || process.env.OPENAI_API_KEY || '',
   whisperModel: 'whisper-1',
   ttsModel: 'tts-1-hd',
   miniModel: 'gpt-4o-mini',
 };
 
 export const ELEVENLABS_CONFIG = {
-  apiKey: extra.elevenlabsApiKey || '',
+  apiKey: extra.elevenlabsApiKey || process.env.ELEVENLABS_API_KEY || '',
   modelId: 'eleven_multilingual_v2',
   stability: 0.75,
   similarityBoost: 0.75,
