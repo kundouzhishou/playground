@@ -19,6 +19,46 @@ const STORE_KEY_AUTH_TOKENS = 'device-auth-tokens';
 const STORAGE_VERSION = 1;
 
 /**
+ * 安全的 btoa 实现（兼容 React Native）
+ */
+function safeBtoa(str) {
+  if (typeof btoa !== 'undefined') return btoa(str);
+  // React Native fallback
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  let result = '';
+  for (let i = 0; i < str.length; i += 3) {
+    const a = str.charCodeAt(i);
+    const b = i + 1 < str.length ? str.charCodeAt(i + 1) : 0;
+    const c = i + 2 < str.length ? str.charCodeAt(i + 2) : 0;
+    result += chars[a >> 2] + chars[((a & 3) << 4) | (b >> 4)];
+    result += i + 1 < str.length ? chars[((b & 15) << 2) | (c >> 6)] : '=';
+    result += i + 2 < str.length ? chars[c & 63] : '=';
+  }
+  return result;
+}
+
+/**
+ * 安全的 atob 实现（兼容 React Native）
+ */
+function safeAtob(str) {
+  if (typeof atob !== 'undefined') return atob(str);
+  // React Native fallback
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  let result = '';
+  str = str.replace(/=+$/, '');
+  for (let i = 0; i < str.length; i += 4) {
+    const a = chars.indexOf(str[i]);
+    const b = chars.indexOf(str[i + 1]);
+    const c = chars.indexOf(str[i + 2]);
+    const d = chars.indexOf(str[i + 3]);
+    result += String.fromCharCode((a << 2) | (b >> 4));
+    if (c !== -1) result += String.fromCharCode(((b & 15) << 4) | (c >> 2));
+    if (d !== -1) result += String.fromCharCode(((c & 3) << 6) | d);
+  }
+  return result;
+}
+
+/**
  * base64url 编码（无填充）
  * @param {Uint8Array} bytes - 要编码的字节数组
  * @returns {string} base64url 编码字符串
@@ -29,7 +69,7 @@ export function base64UrlEncode(bytes) {
   for (let i = 0; i < bytes.length; i++) {
     binary += String.fromCharCode(bytes[i]);
   }
-  const base64 = btoa(binary);
+  const base64 = safeBtoa(binary);
   // 转换为 base64url 并去掉填充
   return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 }
@@ -45,7 +85,7 @@ export function base64UrlDecode(str) {
   // 补齐填充
   const pad = (4 - (base64.length % 4)) % 4;
   base64 += '='.repeat(pad);
-  const binary = atob(base64);
+  const binary = safeAtob(base64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i);
@@ -187,9 +227,18 @@ export function buildSignPayload({
  * @returns {string} base64url 编码的签名
  */
 export function signPayload(secretKey, payload) {
-  // 将 payload 转为 UTF-8 字节
-  const encoder = new TextEncoder();
-  const messageBytes = encoder.encode(payload);
+  // 将 payload 转为 UTF-8 字节（兼容 React Native 无 TextEncoder 的情况）
+  let messageBytes;
+  if (typeof TextEncoder !== 'undefined') {
+    messageBytes = new TextEncoder().encode(payload);
+  } else {
+    // 手动 UTF-8 编码
+    const utf8 = unescape(encodeURIComponent(payload));
+    messageBytes = new Uint8Array(utf8.length);
+    for (let i = 0; i < utf8.length; i++) {
+      messageBytes[i] = utf8.charCodeAt(i);
+    }
+  }
 
   // Ed25519 签名（tweetnacl 返回的是 detached signature，64 字节）
   const signature = nacl.sign.detached(messageBytes, secretKey);
