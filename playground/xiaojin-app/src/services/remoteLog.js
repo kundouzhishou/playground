@@ -1,70 +1,79 @@
 /**
- * 远程日志服务
- * 将 App 端的关键日志通过 Gateway WebSocket 发回，方便调试
+ * 远程日志服务（本地内存版）
+ * 将 App 端的关键日志存到内存数组，提供 React hook 实时显示
  * 
  * 用法：
- *   import { initRemoteLog, rlog } from './services/remoteLog';
- *   initRemoteLog(wsSend);  // 初始化时传入 ws 发送函数
+ *   import { rlog, getLogs, clearLogs, useRemoteLogs } from './services/remoteLog';
  *   rlog('Whisper', '识别结果:', text);
  */
 
-let _send = null;
-let _buffer = [];
-const MAX_BUFFER = 50;
+let _logs = [];
+const MAX_LOGS = 50;
+let _listeners = new Set();
 
-/**
- * 初始化远程日志，传入 WebSocket 发送函数
- */
-export function initRemoteLog(sendFn) {
-  _send = sendFn;
-  // 发送缓冲区中的日志
-  if (_buffer.length > 0) {
-    _buffer.forEach(msg => _trySend(msg));
-    _buffer = [];
-  }
-}
-
-function _trySend(logMsg) {
-  if (!_send) {
-    if (_buffer.length < MAX_BUFFER) {
-      _buffer.push(logMsg);
-    }
-    return;
-  }
-  try {
-    _send({
-      type: 'req',
-      id: `log-${Date.now()}`,
-      method: 'chat',
-      params: {
-        sessionKey: '__device-logs',
-        message: {
-          role: 'user',
-          content: [{ type: 'text', text: `[APP-LOG] ${logMsg}` }],
-        },
-      },
-    });
-  } catch (e) {
-    // 静默失败，不影响 App 运行
-  }
+function _notify() {
+  const snapshot = [..._logs];
+  _listeners.forEach(fn => fn(snapshot));
 }
 
 /**
- * 发送远程日志
+ * 发送日志（存到内存 + console.log）
  * @param {string} tag - 模块标签（如 'Whisper', 'TTS', 'VAD'）
  * @param  {...any} args - 日志内容
  */
 export function rlog(tag, ...args) {
   const msg = `[${tag}] ${args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')}`;
-  // 同时输出到本地 console
   console.log(msg);
-  _trySend(msg);
+  const entry = `${new Date().toLocaleTimeString()} ${msg}`;
+  _logs.push(entry);
+  if (_logs.length > MAX_LOGS) {
+    _logs = _logs.slice(-MAX_LOGS);
+  }
+  _notify();
 }
 
 /**
- * 清理
+ * 获取所有日志
+ * @returns {string[]}
  */
+export function getLogs() {
+  return [..._logs];
+}
+
+/**
+ * 清空日志
+ */
+export function clearLogs() {
+  _logs = [];
+  _notify();
+}
+
+/**
+ * React hook：订阅日志变化
+ * @returns {string[]} 当前日志数组
+ */
+export function useRemoteLogs() {
+  const { useState, useEffect } = require('react');
+  const [logs, setLogs] = useState(() => [..._logs]);
+
+  useEffect(() => {
+    const handler = (snapshot) => setLogs(snapshot);
+    _listeners.add(handler);
+    // 立即同步一次
+    handler([..._logs]);
+    return () => {
+      _listeners.delete(handler);
+    };
+  }, []);
+
+  return logs;
+}
+
+/**
+ * 兼容旧 API：initRemoteLog / destroyRemoteLog 现在是空操作
+ */
+export function initRemoteLog() {}
 export function destroyRemoteLog() {
-  _send = null;
-  _buffer = [];
+  _logs = [];
+  _listeners.clear();
 }

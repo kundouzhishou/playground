@@ -79,7 +79,10 @@ export async function stopRecording() {
  */
 export async function transcribeAudio(audioUri) {
   try {
-    rlog('STT', '开始上传到 ElevenLabs STT...');
+    rlog('STT', '开始上传', audioUri);
+
+    const apiKey = ELEVENLABS_CONFIG.apiKey;
+    rlog('STT', 'API key长度:', apiKey ? apiKey.length : 'MISSING');
 
     const formData = new FormData();
     formData.append('file', {
@@ -90,26 +93,32 @@ export async function transcribeAudio(audioUri) {
     formData.append('language_code', 'zh');
     formData.append('tag_audio_events', 'false');
 
+    rlog('STT', '发送请求到 ElevenLabs...');
+
     const response = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
       method: 'POST',
       headers: {
-        'xi-api-key': ELEVENLABS_CONFIG.apiKey,
+        'xi-api-key': apiKey,
       },
       body: formData,
     });
 
+    rlog('STT', '响应状态:', response.status);
+
+    const responseText = await response.text();
+    rlog('STT', '响应内容:', responseText.slice(0, 500));
+
     if (!response.ok) {
-      const errBody = await response.text();
-      rlog('STT', 'ERROR', 'ElevenLabs API 错误:', response.status, errBody);
+      rlog('STT', 'ERROR', 'ElevenLabs API 错误:', response.status, responseText);
       throw new Error(`ElevenLabs STT API 错误: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data = JSON.parse(responseText);
     const text = (data.text || '').trim();
-    rlog('STT', '识别结果:', text);
+    rlog('STT', '识别文本:', text);
     return text;
   } catch (err) {
-    rlog('STT', 'ERROR', '识别失败:', err);
+    rlog('STT', 'ERROR', err.message);
     throw err;
   }
 }
