@@ -16,6 +16,7 @@ import {
 } from '../services/whisperService';
 import { speakWithOpenAI, stopOpenAITTS } from '../services/ttsService';
 import { formatForVoice } from '../services/voiceFormatter';
+import { rlog } from '../services/remoteLog';
 
 // 沉默窗口时长（毫秒）
 const SILENCE_WINDOW_MS = 3000;
@@ -89,7 +90,7 @@ export const useSpeech = () => {
       setIsListening(true);
       startRecordingTimer();
     } catch (e) {
-      console.error('[Whisper] 启动录音失败:', e);
+      rlog('Speech', 'ERROR', 启动录音失败:', e);
       setError('无法启动录音: ' + e.message);
     }
   }, [clearSilenceTimer, startRecordingTimer]);
@@ -116,7 +117,7 @@ export const useSpeech = () => {
       if (text && text.trim()) {
         // 将识别结果加入待发送队列
         pendingTextsRef.current.push(text.trim());
-        console.log('[VAD] 累积文本段数:', pendingTextsRef.current.length);
+        rlog('VAD', 累积文本段数:', pendingTextsRef.current.length);
         setPartialText(`已识别: "${text.trim()}" (等待中...)`);
 
         // 启动沉默计时器
@@ -125,16 +126,16 @@ export const useSpeech = () => {
           // 沉默窗口到期，合并所有文本并发送
           const allTexts = pendingTextsRef.current.join(' ');
           pendingTextsRef.current = [];
-          console.log('[VAD] 沉默窗口到期，发送合并文本:', allTexts);
+          rlog('VAD', 沉默窗口到期，发送合并文本:', allTexts);
           setRecognizedText(allTexts);
           setPartialText('');
         }, SILENCE_WINDOW_MS);
       } else {
         setPartialText('');
-        console.log('[Whisper] 未识别到有效文本');
+        rlog('Speech', 未识别到有效文本');
       }
     } catch (e) {
-      console.error('[Whisper] 识别失败:', e);
+      rlog('Speech', 'ERROR', 识别失败:', e);
       setError('语音识别失败: ' + e.message);
       setPartialText('');
     }
@@ -158,12 +159,12 @@ export const useSpeech = () => {
           setIsSpeaking(false);
         },
         onError: (err) => {
-          console.error('[TTS] 播放错误:', err);
+          rlog('TTS', 'ERROR', 播放错误:', err);
           setIsSpeaking(false);
         },
       });
     } catch (e) {
-      console.error('[TTS] 失败:', e);
+      rlog('TTS', 'ERROR', 失败:', e);
       setIsSpeaking(false);
     }
   }, [speechSpeed, selectedVoiceId]);
@@ -176,7 +177,7 @@ export const useSpeech = () => {
       await stopOpenAITTS();
       setIsSpeaking(false);
     } catch (e) {
-      console.error('[TTS] 停止失败:', e);
+      rlog('TTS', 'ERROR', 停止失败:', e);
     }
   }, []);
 
