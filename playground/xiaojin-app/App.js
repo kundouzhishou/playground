@@ -3,7 +3,6 @@ import {
   StyleSheet,
   View,
   Text,
-  TextInput,
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
@@ -17,7 +16,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ChatHistory } from './src/components/ChatHistory';
 import { MicrophoneButton } from './src/components/MicrophoneButton';
 import { StatusBar } from './src/components/StatusBar';
-import { ModeSwitch } from './src/components/ModeSwitch';
 import { PairingScreen } from './src/components/PairingScreen';
 import { VoiceSelector } from './src/components/VoiceSelector';
 import { useGateway, GatewayStatus } from './src/hooks/useGateway';
@@ -106,10 +104,8 @@ function detectModeSwitch(text) {
 
 export default function App() {
   const [messages, setMessages] = useState([]);
-  const [isAutoMode, setIsAutoMode] = useState(true);
   const [isThinking, setIsThinking] = useState(false);
   const [isLongPressing, setIsLongPressing] = useState(false);
-  const [inputText, setInputText] = useState('');
   // 对话模式状态
   const [isConversationActive, setIsConversationActive] = useState(false);
   // 老金模式状态
@@ -534,7 +530,7 @@ export default function App() {
 
   // ========== 麦克风按钮 ==========
   const handleMicrophonePress = useCallback(() => {
-    if (isAutoMode) {
+    if (true) {
       if (isListening) {
         stopListening();
       } else {
@@ -552,7 +548,7 @@ export default function App() {
   }, [isAutoMode, isListening, isSpeaking, isConversationActive, startListening, stopListening, stopSpeaking, startConversation]);
 
   const handleMicrophoneLongPress = useCallback(() => {
-    if (!isAutoMode) {
+    if (false) {
       if (isSpeaking) {
         stopSpeaking();
       }
@@ -713,30 +709,6 @@ export default function App() {
           </View>
         ) : null}
 
-        {/* 文字输入框 */}
-        <View style={styles.inputRow}>
-          <TextInput
-            style={styles.textInput}
-            value={inputText}
-            onChangeText={setInputText}
-            placeholder="输入文字..."
-            placeholderTextColor="#666666"
-            returnKeyType="send"
-            onSubmitEditing={handleTextSend}
-            editable={connected && !isThinking}
-          />
-          <TouchableOpacity
-            style={[
-              styles.sendButton,
-              (!inputText.trim() || !connected || isThinking) && styles.sendButtonDisabled,
-            ]}
-            onPress={handleTextSend}
-            disabled={!inputText.trim() || !connected || isThinking}
-          >
-            <Text style={styles.sendButtonText}>发送</Text>
-          </TouchableOpacity>
-        </View>
-
         {/* 麦克风按钮 */}
         <View style={styles.micContainer}>
           <MicrophoneButton
@@ -746,11 +718,6 @@ export default function App() {
             onPressOut={handleMicrophonePressOut}
             disabled={!connected || isThinking}
           />
-        </View>
-
-        {/* 模式切换 */}
-        <View style={styles.modeContainer}>
-          <ModeSwitch isAutoMode={isAutoMode} onToggle={handleModeToggle} />
         </View>
 
         {/* 语速调节 + 声音选择 */}
