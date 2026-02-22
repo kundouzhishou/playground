@@ -38,6 +38,8 @@ export const useGateway = () => {
   const [connected, setConnected] = useState(false);
   const [status, setStatus] = useState(GatewayStatus.DISCONNECTED);
   const [lastMessage, setLastMessage] = useState(null);
+  const [streamingText, setStreamingText] = useState(''); // 当前流式文本
+  const [isStreaming, setIsStreaming] = useState(false);   // 是否正在流式接收
   const [pairingInfo, setPairingInfo] = useState(null); // 配对等待信息
   const [error, setError] = useState(null);
 
@@ -232,12 +234,25 @@ export const useGateway = () => {
         return;
       }
 
-      // 处理聊天事件
+      // 处理聊天事件（支持流式 delta 和 final）
       if (message.type === 'event' && message.event === 'chat') {
-        if (message.payload?.state === 'final') {
-          setLastMessage(message.payload);
+        const payload = message.payload;
+
+        if (payload?.state === 'delta') {
+          // 流式增量：提取当前累积文本
+          const text = payload?.message?.content?.[0]?.text || '';
+          setStreamingText(text);
+          setIsStreaming(true);
           if (onMessageRef.current) {
-            onMessageRef.current(message.payload);
+            onMessageRef.current({ ...payload, _isDelta: true });
+          }
+        } else if (payload?.state === 'final') {
+          // 最终消息
+          setStreamingText('');
+          setIsStreaming(false);
+          setLastMessage(payload);
+          if (onMessageRef.current) {
+            onMessageRef.current(payload);
           }
         }
         return;
@@ -384,6 +399,8 @@ export const useGateway = () => {
     connected,
     status,
     lastMessage,
+    streamingText,
+    isStreaming,
     pairingInfo,
     error,
     connect,

@@ -12,6 +12,7 @@ export const useSpeech = () => {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [recognizedText, setRecognizedText] = useState('');
+  const [partialText, setPartialText] = useState(''); // 实时识别中间结果
   const [error, setError] = useState(null);
   const listeningModeRef = useRef('auto'); // 'auto' or 'manual'
 
@@ -29,6 +30,14 @@ export const useSpeech = () => {
     Voice.onSpeechResults = (e) => {
       if (e.value && e.value.length > 0) {
         setRecognizedText(e.value[0]);
+        setPartialText(''); // 最终结果出来后清空中间结果
+      }
+    };
+
+    // 实时识别中间结果
+    Voice.onSpeechPartialResults = (e) => {
+      if (e.value && e.value.length > 0) {
+        setPartialText(e.value[0]);
       }
     };
 
@@ -49,6 +58,7 @@ export const useSpeech = () => {
       listeningModeRef.current = mode;
       setError(null);
       setRecognizedText('');
+      setPartialText(''); // 清空中间结果
       
       await Voice.start('zh-CN');
     } catch (e) {
@@ -101,6 +111,7 @@ export const useSpeech = () => {
     isListening,
     isSpeaking,
     recognizedText,
+    partialText,
     error,
     startListening,
     stopListening,
