@@ -598,10 +598,17 @@ export default function App() {
     outputRange: [0.05, 0.15],
   });
 
-  // 如果正在等待配对审批，显示配对界面
-  const showPairing =
+  // 如果正在等待配对审批，显示配对界面（延迟 2 秒判断，避免启动时闪屏）
+  const [pairingDelayPassed, setPairingDelayPassed] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setPairingDelayPassed(true), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+  
+  const showPairing = pairingDelayPassed && (
     gatewayStatus === GatewayStatus.WAITING_PAIRING ||
-    (gatewayStatus === GatewayStatus.ERROR && gatewayError?.includes('配对'));
+    (gatewayStatus === GatewayStatus.ERROR && gatewayError?.includes('配对'))
+  );
 
   if (showPairing) {
     return (
