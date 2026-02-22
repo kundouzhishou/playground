@@ -471,9 +471,16 @@ export default function App() {
 
     streamingMsgAddedRef.current = false;
 
-    // 朗读回复（speak 内部会先做口语化转换）
-    await speak(text);
-  }, [speak, isConversationActive]);
+    // 朗读回复，完成后自动开始下一轮录音
+    await speak(text, {
+      voiceId: selectedVoiceId,
+      onDone: () => {
+        if (isConversationActive) {
+          startListening('auto');
+        }
+      },
+    });
+  }, [speak, isConversationActive, selectedVoiceId, startListening]);
 
   // ========== 摇一摇唤醒 ==========
   useShake({
