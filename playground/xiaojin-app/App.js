@@ -1,3 +1,4 @@
+import * as Updates from 'expo-updates';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   StyleSheet,
@@ -638,6 +639,29 @@ export default function App() {
             <Text style={styles.title}>🔧 小金语音</Text>
             <View style={styles.headerRow}>
               <Text style={styles.version}>v{APP_VERSION} · {UPDATE_ID ? `OTA:${UPDATE_ID}` : `build:${BUILD_ID}`}</Text>
+              <TouchableOpacity
+                style={styles.updateButton}
+                onPress={async () => {
+                  try {
+                    Alert.alert('检查更新', '正在检查...');
+                    const update = await Updates.checkForUpdateAsync();
+                    if (update.isAvailable) {
+                      Alert.alert('发现新版本', '正在下载更新...', [{ text: '好' }]);
+                      await Updates.fetchUpdateAsync();
+                      Alert.alert('更新完成', '重启 App 生效', [
+                        { text: '稍后', style: 'cancel' },
+                        { text: '立即重启', onPress: () => Updates.reloadAsync() },
+                      ]);
+                    } else {
+                      Alert.alert('已是最新', '当前已是最新版本');
+                    }
+                  } catch (e) {
+                    Alert.alert('检查失败', e.message);
+                  }
+                }}
+              >
+                <Text style={styles.updateButtonText}>🔄</Text>
+              </TouchableOpacity>
               {isConversationActive && (
                 <Text style={styles.conversationBadge}>● 对话中</Text>
               )}
@@ -772,7 +796,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 4,
-    gap: 12,
+    gap: 8,
+  },
+  updateButton: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  updateButtonText: {
+    fontSize: 14,
   },
   title: {
     fontSize: 24,
