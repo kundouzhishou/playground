@@ -9,7 +9,8 @@ import {
   Platform,
   Alert,
   TouchableOpacity,
-  TouchableWithoutFeedback,
+  Pressable,
+  Animated,
 } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { ChatHistory } from './src/components/ChatHistory';
@@ -19,10 +20,17 @@ import { ModeSwitch } from './src/components/ModeSwitch';
 import { PairingScreen } from './src/components/PairingScreen';
 import { useGateway, GatewayStatus } from './src/hooks/useGateway';
 import { useSpeech } from './src/hooks/useSpeech';
+import { useShake } from './src/hooks/useShake';
+import { preloadSounds, playSound, unloadSounds } from './src/services/soundEffects';
 
 import appJson from './app.json';
 
 const APP_VERSION = appJson.expo.version;
+
+// 结束关键词
+const EXIT_KEYWORDS = ['再见', '结束', '拜拜', '没事了'];
+// 无活动超时（毫秒）
+const INACTIVITY_TIMEOUT_MS = 30000;
 
 export default function App() {
   const [messages, setMessages] = useState([]);
@@ -30,9 +38,20 @@ export default function App() {
   const [isThinking, setIsThinking] = useState(false);
   const [isLongPressing, setIsLongPressing] = useState(false);
   const [inputText, setInputText] = useState('');
+  // 对话模式状态
+  const [isConversationActive, setIsConversationActive] = useState(false);
 
   // 用 ref 跟踪是否已经为当前流式回复创建了助手消息占位
   const streamingMsgAddedRef = useRef(false);
+  // 无活动计时器
+  const inactivityTimerRef = useRef(null);
+  // 思考提示音 interval
+  const thinkingIntervalRef = useRef(null);
+  // 呼吸灯动画值
+  const breathAnim = useRef(new Animated.Value(0)).current;
+  const breathAnimRef = useRef(null);
+  // 当前呼吸灯颜色
+  const [breathColor, setBreathColor] = useState(null);
 
   const {
     connected,
@@ -58,14 +77,151 @@ export default function App() {
     stopSpeaking,
   } = useSpeech();
 
-  // 监听语音识别结果（VAD 沉默窗口到期后触发）
+  // ========== 音效预加载 ==========
+  useEffect(() => {
+    preloadSounds();
+    return () => { unloadSounds(); };
+  }, []);
+
+  // ========== 呼吸灯动画 ==========
+  const startBreathAnimation = useCallback((color) => {
+    setBreathColor(color);
+    // 停止之前的动画
+    if (breathAnimRef.current) {
+      breathAnimRef.current.stop();
+    }
+    breathAnim.setValue(0);
+    breathAnimRef.current = Animated.loop(
+      Animated.sequence([
+        Animated.timing(breathAnim, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: false,
+        }),
+        Animated.timing(breathAnim, {
+          toValue: 0,
+          duration: 2000,
+          useNativeDriver: false,
+        }),
+      ])
+    );
+    breathAnimRef.current.start();
+  }, [breathAnim]);
+
+  const stopBreathAnimation = useCallback(() => {
+    if (breathAnimRef.current) {
+      breathAnimRef.current.stop();
+      breathAnimRef.current = null;
+    }
+    breathAnim.setValue(0);
+    setBreathColor(null);
+  }, [breathAnim]);
+
+  // 根据状态切换呼吸灯颜色
+  useEffect(() => {
+    if (!isConversationActive) {
+      stopBreathAnimation();
+      return;
+    }
+    if (isListening) {
+      startBreathAnimation('rgba(255, 120, 50, OPACITY)'); // 橙色 — 录音中
+    } else if (isThinking) {
+      startBreathAnimation('rgba(50, 120, 255, OPACITY)'); // 蓝色 — 思考中
+    } else if (isSpeaking) {
+      startBreathAnimation('rgba(50, 200, 100, OPACITY)'); // 绿色 — 朗读中
+    } else {
+      startBreathAnimation('rgba(100, 100, 100, OPACITY)'); // 灰色 — 等待中
+    }
+  }, [isConversationActive, isListening, isThinking, isSpeaking]);
+
+  // ========== 思考提示音 ==========
+  useEffect(() => {
+    if (isThinking && isConversationActive) {
+      // 立即播放一次，然后每 3 秒播放
+      playSound('thinking');
+      thinkingIntervalRef.current = setInterval(() => {
+        playSound('thinking');
+      }, 3000);
+    } else {
+      if (thinkingIntervalRef.current) {
+        clearInterval(thinkingIntervalRef.current);
+        thinkingIntervalRef.current = null;
+      }
+    }
+    return () => {
+      if (thinkingIntervalRef.current) {
+        clearInterval(thinkingIntervalRef.current);
+        thinkingIntervalRef.current = null;
+      }
+    };
+  }, [isThinking, isConversationActive]);
+
+  // ========== 无活动超时 ==========
+  const clearInactivityTimer = useCallback(() => {
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+      inactivityTimerRef.current = null;
+    }
+  }, []);
+
+  const startInactivityTimer = useCallback(() => {
+    clearInactivityTimer();
+    inactivityTimerRef.current = setTimeout(() => {
+      console.log('[Conversation] 30 秒无活动，自动结束对话');
+      endConversation();
+    }, INACTIVITY_TIMEOUT_MS);
+  }, [clearInactivityTimer]);
+
+  // 对话活跃时有活动就重置计时器
+  useEffect(() => {
+    if (isConversationActive && (isListening || isThinking || isSpeaking)) {
+      clearInactivityTimer();
+    }
+  }, [isConversationActive, isListening, isThinking, isSpeaking, clearInactivityTimer]);
+
+  // ========== 对话模式控制 ==========
+  const startConversation = useCallback(async () => {
+    if (isConversationActive) return;
+    console.log('[Conversation] 唤醒对话模式');
+    setIsConversationActive(true);
+    // 如果正在朗读，先停止
+    if (isSpeaking) {
+      await stopSpeaking();
+    }
+    // 播放开始音效并开始录音
+    await playSound('start');
+    startListening('auto');
+  }, [isConversationActive, isSpeaking, stopSpeaking, startListening]);
+
+  const endConversation = useCallback(async () => {
+    console.log('[Conversation] 结束对话模式');
+    clearInactivityTimer();
+    setIsConversationActive(false);
+    await playSound('end');
+    // 停止一切进行中的操作
+    if (isSpeaking) stopSpeaking();
+  }, [clearInactivityTimer, isSpeaking, stopSpeaking]);
+
+  // ========== 关键词检测 ==========
+  const checkExitKeyword = useCallback((text) => {
+    if (!text) return false;
+    return EXIT_KEYWORDS.some((kw) => text.includes(kw));
+  }, []);
+
+  // ========== 监听语音识别结果 ==========
   useEffect(() => {
     if (recognizedText && !isListening) {
+      // 检测结束关键词
+      if (isConversationActive && checkExitKeyword(recognizedText)) {
+        console.log('[Conversation] 检测到结束关键词:', recognizedText);
+        endConversation();
+        return;
+      }
       handleUserMessage(recognizedText);
     }
   }, [recognizedText, isListening]);
 
-  // 监听流式文本 — 实时更新最后一条助手消息
+  // ========== 监听流式文本 ==========
   useEffect(() => {
     if (isStreaming && streamingText) {
       setMessages((prev) => {
@@ -89,7 +245,7 @@ export default function App() {
     }
   }, [isStreaming, streamingText]);
 
-  // 监听 Gateway 最终消息
+  // ========== 监听 Gateway 最终消息 ==========
   useEffect(() => {
     if (lastMessage && lastMessage.state === 'final' && lastMessage.message?.content?.[0]?.text) {
       const finalText = lastMessage.message.content[0].text;
@@ -97,15 +253,40 @@ export default function App() {
     }
   }, [lastMessage]);
 
-  // 监听语音错误
+  // ========== 监听语音错误 ==========
   useEffect(() => {
     if (speechError) {
+      playSound('error');
       Alert.alert('语音错误', speechError);
     }
   }, [speechError]);
 
+  // ========== 朗读结束后自动继续录音 ==========
+  useEffect(() => {
+    // 当朗读刚结束且对话模式激活 → 自动开始下一轮录音
+    if (isConversationActive && !isSpeaking && !isListening && !isThinking) {
+      // 延迟一小段时间再开始，避免和 TTS 结束冲突
+      const timer = setTimeout(async () => {
+        // 再次检查状态（可能已经变化）
+        if (isConversationActive && !isSpeaking && !isListening && !isThinking) {
+          console.log('[Conversation] 朗读结束，自动开始下一轮录音');
+          await playSound('start');
+          startListening('auto');
+          // 启动无活动计时器
+          startInactivityTimer();
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isConversationActive, isSpeaking, isListening, isThinking]);
+
+  // ========== 消息处理 ==========
   const handleUserMessage = useCallback(async (text) => {
     if (!text.trim()) return;
+
+    if (isConversationActive) {
+      await playSound('sent');
+    }
 
     const userMessage = {
       text,
@@ -113,7 +294,6 @@ export default function App() {
       timestamp: Date.now(),
     };
     setMessages((prev) => [...prev, userMessage]);
-
     streamingMsgAddedRef.current = false;
 
     try {
@@ -121,14 +301,18 @@ export default function App() {
       await sendMessage(text);
     } catch (error) {
       console.error('Send message error:', error);
+      playSound('error');
       Alert.alert('发送失败', error.message);
       setIsThinking(false);
     }
-  }, [sendMessage]);
+  }, [sendMessage, isConversationActive]);
 
-  // 最终消息到达：确保消息列表是最终文本，然后朗读
   const handleAssistantFinal = useCallback(async (text) => {
     setIsThinking(false);
+
+    if (isConversationActive) {
+      await playSound('received');
+    }
 
     setMessages((prev) => {
       if (streamingMsgAddedRef.current) {
@@ -151,33 +335,68 @@ export default function App() {
 
     // 朗读回复（speak 内部会先做口语化转换）
     await speak(text);
-  }, [speak]);
+  }, [speak, isConversationActive]);
 
-  // 改进 3：打断控制 — 按麦克风时自动停止 TTS 并开始录音
+  // ========== 摇一摇唤醒 ==========
+  useShake({
+    onShake: () => {
+      if (!isConversationActive && connected && !isThinking) {
+        console.log('[Shake] 摇一摇唤醒');
+        startConversation();
+      }
+    },
+    enabled: connected && !isConversationActive,
+  });
+
+  // ========== 点击屏幕唤醒/打断 ==========
+  const handleScreenPress = useCallback(() => {
+    if (!connected) return;
+
+    if (!isConversationActive) {
+      // 待机状态 → 唤醒对话
+      startConversation();
+    } else if (isSpeaking) {
+      // 对话中正在朗读 → 打断朗读，开始录音
+      stopSpeaking();
+      playSound('start');
+      startListening('auto');
+    } else if (isListening) {
+      // 已经在录音 → 忽略
+    }
+  }, [connected, isConversationActive, isSpeaking, isListening, stopSpeaking, startListening, startConversation]);
+
+  // ========== 麦克风按钮 ==========
   const handleMicrophonePress = useCallback(() => {
     if (isAutoMode) {
       if (isListening) {
         stopListening();
       } else {
-        // 打断：如果正在朗读，先停止 TTS 再开始录音
         if (isSpeaking) {
           stopSpeaking();
         }
-        startListening('auto');
+        if (!isConversationActive) {
+          startConversation();
+        } else {
+          playSound('start');
+          startListening('auto');
+        }
       }
     }
-  }, [isAutoMode, isListening, isSpeaking, startListening, stopListening, stopSpeaking]);
+  }, [isAutoMode, isListening, isSpeaking, isConversationActive, startListening, stopListening, stopSpeaking, startConversation]);
 
   const handleMicrophoneLongPress = useCallback(() => {
     if (!isAutoMode) {
-      // 打断：如果正在朗读，先停止 TTS
       if (isSpeaking) {
         stopSpeaking();
       }
       setIsLongPressing(true);
+      if (!isConversationActive) {
+        setIsConversationActive(true);
+      }
+      playSound('start');
       startListening('manual');
     }
-  }, [isAutoMode, isSpeaking, startListening, stopSpeaking]);
+  }, [isAutoMode, isSpeaking, isConversationActive, startListening, stopSpeaking]);
 
   const handleMicrophonePressOut = useCallback(() => {
     if (!isAutoMode && isLongPressing) {
@@ -192,13 +411,6 @@ export default function App() {
     }
     setIsAutoMode((prev) => !prev);
   }, [isListening, stopListening]);
-
-  // 点击屏幕任意位置停止朗读
-  const handleScreenPress = useCallback(() => {
-    if (isSpeaking) {
-      stopSpeaking();
-    }
-  }, [isSpeaking, stopSpeaking]);
 
   // 文字输入发送
   const handleTextSend = useCallback(() => {
@@ -215,6 +427,12 @@ export default function App() {
       return Math.max(0.5, Math.min(2.0, next));
     });
   }, [setSpeechSpeed]);
+
+  // ========== 呼吸灯背景色插值 ==========
+  const breathOpacity = breathAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.05, 0.15],
+  });
 
   // 如果正在等待配对审批，显示配对界面
   const showPairing =
@@ -233,23 +451,69 @@ export default function App() {
   return (
     <SafeAreaView style={styles.container}>
       <ExpoStatusBar style="light" />
-      
-      {/* 顶部标题 */}
-      <View style={styles.header}>
-        <Text style={styles.title}>🔧 小金语音</Text>
-        <Text style={styles.version}>v{APP_VERSION}</Text>
-      </View>
 
-      {/* 点击屏幕停止朗读 */}
-      <TouchableWithoutFeedback onPress={handleScreenPress}>
-        <View style={styles.chatArea}>
-          <ChatHistory
-            messages={messages}
-            isThinking={isThinking}
-            isStreaming={isStreaming}
-          />
+      {/* 呼吸灯背景层 */}
+      {isConversationActive && breathColor && (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: breathColor.replace('OPACITY', '1'),
+              opacity: breathOpacity,
+              zIndex: 1,
+            },
+          ]}
+        />
+      )}
+
+      {/* 点击屏幕任意位置唤醒/打断 */}
+      <Pressable style={styles.pressableOverlay} onPress={handleScreenPress}>
+        <View style={styles.innerContainer}>
+          {/* 顶部标题 */}
+          <View style={styles.header}>
+            <Text style={styles.title}>🔧 小金语音</Text>
+            <View style={styles.headerRow}>
+              <Text style={styles.version}>v{APP_VERSION}</Text>
+              {isConversationActive && (
+                <Text style={styles.conversationBadge}>● 对话中</Text>
+              )}
+            </View>
+          </View>
+
+          {/* 聊天区域 */}
+          <View style={styles.chatArea}>
+            <ChatHistory
+              messages={messages}
+              isThinking={isThinking}
+              isStreaming={isStreaming}
+            />
+          </View>
+
+          {/* 对话模式状态提示 */}
+          {isConversationActive && (
+            <View style={styles.conversationHint}>
+              <Text style={styles.conversationHintText}>
+                {isListening ? '🎙 正在听...' :
+                 isThinking ? '🤔 思考中...' :
+                 isSpeaking ? '🔊 朗读中...' :
+                 '⏳ 等待中...'}
+              </Text>
+              <Text style={styles.conversationSubHint}>
+                说"再见"或 30 秒无操作自动结束
+              </Text>
+            </View>
+          )}
+
+          {!isConversationActive && (
+            <View style={styles.wakeHint}>
+              <Text style={styles.wakeHintText}>
+                点击屏幕或摇一摇开始对话
+              </Text>
+            </View>
+          )}
         </View>
-      </TouchableWithoutFeedback>
+      </Pressable>
 
       {/* 底部控制区 */}
       <KeyboardAvoidingView
@@ -339,11 +603,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#1a1a1a',
   },
+  pressableOverlay: {
+    flex: 1,
+    zIndex: 2,
+  },
+  innerContainer: {
+    flex: 1,
+  },
   header: {
     paddingVertical: 16,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#2a2a2a',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 12,
   },
   title: {
     fontSize: 24,
@@ -355,14 +633,42 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666666',
     textAlign: 'center',
-    marginTop: 4,
+  },
+  conversationBadge: {
+    fontSize: 12,
+    color: '#4CAF50',
+    fontWeight: '600',
   },
   chatArea: {
     flex: 1,
   },
+  conversationHint: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+  },
+  conversationHintText: {
+    fontSize: 18,
+    color: '#ffffff',
+    fontWeight: '600',
+  },
+  conversationSubHint: {
+    fontSize: 12,
+    color: '#666666',
+    marginTop: 4,
+  },
+  wakeHint: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  wakeHintText: {
+    fontSize: 14,
+    color: '#555555',
+  },
   bottomContainer: {
     backgroundColor: '#1a1a1a',
     paddingBottom: 20,
+    zIndex: 3,
   },
   statusContainer: {
     alignItems: 'center',
@@ -422,7 +728,6 @@ const styles = StyleSheet.create({
   modeContainer: {
     marginBottom: 8,
   },
-  // 语速调节
   speedContainer: {
     flexDirection: 'row',
     alignItems: 'center',
