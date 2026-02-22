@@ -24,7 +24,8 @@ import { useGateway, GatewayStatus } from './src/hooks/useGateway';
 import { useSpeech } from './src/hooks/useSpeech';
 import { useShake } from './src/hooks/useShake';
 import { preloadSounds, playSound, unloadSounds } from './src/services/soundEffects';
-import { DEFAULT_VOICE_ID } from './src/config/apiKeys';
+import { DEFAULT_VOICE_ID, LAOJIN_VOICE_ID } from './src/config/apiKeys';
+import { speakWithOpenAI } from './src/services/ttsService';
 
 import appJson from './app.json';
 
@@ -35,6 +36,48 @@ const EXIT_KEYWORDS = ['再见', '结束', '拜拜', '没事了'];
 // 无活动超时（毫秒）
 const INACTIVITY_TIMEOUT_MS = 30000;
 
+/**
+ * 检测老金模式切换指令
+ * @param {string} text - 用户语音识别文本
+ * @returns {{ action: 'activate'|'deactivate'|null, target: string|null }}
+ */
+function detectModeSwitch(text) {
+  if (!text) return { action: null, target: null };
+
+  // 激活老金模式
+  const activatePatterns = [
+    /接下来(.+?)跟你说/,
+    /切换到老金/,
+    /用老金的声音/,
+  ];
+
+  for (const pattern of activatePatterns) {
+    const match = text.match(pattern);
+    if (match) {
+      // 如果有捕获组，提取对话者名字
+      const target = match[1] ? match[1].trim() : null;
+      console.log('[LaojinMode] 检测到激活指令，对话者:', target || '未指定');
+      return { action: 'activate', target };
+    }
+  }
+
+  // 退出老金模式
+  const deactivatePatterns = [
+    /退出老金/,
+    /我回来了/,
+    /结束老金模式/,
+  ];
+
+  for (const pattern of deactivatePatterns) {
+    if (pattern.test(text)) {
+      console.log('[LaojinMode] 检测到退出指令');
+      return { action: 'deactivate', target: null };
+    }
+  }
+
+  return { action: null, target: null };
+}
+
 export default function App() {
   const [messages, setMessages] = useState([]);
   const [isAutoMode, setIsAutoMode] = useState(true);
@@ -43,6 +86,12 @@ export default function App() {
   const [inputText, setInputText] = useState('');
   // 对话模式状态
   const [isConversationActive, setIsConversationActive] = useState(false);
+  // 老金模式状态
+  const [isLaojinMode, setIsLaojinMode] = useState(false);
+  // 老金模式下的对话者名字
+  const [laojinTarget, setLaojinTarget] = useState(null);
+  // 老金模式激活前用户选择的声音（用于退出时恢复）
+  const previousVoiceIdRef = useRef(null);
 
   // 用 ref 跟踪是否已经为当前流式回复创建了助手消息占位
   const streamingMsgAddedRef = useRef(false);
@@ -240,6 +289,44 @@ export default function App() {
         endConversation();
         return;
       }
+
+      // 检测老金模式切换指令（在发送消息之前拦截）
+      const modeSwitch = detectModeSwitch(recognizedText);
+      if (modeSwitch.action === 'activate' && !isLaojinMode) {
+        console.log('[LaojinMode] 激活老金模式');
+        // 保存当前声音，切换到老金声音
+        previousVoiceIdRef.current = selectedVoiceId;
+        setSelectedVoiceId(LAOJIN_VOICE_ID);
+        setIsLaojinMode(true);
+        setLaojinTarget(modeSwitch.target);
+        // 播放确认语音（用老金的声音）
+        speakWithOpenAI('好的，已切换到老金模式', {
+          voiceId: LAOJIN_VOICE_ID,
+          onDone: () => {
+            console.log('[LaojinMode] 确认语音播放完成');
+          },
+        });
+        return; // 不发送这条消息到 Gateway
+      }
+      if (modeSwitch.action === 'deactivate' && isLaojinMode) {
+        console.log('[LaojinMode] 退出老金模式');
+        // 恢复之前的声音
+        const restoredVoice = previousVoiceIdRef.current || DEFAULT_VOICE_ID;
+        setSelectedVoiceId(restoredVoice);
+        AsyncStorage.setItem(VOICE_STORAGE_KEY, restoredVoice).catch(() => {});
+        setIsLaojinMode(false);
+        setLaojinTarget(null);
+        previousVoiceIdRef.current = null;
+        // 播放确认语音（用恢复后的声音）
+        speakWithOpenAI('好的，已退出老金模式', {
+          voiceId: restoredVoice,
+          onDone: () => {
+            console.log('[LaojinMode] 退出确认语音播放完成');
+          },
+        });
+        return; // 不发送这条消息到 Gateway
+      }
+
       handleUserMessage(recognizedText);
     }
   }, [recognizedText, isListening]);
@@ -319,16 +406,24 @@ export default function App() {
     setMessages((prev) => [...prev, userMessage]);
     streamingMsgAddedRef.current = false;
 
+    // 老金模式下，在消息前注入上下文提示
+    let messageToSend = text;
+    if (isLaojinMode) {
+      const contextPrefix = `[系统提示：当前与你对话的是${laojinTarget || '老金的家人'}，不是老金本人。请用老金的语气回复——温暖、直接、务实、不废话。你在代表老金说话。]\n\n`;
+      messageToSend = contextPrefix + text;
+      console.log('[LaojinMode] 注入上下文前缀，对话者:', laojinTarget || '老金的家人');
+    }
+
     try {
       setIsThinking(true);
-      await sendMessage(text);
+      await sendMessage(messageToSend);
     } catch (error) {
       console.error('Send message error:', error);
       playSound('error');
       Alert.alert('发送失败', error.message);
       setIsThinking(false);
     }
-  }, [sendMessage, isConversationActive]);
+  }, [sendMessage, isConversationActive, isLaojinMode, laojinTarget]);
 
   const handleAssistantFinal = useCallback(async (text) => {
     setIsThinking(false);
@@ -504,6 +599,15 @@ export default function App() {
             </View>
           </View>
 
+          {/* 老金模式提示条 */}
+          {isLaojinMode && (
+            <View style={styles.laojinBanner}>
+              <Text style={styles.laojinBannerText}>
+                🎭 老金模式{laojinTarget ? ` · 对话者：${laojinTarget}` : ''}
+              </Text>
+            </View>
+          )}
+
           {/* 聊天区域 */}
           <View style={styles.chatArea}>
             <ChatHistory
@@ -620,6 +724,7 @@ export default function App() {
             <VoiceSelector
               selectedVoiceId={selectedVoiceId || DEFAULT_VOICE_ID}
               onVoiceChange={handleVoiceChange}
+              disabled={isLaojinMode}
             />
           </View>
         </View>
@@ -667,6 +772,20 @@ const styles = StyleSheet.create({
   conversationBadge: {
     fontSize: 12,
     color: '#4CAF50',
+    fontWeight: '600',
+  },
+  // 老金模式提示条
+  laojinBanner: {
+    backgroundColor: 'rgba(255, 152, 0, 0.15)',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 152, 0, 0.3)',
+  },
+  laojinBannerText: {
+    color: '#FFB74D',
+    fontSize: 14,
     fontWeight: '600',
   },
   chatArea: {
