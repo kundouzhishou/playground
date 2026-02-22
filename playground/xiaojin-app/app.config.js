@@ -1,13 +1,22 @@
 // app.config.js - Dynamic Expo config
 // Reads API keys from environment variables for EAS builds
-// Locally, falls back to empty strings (local dev uses src/config/apiKeys.local.js)
+
+const { execSync } = require('child_process');
+
+// 获取 git commit hash 作为 buildId
+let buildId = 'unknown';
+try {
+  buildId = execSync('git rev-parse --short HEAD', { encoding: 'utf-8' }).trim();
+} catch (e) {
+  // 构建环境可能没有 git
+}
 
 export default {
   expo: {
     name: "小金语音",
     slug: "xiaojin-voice-app",
     owner: "notjayson",
-    version: "0.3.0",
+    version: "0.4.0",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "dark",
@@ -43,6 +52,7 @@ export default {
         projectId: "ba6bd7ef-c634-4630-a7d1-881bb32e630f",
       },
       // API keys injected from environment variables (EAS Secrets)
+      buildId,
       openaiApiKey: process.env.OPENAI_API_KEY || "",
       elevenlabsApiKey: process.env.ELEVENLABS_API_KEY || "",
     },
