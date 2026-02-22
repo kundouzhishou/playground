@@ -38,6 +38,7 @@ memory/
 - iOS 构建：只用 production profile，不要给 development build
 - 教训：派 subagent 写代码前必须先确认接口协议，不能让它猜；写完必须测试再构建
 - 教训：EAS 构建从 git 拉代码，subagent 写完代码后必须 commit + push，构建前要验证 git status 干净且 commit 正确
+- 教训：主线程不要写代码！严格遵守调度原则，代码修改/OTA推送全交给 subagent，主线程只负责沟通和审核
 - 推送预览/文档给老金时，放到 voice.web3hunter.org 上给网页链接，不要给文件路径
 - 影响源：张咋啦 Zara (learn/build in public)、郭宇 guoyu.eth (build company as a product)
 - 想在小红书做内容，还没开始
