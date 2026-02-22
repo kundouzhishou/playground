@@ -73,10 +73,11 @@ async function generateKeyPair() {
   const keyPair = nacl.sign.keyPair();
 
   // 设备 ID = SHA-256(原始公钥 32 字节).hex()
-  const hashHex = await Crypto.digest(
+  const hashBuffer = await Crypto.digest(
     Crypto.CryptoDigestAlgorithm.SHA256,
     keyPair.publicKey
   );
+  const hashHex = bytesToHex(new Uint8Array(hashBuffer));
 
   return {
     deviceId: hashHex,
@@ -105,10 +106,11 @@ export async function initDeviceIdentity() {
         const secretKey = base64UrlDecode(parsed.secretKeyB64);
 
         // 验证设备 ID 与公钥一致
-        const derivedId = await Crypto.digest(
+        const derivedBuffer = await Crypto.digest(
           Crypto.CryptoDigestAlgorithm.SHA256,
           publicKey
         );
+        const derivedId = bytesToHex(new Uint8Array(derivedBuffer));
         if (derivedId === parsed.deviceId) {
           console.log('[设备身份] 从安全存储加载成功，设备 ID:', parsed.deviceId.substring(0, 8));
           return { deviceId: parsed.deviceId, publicKey, secretKey };
