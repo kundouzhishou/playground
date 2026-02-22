@@ -3,6 +3,12 @@ import { View, Text, StyleSheet } from 'react-native';
 
 export const StatusBar = ({ gatewayStatus, isListening, isSpeaking, isThinking }) => {
   const getStatusText = () => {
+    if (gatewayStatus === 'waiting_challenge' || gatewayStatus === 'signing') {
+      return '🔐 验证身份中...';
+    }
+    if (gatewayStatus === 'waiting_pairing') {
+      return '⏳ 等待配对审批...';
+    }
     if (gatewayStatus !== 'connected') {
       return '连接中...';
     }
