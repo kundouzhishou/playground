@@ -645,10 +645,15 @@ export default function App() {
                   if (recent.length === 0) {
                     Alert.alert('调试日志', '暂无日志');
                   } else {
+                    const logText = recent.join('\n');
                     Alert.alert(
                       '调试日志 (最近20条)',
-                      recent.join('\n'),
+                      logText,
                       [
+                        { text: '分享', onPress: () => {
+                          const { Share } = require('react-native');
+                          Share.share({ message: logText });
+                        }},
                         { text: '清空', style: 'destructive', onPress: () => clearLogs() },
                         { text: '关闭', style: 'cancel' },
                       ]
