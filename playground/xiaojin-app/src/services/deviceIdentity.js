@@ -11,6 +11,14 @@ import * as SecureStore from 'expo-secure-store';
 import * as Crypto from 'expo-crypto';
 import nacl from 'tweetnacl';
 
+// 注入 expo-crypto 的安全随机数生成器给 tweetnacl
+nacl.setPRNG((x, n) => {
+  const randomBytes = Crypto.getRandomBytes(n);
+  for (let i = 0; i < n; i++) {
+    x[i] = randomBytes[i];
+  }
+});
+
 // 存储键名
 const STORE_KEY_IDENTITY = 'device-identity';
 const STORE_KEY_AUTH_TOKENS = 'device-auth-tokens';
@@ -146,11 +154,11 @@ export async function initDeviceIdentity() {
         const secretKey = base64UrlDecode(parsed.secretKeyB64);
 
         // 验证设备 ID 与公钥一致
-        const derivedBuffer = await Crypto.digest(
+        const derivedHashBuffer = await Crypto.digest(
           Crypto.CryptoDigestAlgorithm.SHA256,
           publicKey
         );
-        const derivedId = bytesToHex(new Uint8Array(derivedBuffer));
+        const derivedId = bytesToHex(new Uint8Array(derivedHashBuffer));
         if (derivedId === parsed.deviceId) {
           console.log('[设备身份] 从安全存储加载成功，设备 ID:', parsed.deviceId.substring(0, 8));
           return { deviceId: parsed.deviceId, publicKey, secretKey };
