@@ -92,6 +92,7 @@ export async function transcribeAudio(audioUri) {
     });
     formData.append('language_code', 'zh');
     formData.append('tag_audio_events', 'false');
+    formData.append('model_id', 'scribe_v1');
 
     rlog('STT', '发送请求到 ElevenLabs...');
 
