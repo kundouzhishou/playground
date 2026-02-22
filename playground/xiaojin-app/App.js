@@ -1,4 +1,3 @@
-import * as Updates from 'expo-updates';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   StyleSheet,
@@ -650,6 +649,7 @@ export default function App() {
                 style={styles.updateButton}
                 onPress={async () => {
                   try {
+                    const Updates = require('expo-updates');
                     Alert.alert('检查更新', '正在检查...');
                     const update = await Updates.checkForUpdateAsync();
                     if (update.isAvailable) {
