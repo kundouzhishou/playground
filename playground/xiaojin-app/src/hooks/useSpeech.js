@@ -100,16 +100,11 @@ export const useSpeech = () => {
       await startRecording();
       setIsListening(true);
       startRecordingTimer();
-      // 60 秒最大录音时长，自动停止
-      maxRecordingTimerRef.current = setTimeout(() => {
-        rlog('Speech', '录音超过60秒，自动停止');
-        stopListening();
-      }, 60000);
     } catch (e) {
       rlog('Speech', 'ERROR', '启动录音失败:', e);
       setError('无法启动录音: ' + e.message);
     }
-  }, [clearSilenceTimer, startRecordingTimer, stopListening]);
+  }, [clearSilenceTimer, startRecordingTimer]);
 
   /**
    * 停止录音并识别
@@ -149,8 +144,10 @@ export const useSpeech = () => {
 
   /**
    * 使用 OpenAI TTS 朗读文本（先口语化转换）
+   * @param {string} text
+   * @param {{ voiceId?: string, onDone?: () => void }} [options]
    */
-  const speak = useCallback(async (text) => {
+  const speak = useCallback(async (text, options = {}) => {
     try {
       setIsSpeaking(true);
 
@@ -160,9 +157,10 @@ export const useSpeech = () => {
       // ElevenLabs TTS 朗读（传入选中的声音 ID）
       await speakWithOpenAI(voiceText, {
         speed: speechSpeed,
-        voiceId: selectedVoiceId,
+        voiceId: options.voiceId ?? selectedVoiceId,
         onDone: () => {
           setIsSpeaking(false);
+          options.onDone?.();
         },
         onError: (err) => {
           rlog('TTS', 'ERROR', '播放错误:', err);
