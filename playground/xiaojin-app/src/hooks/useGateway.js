@@ -283,7 +283,16 @@ export const useGateway = () => {
     }
 
     console.log('[Gateway] 连接到', GATEWAY_CONFIG.url);
-    const ws = new WebSocket(GATEWAY_CONFIG.url);
+    let ws;
+    try {
+      ws = new WebSocket(GATEWAY_CONFIG.url);
+      console.log('[Gateway] WebSocket 对象已创建, readyState:', ws.readyState);
+    } catch (e) {
+      console.error('[Gateway] WebSocket 创建失败:', e.message);
+      setStatus(GatewayStatus.ERROR);
+      setError('WebSocket 创建失败: ' + e.message);
+      return;
+    }
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -291,10 +300,13 @@ export const useGateway = () => {
       setStatus(GatewayStatus.WAITING_CHALLENGE);
     };
 
-    ws.onmessage = handleMessage;
+    ws.onmessage = (event) => {
+      console.log('[Gateway] 收到消息:', typeof event.data === 'string' ? event.data.substring(0, 200) : '(非文本)');
+      handleMessage(event);
+    };
 
     ws.onerror = (err) => {
-      console.error('[Gateway] WebSocket 错误:', err.message || err);
+      console.error('[Gateway] WebSocket 错误:', JSON.stringify(err));
       setStatus(GatewayStatus.ERROR);
       setError('连接错误');
     };
