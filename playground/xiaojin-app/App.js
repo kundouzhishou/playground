@@ -17,6 +17,10 @@ import { PairingScreen } from './src/components/PairingScreen';
 import { useGateway, GatewayStatus } from './src/hooks/useGateway';
 import { useSpeech } from './src/hooks/useSpeech';
 
+import appJson from './app.json';
+
+const APP_VERSION = appJson.expo.version;
+
 export default function App() {
   const [messages, setMessages] = useState([]);
   const [isAutoMode, setIsAutoMode] = useState(true);
@@ -155,6 +159,7 @@ export default function App() {
       {/* 顶部标题 */}
       <View style={styles.header}>
         <Text style={styles.title}>🔧 小金语音</Text>
+        <Text style={styles.version}>v{APP_VERSION}</Text>
       </View>
 
       {/* 聊天记录 */}
@@ -211,6 +216,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#ffffff',
     textAlign: 'center',
+  },
+  version: {
+    fontSize: 12,
+    color: '#666666',
+    textAlign: 'center',
+    marginTop: 4,
   },
   bottomContainer: {
     backgroundColor: '#1a1a1a',
