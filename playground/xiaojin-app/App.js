@@ -395,7 +395,10 @@ export default function App() {
   useEffect(() => {
     if (speechError) {
       playSound('error');
-      Alert.alert('语音错误', speechError);
+      Alert.alert('语音错误', speechError, [
+              { text: '分享', onPress: () => require('react-native').Share.share({ message: speechError }) },
+              { text: '关闭', style: 'cancel' },
+            ]);
     }
   }, [speechError]);
 
@@ -432,7 +435,10 @@ export default function App() {
     } catch (error) {
       console.error('Send message error:', error);
       playSound('error');
-      Alert.alert('发送失败', error.message);
+      Alert.alert('发送失败', error.message, [
+              { text: '分享', onPress: () => require('react-native').Share.share({ message: error.message }) },
+              { text: '关闭', style: 'cancel' },
+            ]);
       setIsThinking(false);
     }
   }, [sendMessage, isConversationActive, isLaojinMode, laojinTarget, currentSessionKey]);
@@ -632,7 +638,10 @@ export default function App() {
                       Alert.alert('已是最新', '当前已是最新版本');
                     }
                   } catch (e) {
-                    Alert.alert('检查失败', e.message);
+                    Alert.alert('检查失败', e.message, [
+              { text: '分享', onPress: () => require('react-native').Share.share({ message: e.message }) },
+              { text: '关闭', style: 'cancel' },
+            ]);
                   }
                 }}
               >
