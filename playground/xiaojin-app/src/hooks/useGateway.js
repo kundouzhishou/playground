@@ -13,6 +13,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import uuid from 'react-native-uuid';
 import { GATEWAY_CONFIG } from '../config/gateway';
+import { initRemoteLog } from '../services/remoteLog';
 import {
   initDeviceIdentity,
   buildSignPayload,
@@ -162,6 +163,13 @@ export const useGateway = () => {
         setPairingInfo(null);
         setError(null);
         reconnectDelayRef.current = 1000; // 重置退避
+
+        // 初始化远程日志
+        initRemoteLog((msg) => {
+          if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify(msg));
+          }
+        });
 
         // 保存 device token（如果返回了）
         if (result.auth?.deviceToken) {

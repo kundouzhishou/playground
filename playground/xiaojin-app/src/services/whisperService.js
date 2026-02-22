@@ -7,6 +7,7 @@
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { OPENAI_CONFIG } from '../config/apiKeys';
+import { rlog } from './remoteLog';
 
 // 录音实例
 let recording = null;
@@ -35,9 +36,9 @@ export async function startRecording() {
     );
 
     recording = newRecording;
-    console.log('[Whisper] 录音已开始');
+    rlog('Whisper', 录音已开始');
   } catch (err) {
-    console.error('[Whisper] 开始录音失败:', err);
+    rlog('Whisper', 'ERROR', 开始录音失败:', err);
     throw err;
   }
 }
@@ -48,7 +49,7 @@ export async function startRecording() {
  */
 export async function stopRecording() {
   if (!recording) {
-    console.warn('[Whisper] 没有正在进行的录音');
+    rlog('Whisper', 'WARN', 没有正在进行的录音');
     return null;
   }
 
@@ -61,11 +62,11 @@ export async function stopRecording() {
     });
 
     const uri = recording.getURI();
-    console.log('[Whisper] 录音已停止，文件:', uri);
+    rlog('Whisper', 录音已停止，文件:', uri);
     recording = null;
     return uri;
   } catch (err) {
-    console.error('[Whisper] 停止录音失败:', err);
+    rlog('Whisper', 'ERROR', 停止录音失败:', err);
     recording = null;
     throw err;
   }
@@ -78,7 +79,7 @@ export async function stopRecording() {
  */
 export async function transcribeAudio(audioUri) {
   try {
-    console.log('[Whisper] 开始上传识别...');
+    rlog('Whisper', 开始上传识别...');
 
     // 使用 fetch + FormData 上传（FileSystem.uploadAsync 的 MULTIPART 在部分环境不可用）
     const formData = new FormData();
@@ -101,15 +102,15 @@ export async function transcribeAudio(audioUri) {
 
     if (!response.ok) {
       const errBody = await response.text();
-      console.error('[Whisper] API 错误:', response.status, errBody);
+      rlog('Whisper', 'ERROR', API 错误:', response.status, errBody);
       throw new Error(`Whisper API 错误: ${response.status}`);
     }
 
     const text = (await response.text()).trim();
-    console.log('[Whisper] 识别结果:', text);
+    rlog('Whisper', 识别结果:', text);
     return text;
   } catch (err) {
-    console.error('[Whisper] 识别失败:', err);
+    rlog('Whisper', 'ERROR', 识别失败:', err);
     throw err;
   }
 }
@@ -126,7 +127,7 @@ export async function cancelRecording() {
         playsInSilentModeIOS: true,
       });
     } catch (err) {
-      console.warn('[Whisper] 取消录音时出错:', err);
+      rlog('Whisper', 'WARN', 取消录音时出错:', err);
     }
     recording = null;
   }
