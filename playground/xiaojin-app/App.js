@@ -3,6 +3,7 @@ import {
   StyleSheet,
   View,
   Text,
+  TextInput,
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
@@ -16,6 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ChatHistory } from './src/components/ChatHistory';
 import { MicrophoneButton } from './src/components/MicrophoneButton';
 import { StatusBar } from './src/components/StatusBar';
+import { ModeSwitch } from './src/components/ModeSwitch';
 import { PairingScreen } from './src/components/PairingScreen';
 import { VoiceSelector } from './src/components/VoiceSelector';
 import { useGateway, GatewayStatus } from './src/hooks/useGateway';
@@ -27,11 +29,8 @@ import { speakWithOpenAI } from './src/services/ttsService';
 import { GATEWAY_CONFIG } from './src/config/gateway';
 
 import appJson from './app.json';
-import Constants from 'expo-constants';
 
 const APP_VERSION = appJson.expo.version;
-const BUILD_ID = Constants.expoConfig?.extra?.buildId || 'dev';
-const UPDATE_ID = Constants.manifest2?.id?.slice(0, 8) || Constants.manifest?.id?.slice(0, 8) || null;
 
 // 结束关键词
 const EXIT_KEYWORDS = ['再见', '结束', '拜拜', '没事了'];
@@ -104,8 +103,10 @@ function detectModeSwitch(text) {
 
 export default function App() {
   const [messages, setMessages] = useState([]);
+  const [isAutoMode, setIsAutoMode] = useState(true);
   const [isThinking, setIsThinking] = useState(false);
   const [isLongPressing, setIsLongPressing] = useState(false);
+  const [inputText, setInputText] = useState('');
   // 对话模式状态
   const [isConversationActive, setIsConversationActive] = useState(false);
   // 老金模式状态
@@ -530,7 +531,7 @@ export default function App() {
 
   // ========== 麦克风按钮 ==========
   const handleMicrophonePress = useCallback(() => {
-    if (true) {
+    if (isAutoMode) {
       if (isListening) {
         stopListening();
       } else {
@@ -548,7 +549,7 @@ export default function App() {
   }, [isAutoMode, isListening, isSpeaking, isConversationActive, startListening, stopListening, stopSpeaking, startConversation]);
 
   const handleMicrophoneLongPress = useCallback(() => {
-    if (false) {
+    if (!isAutoMode) {
       if (isSpeaking) {
         stopSpeaking();
       }
@@ -597,17 +598,10 @@ export default function App() {
     outputRange: [0.05, 0.15],
   });
 
-  // 如果正在等待配对审批，显示配对界面（延迟 2 秒判断，避免启动时闪屏）
-  const [pairingDelayPassed, setPairingDelayPassed] = useState(false);
-  useEffect(() => {
-    const timer = setTimeout(() => setPairingDelayPassed(true), 2000);
-    return () => clearTimeout(timer);
-  }, []);
-  
-  const showPairing = pairingDelayPassed && (
+  // 如果正在等待配对审批，显示配对界面
+  const showPairing =
     gatewayStatus === GatewayStatus.WAITING_PAIRING ||
-    (gatewayStatus === GatewayStatus.ERROR && gatewayError?.includes('配对'))
-  );
+    (gatewayStatus === GatewayStatus.ERROR && gatewayError?.includes('配对'));
 
   if (showPairing) {
     return (
@@ -644,31 +638,7 @@ export default function App() {
           <View style={styles.header}>
             <Text style={styles.title}>🔧 小金语音</Text>
             <View style={styles.headerRow}>
-              <Text style={styles.version}>v{APP_VERSION} · {UPDATE_ID ? `OTA:${UPDATE_ID}` : `build:${BUILD_ID}`}</Text>
-              <TouchableOpacity
-                style={styles.updateButton}
-                onPress={async () => {
-                  try {
-                    const Updates = require('expo-updates');
-                    Alert.alert('检查更新', '正在检查...');
-                    const update = await Updates.checkForUpdateAsync();
-                    if (update.isAvailable) {
-                      Alert.alert('发现新版本', '正在下载更新...', [{ text: '好' }]);
-                      await Updates.fetchUpdateAsync();
-                      Alert.alert('更新完成', '重启 App 生效', [
-                        { text: '稍后', style: 'cancel' },
-                        { text: '立即重启', onPress: () => Updates.reloadAsync() },
-                      ]);
-                    } else {
-                      Alert.alert('已是最新', '当前已是最新版本');
-                    }
-                  } catch (e) {
-                    Alert.alert('检查失败', e.message);
-                  }
-                }}
-              >
-                <Text style={styles.updateButtonText}>🔄</Text>
-              </TouchableOpacity>
+              <Text style={styles.version}>v{APP_VERSION}</Text>
               {isConversationActive && (
                 <Text style={styles.conversationBadge}>● 对话中</Text>
               )}
@@ -740,6 +710,30 @@ export default function App() {
           </View>
         ) : null}
 
+        {/* 文字输入框 */}
+        <View style={styles.inputRow}>
+          <TextInput
+            style={styles.textInput}
+            value={inputText}
+            onChangeText={setInputText}
+            placeholder="输入文字..."
+            placeholderTextColor="#666666"
+            returnKeyType="send"
+            onSubmitEditing={handleTextSend}
+            editable={connected && !isThinking}
+          />
+          <TouchableOpacity
+            style={[
+              styles.sendButton,
+              (!inputText.trim() || !connected || isThinking) && styles.sendButtonDisabled,
+            ]}
+            onPress={handleTextSend}
+            disabled={!inputText.trim() || !connected || isThinking}
+          >
+            <Text style={styles.sendButtonText}>发送</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* 麦克风按钮 */}
         <View style={styles.micContainer}>
           <MicrophoneButton
@@ -749,6 +743,11 @@ export default function App() {
             onPressOut={handleMicrophonePressOut}
             disabled={!connected || isThinking}
           />
+        </View>
+
+        {/* 模式切换 */}
+        <View style={styles.modeContainer}>
+          <ModeSwitch isAutoMode={isAutoMode} onToggle={handleModeToggle} />
         </View>
 
         {/* 语速调节 + 声音选择 */}
@@ -803,14 +802,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 4,
-    gap: 8,
-  },
-  updateButton: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  updateButtonText: {
-    fontSize: 14,
+    gap: 12,
   },
   title: {
     fontSize: 24,

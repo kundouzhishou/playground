@@ -58,7 +58,7 @@ memory/
   - 用途：跨网络 SSH 访问，手机远程管理服务器，IP 固定不变
 - Apple Team ID: 292Q7R3PT3 (Jin suiyong, Individual)
 - Expo 账号: notjayson, Token 存在 ~/.openclaw/credentials/expo-token
-- EAS Build 付费额度（$20），省着用
+- EAS Build 额度：$45/月，每次 iOS 构建 $2，不用太省
 
 ### 已配置服务
 - Discord AI 日报推送 → #ai-news 频道，每天 9:00 UTC+8
