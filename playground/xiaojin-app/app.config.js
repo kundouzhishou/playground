@@ -16,7 +16,7 @@ export default {
     name: "小金语音",
     slug: "xiaojin-voice-app",
     owner: "notjayson",
-    version: "0.4.1",
+    version: "0.4.2",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "dark",
