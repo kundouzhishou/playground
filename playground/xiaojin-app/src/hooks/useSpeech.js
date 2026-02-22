@@ -36,6 +36,8 @@ export const useSpeech = () => {
   const silenceTimerRef = useRef(null);
   // 录音时长计时器
   const recordingTimerRef = useRef(null);
+  // 最大录音时长计时器（60秒自动停止）
+  const maxRecordingTimerRef = useRef(null);
   const recordingStartTimeRef = useRef(null);
   // 模式
   const listeningModeRef = useRef('auto');
@@ -47,6 +49,7 @@ export const useSpeech = () => {
       stopOpenAITTS();
       clearSilenceTimer();
       clearRecordingTimer();
+      clearMaxRecordingTimer();
     };
   }, []);
 
@@ -63,6 +66,14 @@ export const useSpeech = () => {
     if (recordingTimerRef.current) {
       clearInterval(recordingTimerRef.current);
       recordingTimerRef.current = null;
+    }
+  }, []);
+
+  // 清除最大录音时长计时器
+  const clearMaxRecordingTimer = useCallback(() => {
+    if (maxRecordingTimerRef.current) {
+      clearTimeout(maxRecordingTimerRef.current);
+      maxRecordingTimerRef.current = null;
     }
   }, []);
 
@@ -89,11 +100,16 @@ export const useSpeech = () => {
       await startRecording();
       setIsListening(true);
       startRecordingTimer();
+      // 60 秒最大录音时长，自动停止
+      maxRecordingTimerRef.current = setTimeout(() => {
+        rlog('Speech', '录音超过60秒，自动停止');
+        stopListening();
+      }, 60000);
     } catch (e) {
       rlog('Speech', 'ERROR', '启动录音失败:', e);
       setError('无法启动录音: ' + e.message);
     }
-  }, [clearSilenceTimer, startRecordingTimer]);
+  }, [clearSilenceTimer, startRecordingTimer, stopListening]);
 
   /**
    * 停止录音并识别
@@ -102,6 +118,7 @@ export const useSpeech = () => {
   const stopListening = useCallback(async () => {
     try {
       setIsListening(false);
+      clearMaxRecordingTimer();
       clearRecordingTimer();
       setPartialText('识别中...');
 
@@ -128,7 +145,7 @@ export const useSpeech = () => {
       setError('语音识别失败: ' + e.message);
       setPartialText('');
     }
-  }, [clearSilenceTimer, clearRecordingTimer]);
+  }, [clearSilenceTimer, clearRecordingTimer, clearMaxRecordingTimer]);
 
   /**
    * 使用 OpenAI TTS 朗读文本（先口语化转换）
