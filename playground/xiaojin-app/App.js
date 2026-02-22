@@ -38,8 +38,6 @@ const UPDATE_ID = Constants.manifest2?.id?.slice(0, 8) || Constants.manifest?.id
 
 // 结束关键词
 const EXIT_KEYWORDS = ['再见', '结束', '拜拜', '没事了'];
-// 无活动超时（毫秒）
-const INACTIVITY_TIMEOUT_MS = 30000;
 
 /**
  * 检测老金模式切换指令
@@ -129,8 +127,6 @@ export default function App() {
 
   // 用 ref 跟踪是否已经为当前流式回复创建了助手消息占位
   const streamingMsgAddedRef = useRef(false);
-  // 无活动计时器
-  const inactivityTimerRef = useRef(null);
   // 思考提示音 interval
   const thinkingIntervalRef = useRef(null);
   // 呼吸灯动画值
@@ -262,28 +258,7 @@ export default function App() {
     };
   }, [isThinking, isConversationActive]);
 
-  // ========== 无活动超时 ==========
-  const clearInactivityTimer = useCallback(() => {
-    if (inactivityTimerRef.current) {
-      clearTimeout(inactivityTimerRef.current);
-      inactivityTimerRef.current = null;
-    }
-  }, []);
-
-  const startInactivityTimer = useCallback(() => {
-    clearInactivityTimer();
-    inactivityTimerRef.current = setTimeout(() => {
-      console.log('[Conversation] 30 秒无活动，自动结束对话');
-      endConversation();
-    }, INACTIVITY_TIMEOUT_MS);
-  }, [clearInactivityTimer]);
-
-  // 对话活跃时有活动就重置计时器
-  useEffect(() => {
-    if (isConversationActive && (isListening || isThinking || isSpeaking)) {
-      clearInactivityTimer();
-    }
-  }, [isConversationActive, isListening, isThinking, isSpeaking, clearInactivityTimer]);
+  // ========== 无活动超时（已禁用，单轮模式不需要） ==========
 
   // ========== 对话模式控制 ==========
   const startConversation = useCallback(async () => {
@@ -301,12 +276,11 @@ export default function App() {
 
   const endConversation = useCallback(async () => {
     console.log('[Conversation] 结束对话模式');
-    clearInactivityTimer();
     setIsConversationActive(false);
     await playSound('end');
     // 停止一切进行中的操作
     if (isSpeaking) stopSpeaking();
-  }, [clearInactivityTimer, isSpeaking, stopSpeaking]);
+  }, [isSpeaking, stopSpeaking]);
 
   // ========== 关键词检测 ==========
   const checkExitKeyword = useCallback((text) => {
@@ -425,24 +399,7 @@ export default function App() {
     }
   }, [speechError]);
 
-  // ========== 朗读结束后自动继续录音 ==========
-  useEffect(() => {
-    // 当朗读刚结束且对话模式激活 → 自动开始下一轮录音
-    if (isConversationActive && !isSpeaking && !isListening && !isThinking) {
-      // 延迟一小段时间再开始，避免和 TTS 结束冲突
-      const timer = setTimeout(async () => {
-        // 再次检查状态（可能已经变化）
-        if (isConversationActive && !isSpeaking && !isListening && !isThinking) {
-          console.log('[Conversation] 朗读结束，自动开始下一轮录音');
-          await playSound('start');
-          startListening('auto');
-          // 启动无活动计时器
-          startInactivityTimer();
-        }
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [isConversationActive, isSpeaking, isListening, isThinking]);
+  // ========== 单轮模式：朗读结束后等待用户手动点击，不自动录音 ==========
 
   // ========== 消息处理 ==========
   const handleUserMessage = useCallback(async (text) => {
@@ -529,33 +486,35 @@ export default function App() {
       // 待机状态 → 唤醒对话
       startConversation();
     } else if (isSpeaking) {
-      // 对话中正在朗读 → 打断朗读，开始录音
+      // 对话中正在朗读 → 停止朗读（不自动开始录音，等用户手动点击）
       stopSpeaking();
+    } else if (isListening) {
+      // 已经在录音 → 停止录音
+      stopListening();
+    } else if (!isThinking) {
+      // 空闲状态 → 开始录音
       playSound('start');
       startListening('auto');
-    } else if (isListening) {
-      // 已经在录音 → 忽略
     }
-  }, [connected, isConversationActive, isSpeaking, isListening, stopSpeaking, startListening, startConversation]);
+  }, [connected, isConversationActive, isSpeaking, isListening, isThinking, stopSpeaking, stopListening, startListening, startConversation]);
 
   // ========== 麦克风按钮 ==========
   const handleMicrophonePress = useCallback(() => {
-    if (true) {
-      if (isListening) {
-        stopListening();
-      } else {
-        if (isSpeaking) {
-          stopSpeaking();
-        }
-        if (!isConversationActive) {
-          startConversation();
-        } else {
-          playSound('start');
-          startListening('auto');
-        }
-      }
+    if (isListening) {
+      // 正在录音 → 停止录音
+      stopListening();
+    } else if (isSpeaking) {
+      // 正在朗读 → 停止朗读
+      stopSpeaking();
+    } else if (!isConversationActive) {
+      // 未激活 → 启动对话（会自动开始录音）
+      startConversation();
+    } else if (!isThinking) {
+      // 对话已激活，空闲状态 → 开始录音
+      playSound('start');
+      startListening('auto');
     }
-  }, [isAutoMode, isListening, isSpeaking, isConversationActive, startListening, stopListening, stopSpeaking, startConversation]);
+  }, [isListening, isSpeaking, isConversationActive, isThinking, startListening, stopListening, stopSpeaking, startConversation]);
 
   const handleMicrophoneLongPress = useCallback(() => {
     if (false) {
@@ -733,7 +692,7 @@ export default function App() {
                  '⏳ 等待中...'}
               </Text>
               <Text style={styles.conversationSubHint}>
-                说"再见"或 30 秒无操作自动结束
+                点击麦克风开始/停止录音 · 说"再见"结束
               </Text>
             </View>
           )}
