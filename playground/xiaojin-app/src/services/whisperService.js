@@ -1,12 +1,11 @@
 /**
- * Whisper 语音识别服务
- * 使用 expo-av 录音，上传到 OpenAI Whisper API 进行语音转文字
+ * 语音识别服务（原 Whisper，现已切换到 ElevenLabs STT）
+ * 使用 expo-av 录音，上传到 ElevenLabs STT API 进行语音转文字
  * 支持中文识别，返回带标点的文本
  */
 
 import { Audio } from 'expo-av';
-import * as FileSystem from 'expo-file-system';
-import { OPENAI_CONFIG } from '../config/apiKeys';
+import { ELEVENLABS_CONFIG } from '../config/apiKeys';
 import { rlog } from './remoteLog';
 
 // 录音实例
@@ -73,44 +72,44 @@ export async function stopRecording() {
 }
 
 /**
- * 将录音文件上传到 Whisper API 进行识别
+ * 将录音文件上传到 ElevenLabs STT API 进行识别
+ * （原 Whisper 实现已替换，文件名保留以避免改 import 路径）
  * @param {string} audioUri - 录音文件 URI
  * @returns {Promise<string>} 识别出的文本
  */
 export async function transcribeAudio(audioUri) {
   try {
-    rlog('Whisper', '开始上传识别...');
+    rlog('STT', '开始上传到 ElevenLabs STT...');
 
-    // 使用 fetch + FormData 上传（FileSystem.uploadAsync 的 MULTIPART 在部分环境不可用）
     const formData = new FormData();
     formData.append('file', {
       uri: audioUri,
       type: 'audio/m4a',
       name: 'recording.m4a',
     });
-    formData.append('model', OPENAI_CONFIG.whisperModel);
-    formData.append('language', 'zh');
-    formData.append('response_format', 'text');
+    formData.append('language_code', 'zh');
+    formData.append('tag_audio_events', 'false');
 
-    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    const response = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENAI_CONFIG.apiKey}`,
+        'xi-api-key': ELEVENLABS_CONFIG.apiKey,
       },
       body: formData,
     });
 
     if (!response.ok) {
       const errBody = await response.text();
-      rlog('Whisper', 'ERROR', 'API 错误:', response.status, errBody);
-      throw new Error(`Whisper API 错误: ${response.status}`);
+      rlog('STT', 'ERROR', 'ElevenLabs API 错误:', response.status, errBody);
+      throw new Error(`ElevenLabs STT API 错误: ${response.status}`);
     }
 
-    const text = (await response.text()).trim();
-    rlog('Whisper', '识别结果:', text);
+    const data = await response.json();
+    const text = (data.text || '').trim();
+    rlog('STT', '识别结果:', text);
     return text;
   } catch (err) {
-    rlog('Whisper', 'ERROR', '识别失败:', err);
+    rlog('STT', 'ERROR', '识别失败:', err);
     throw err;
   }
 }
