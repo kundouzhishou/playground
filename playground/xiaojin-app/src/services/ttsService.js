@@ -1,11 +1,11 @@
 /**
  * ElevenLabs TTS 语音合成服务
- * 使用 ElevenLabs API 生成老金声音克隆语音，通过 expo-av 播放
+ * 使用 ElevenLabs API 生成语音，支持多声音切换，通过 expo-av 播放
  */
 
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
-import { ELEVENLABS_CONFIG } from '../config/apiKeys';
+import { ELEVENLABS_CONFIG, DEFAULT_VOICE_ID } from '../config/apiKeys';
 
 // 当前播放的 Sound 实例
 let currentSound = null;
@@ -15,10 +15,13 @@ let currentSound = null;
  * @param {string} text - 要朗读的文本
  * @param {object} options - 选项
  * @param {number} options.speed - 语速（暂未使用，ElevenLabs 通过 stability 控制）
+ * @param {string} options.voiceId - 声音 ID（不传则使用默认声音）
  * @param {function} options.onDone - 播放完成回调
  * @param {function} options.onError - 播放错误回调
  */
-export async function speakWithOpenAI(text, { speed = 1.0, onDone, onError } = {}) {
+export async function speakWithOpenAI(text, { speed = 1.0, voiceId, onDone, onError } = {}) {
+  // 使用传入的 voiceId，否则用默认值
+  const activeVoiceId = voiceId || DEFAULT_VOICE_ID;
   try {
     // 确保音频模式允许播放
     await Audio.setAudioModeAsync({
@@ -30,7 +33,7 @@ export async function speakWithOpenAI(text, { speed = 1.0, onDone, onError } = {
 
     // 调用 ElevenLabs TTS API
     const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_CONFIG.voiceId}`,
+      `https://api.elevenlabs.io/v1/text-to-speech/${activeVoiceId}`,
       {
         method: 'POST',
         headers: {
@@ -93,7 +96,7 @@ export async function speakWithOpenAI(text, { speed = 1.0, onDone, onError } = {
       }
     });
 
-    console.log('[TTS] 开始播放（ElevenLabs 老金声音）');
+    console.log('[TTS] 开始播放，声音 ID:', activeVoiceId);
   } catch (err) {
     console.error('[TTS] 失败:', err);
     currentSound = null;

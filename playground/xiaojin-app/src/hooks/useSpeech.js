@@ -27,6 +27,8 @@ export const useSpeech = () => {
   const [partialText, setPartialText] = useState(''); // 录音中显示状态
   const [error, setError] = useState(null);
   const [speechSpeed, setSpeechSpeed] = useState(1.0); // 语速（0.25-4.0）
+  // 当前选中的声音 ID（由外部传入设置）
+  const [selectedVoiceId, setSelectedVoiceId] = useState(null);
 
   // VAD 累积发送相关
   const pendingTextsRef = useRef([]);
@@ -148,9 +150,10 @@ export const useSpeech = () => {
       // 口语化转换
       const voiceText = await formatForVoice(text);
 
-      // OpenAI TTS 朗读
+      // ElevenLabs TTS 朗读（传入选中的声音 ID）
       await speakWithOpenAI(voiceText, {
         speed: speechSpeed,
+        voiceId: selectedVoiceId,
         onDone: () => {
           setIsSpeaking(false);
         },
@@ -163,7 +166,7 @@ export const useSpeech = () => {
       console.error('[TTS] 失败:', e);
       setIsSpeaking(false);
     }
-  }, [speechSpeed]);
+  }, [speechSpeed, selectedVoiceId]);
 
   /**
    * 停止 TTS 播放
@@ -185,6 +188,8 @@ export const useSpeech = () => {
     error,
     speechSpeed,
     setSpeechSpeed,
+    selectedVoiceId,
+    setSelectedVoiceId,
     startListening,
     stopListening,
     speak,
