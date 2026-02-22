@@ -13,7 +13,8 @@ import { ChatHistory } from './src/components/ChatHistory';
 import { MicrophoneButton } from './src/components/MicrophoneButton';
 import { StatusBar } from './src/components/StatusBar';
 import { ModeSwitch } from './src/components/ModeSwitch';
-import { useGateway } from './src/hooks/useGateway';
+import { PairingScreen } from './src/components/PairingScreen';
+import { useGateway, GatewayStatus } from './src/hooks/useGateway';
 import { useSpeech } from './src/hooks/useSpeech';
 
 export default function App() {
@@ -22,7 +23,14 @@ export default function App() {
   const [isThinking, setIsThinking] = useState(false);
   const [isLongPressing, setIsLongPressing] = useState(false);
 
-  const { connected, status: gatewayStatus, sendMessage, lastMessage } = useGateway();
+  const {
+    connected,
+    status: gatewayStatus,
+    sendMessage,
+    lastMessage,
+    pairingInfo,
+    error: gatewayError,
+  } = useGateway();
   const {
     isListening,
     isSpeaking,
@@ -125,6 +133,20 @@ export default function App() {
     }
     setIsAutoMode((prev) => !prev);
   }, [isListening, stopListening]);
+
+  // 如果正在等待配对审批，显示配对界面
+  const showPairing =
+    gatewayStatus === GatewayStatus.WAITING_PAIRING ||
+    (gatewayStatus === GatewayStatus.ERROR && gatewayError?.includes('配对'));
+
+  if (showPairing) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ExpoStatusBar style="light" />
+        <PairingScreen pairingInfo={pairingInfo} error={gatewayError} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
