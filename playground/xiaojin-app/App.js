@@ -698,25 +698,12 @@ export default function App() {
             />
           </View>
 
-          {/* 对话模式状态提示 */}
-          {isConversationActive && (
-            <View style={styles.conversationHint}>
-              <Text style={styles.conversationHintText}>
-                {isListening ? '🎙 正在听...' :
-                 isThinking ? '🤔 思考中...' :
-                 isSpeaking ? '🔊 朗读中...' :
-                 '⏳ 等待中...'}
-              </Text>
-              <Text style={styles.conversationSubHint}>
-                点击麦克风开始/停止录音 · 说"再见"结束
-              </Text>
-            </View>
-          )}
+
 
           {!isConversationActive && (
             <View style={styles.wakeHint}>
               <Text style={styles.wakeHintText}>
-                点击屏幕或摇一摇开始对话
+                点击麦克风开始录音
               </Text>
             </View>
           )}
