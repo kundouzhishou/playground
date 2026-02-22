@@ -29,10 +29,11 @@ export async function startRecording() {
       playsInSilentModeIOS: true,
     });
 
-    // 创建录音实例，使用高质量 m4a 格式（Whisper 支持）
-    const { recording: newRecording } = await Audio.Recording.createAsync(
-      Audio.RecordingOptionsPresets.HIGH_QUALITY
-    );
+    // 创建录音实例，使用高质量 m4a 格式，开启 metering 用于 VAD
+    const { recording: newRecording } = await Audio.Recording.createAsync({
+      ...Audio.RecordingOptionsPresets.HIGH_QUALITY,
+      isMeteringEnabled: true,
+    });
 
     recording = newRecording;
     rlog('Whisper', '录音已开始');
@@ -122,6 +123,14 @@ export async function transcribeAudio(audioUri) {
     rlog('STT', 'ERROR', err.message);
     throw err;
   }
+}
+
+/**
+ * 获取当前录音实例（用于 VAD metering 轮询）
+ * @returns {Audio.Recording|null}
+ */
+export function getRecording() {
+  return recording;
 }
 
 /**

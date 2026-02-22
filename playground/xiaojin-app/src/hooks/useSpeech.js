@@ -13,6 +13,7 @@ import {
   stopRecording,
   transcribeAudio,
   cancelRecording,
+  getRecording,
 } from '../services/whisperService';
 import { speakWithOpenAI, stopOpenAITTS } from '../services/ttsService';
 import { formatForVoice } from '../services/voiceFormatter';
@@ -39,6 +40,10 @@ export const useSpeech = () => {
   // 最大录音时长计时器（60秒自动停止）
   const maxRecordingTimerRef = useRef(null);
   const recordingStartTimeRef = useRef(null);
+  // VAD metering interval
+  const meteringIntervalRef = useRef(null);
+  // stopListening ref（避免 startListening 与 stopListening 的循环依赖）
+  const stopListeningRef = useRef(null);
   // 模式
   const listeningModeRef = useRef('auto');
 
@@ -50,6 +55,7 @@ export const useSpeech = () => {
       clearSilenceTimer();
       clearRecordingTimer();
       clearMaxRecordingTimer();
+      clearMeteringInterval();
     };
   }, []);
 
@@ -77,6 +83,14 @@ export const useSpeech = () => {
     }
   }, []);
 
+  // 清除 VAD metering interval
+  const clearMeteringInterval = useCallback(() => {
+    if (meteringIntervalRef.current) {
+      clearInterval(meteringIntervalRef.current);
+      meteringIntervalRef.current = null;
+    }
+  }, []);
+
   // 启动录音时长显示
   const startRecordingTimer = useCallback(() => {
     recordingStartTimeRef.current = Date.now();
@@ -100,11 +114,52 @@ export const useSpeech = () => {
       await startRecording();
       setIsListening(true);
       startRecordingTimer();
+
+      // VAD：启动音量轮询，静音超过 1.5s 自动停止
+      const SILENCE_THRESHOLD = -40; // dB，低于此值视为静音
+      const SILENCE_DURATION = 1500; // 1.5秒静音后自动停止
+      const MIN_RECORD_MS = 500;     // 最短录音时长保护
+      const recordStart = Date.now();
+      let silenceStart = null;
+      let hadSound = false; // 只在检测到声音后才开始静音计时
+
+      clearMeteringInterval();
+      meteringIntervalRef.current = setInterval(async () => {
+        const rec = getRecording();
+        if (!rec) {
+          clearMeteringInterval();
+          return;
+        }
+        try {
+          const status = await rec.getStatusAsync();
+          if (!status.isRecording) {
+            clearMeteringInterval();
+            return;
+          }
+          // 最短录音时长保护
+          if (Date.now() - recordStart < MIN_RECORD_MS) return;
+
+          const db = status.metering ?? -160;
+          if (db >= SILENCE_THRESHOLD) {
+            hadSound = true;
+            silenceStart = null; // 有声音，重置静音计时
+          } else if (hadSound) {
+            // 已经有过声音，开始计静音时长
+            if (!silenceStart) silenceStart = Date.now();
+            else if (Date.now() - silenceStart >= SILENCE_DURATION) {
+              clearMeteringInterval();
+              stopListeningRef.current?.(); // 自动停止（通过 ref 避免循环依赖）
+            }
+          }
+        } catch (_) {
+          clearMeteringInterval();
+        }
+      }, 100);
     } catch (e) {
       rlog('Speech', 'ERROR', '启动录音失败:', e);
       setError('无法启动录音: ' + e.message);
     }
-  }, [clearSilenceTimer, startRecordingTimer]);
+  }, [clearSilenceTimer, startRecordingTimer, clearMeteringInterval]);
 
   /**
    * 停止录音并识别
@@ -115,6 +170,7 @@ export const useSpeech = () => {
       setIsListening(false);
       clearMaxRecordingTimer();
       clearRecordingTimer();
+      clearMeteringInterval();
       setPartialText('识别中...');
 
       const audioUri = await stopRecording();
@@ -140,7 +196,12 @@ export const useSpeech = () => {
       setError('语音识别失败: ' + e.message);
       setPartialText('');
     }
-  }, [clearSilenceTimer, clearRecordingTimer, clearMaxRecordingTimer]);
+  }, [clearSilenceTimer, clearRecordingTimer, clearMaxRecordingTimer, clearMeteringInterval]);
+
+  // 更新 stopListeningRef，供 startListening 的 setInterval 回调使用
+  useEffect(() => {
+    stopListeningRef.current = stopListening;
+  }, [stopListening]);
 
   /**
    * 使用 OpenAI TTS 朗读文本（先口语化转换）
