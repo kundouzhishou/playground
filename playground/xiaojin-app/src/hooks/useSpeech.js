@@ -184,5 +184,6 @@ export const useSpeech = () => {
     stopListening,
     speak,
     stopSpeaking,
+    clearRecognizedText: () => setRecognizedText(''),
   };
 };
