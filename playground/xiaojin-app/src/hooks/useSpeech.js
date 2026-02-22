@@ -115,21 +115,10 @@ export const useSpeech = () => {
       const text = await transcribeAudio(audioUri);
 
       if (text && text.trim()) {
-        // 将识别结果加入待发送队列
-        pendingTextsRef.current.push(text.trim());
-        rlog('VAD', '累积文本段数:', pendingTextsRef.current.length);
-        setPartialText(`已识别: "${text.trim()}" (等待中...)`);
-
-        // 启动沉默计时器
-        clearSilenceTimer();
-        silenceTimerRef.current = setTimeout(() => {
-          // 沉默窗口到期，合并所有文本并发送
-          const allTexts = pendingTextsRef.current.join(' ');
-          pendingTextsRef.current = [];
-          rlog('VAD', '沉默窗口到期，发送合并文本:', allTexts);
-          setRecognizedText(allTexts);
-          setPartialText('');
-        }, SILENCE_WINDOW_MS);
+        // 识别成功，立刻发送（不再等待 VAD 沉默窗口）
+        rlog('VAD', '识别完成，立刻发送:', text.trim());
+        setRecognizedText(text.trim() + ' ' + Date.now()); // 加时间戳确保每次都触发更新
+        setPartialText('');
       } else {
         setPartialText('');
         rlog('Speech', '未识别到有效文本');
