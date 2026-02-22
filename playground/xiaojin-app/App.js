@@ -29,8 +29,11 @@ import { speakWithOpenAI } from './src/services/ttsService';
 import { GATEWAY_CONFIG } from './src/config/gateway';
 
 import appJson from './app.json';
+import Constants from 'expo-constants';
 
 const APP_VERSION = appJson.expo.version;
+const BUILD_ID = Constants.expoConfig?.extra?.buildId || 'dev';
+const UPDATE_ID = Constants.manifest2?.id?.slice(0, 8) || Constants.manifest?.id?.slice(0, 8) || null;
 
 // 结束关键词
 const EXIT_KEYWORDS = ['再见', '结束', '拜拜', '没事了'];
@@ -638,7 +641,7 @@ export default function App() {
           <View style={styles.header}>
             <Text style={styles.title}>🔧 小金语音</Text>
             <View style={styles.headerRow}>
-              <Text style={styles.version}>v{APP_VERSION}</Text>
+              <Text style={styles.version}>v{APP_VERSION} · {UPDATE_ID ? `OTA:${UPDATE_ID}` : `build:${BUILD_ID}`}</Text>
               {isConversationActive && (
                 <Text style={styles.conversationBadge}>● 对话中</Text>
               )}
