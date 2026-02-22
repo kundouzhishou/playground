@@ -6,6 +6,7 @@
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { ELEVENLABS_CONFIG, DEFAULT_VOICE_ID } from '../config/apiKeys';
+import { rlog } from './remoteLog';
 
 // 当前播放的 Sound 实例
 let currentSound = null;
@@ -29,7 +30,7 @@ export async function speakWithOpenAI(text, { speed = 1.0, voiceId, onDone, onEr
       playsInSilentModeIOS: true,
     });
 
-    console.log('[TTS] 请求 ElevenLabs TTS，文本长度:', text.length);
+    rlog('TTS', '请求 ElevenLabs TTS，文本长度:', text.length);
 
     // 调用 ElevenLabs TTS API
     const response = await fetch(
@@ -54,7 +55,7 @@ export async function speakWithOpenAI(text, { speed = 1.0, voiceId, onDone, onEr
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error('[TTS] ElevenLabs API 错误:', response.status, errText);
+      rlog('TTS', 'ERROR', 'ElevenLabs API 错误:', response.status, errText);
       throw new Error(`ElevenLabs TTS API 错误: ${response.status}`);
     }
 
@@ -89,16 +90,16 @@ export async function speakWithOpenAI(text, { speed = 1.0, voiceId, onDone, onEr
     // 监听播放状态
     sound.setOnPlaybackStatusUpdate((status) => {
       if (status.didJustFinish) {
-        console.log('[TTS] 播放完成');
+        rlog('TTS', '播放完成');
         currentSound = null;
         sound.unloadAsync();
         onDone?.();
       }
     });
 
-    console.log('[TTS] 开始播放，声音 ID:', activeVoiceId);
+    rlog('TTS', '开始播放，声音 ID:', activeVoiceId);
   } catch (err) {
-    console.error('[TTS] 失败:', err);
+    rlog('TTS', 'ERROR', '失败:', err);
     currentSound = null;
     onError?.(err);
   }
@@ -112,9 +113,9 @@ export async function stopOpenAITTS() {
     try {
       await currentSound.stopAsync();
       await currentSound.unloadAsync();
-      console.log('[TTS] 已停止播放');
+      rlog('TTS', '已停止播放');
     } catch (err) {
-      console.warn('[TTS] 停止播放时出错:', err);
+      rlog('TTS', 'WARN', '停止播放时出错:', err);
     }
     currentSound = null;
   }
