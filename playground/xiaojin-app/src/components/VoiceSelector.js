@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { VOICE_OPTIONS } from '../config/apiKeys';
 
-export const VoiceSelector = ({ selectedVoiceId, onVoiceChange }) => {
+export const VoiceSelector = ({ selectedVoiceId, onVoiceChange, disabled = false }) => {
   const [visible, setVisible] = useState(false);
 
   // 当前选中的声音信息
@@ -27,12 +27,19 @@ export const VoiceSelector = ({ selectedVoiceId, onVoiceChange }) => {
 
   return (
     <View style={styles.container}>
-      {/* 当前声音按钮 */}
+      {/* 老金模式激活时显示模式标签，否则显示正常选择器 */}
+      {disabled ? (
+        <View style={[styles.selector, styles.selectorDisabled]}>
+          <Text style={styles.selectorIcon}>🎭</Text>
+          <Text style={styles.selectorText}>老金模式</Text>
+        </View>
+      ) : (
       <TouchableOpacity style={styles.selector} onPress={() => setVisible(true)}>
         <Text style={styles.selectorIcon}>🎤</Text>
         <Text style={styles.selectorText}>{currentVoice.name}</Text>
         <Text style={styles.selectorArrow}>▾</Text>
       </TouchableOpacity>
+      )}
 
       {/* 声音选择弹窗 */}
       <Modal
@@ -72,6 +79,11 @@ export const VoiceSelector = ({ selectedVoiceId, onVoiceChange }) => {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
+  },
+  // 选择器禁用状态（老金模式）
+  selectorDisabled: {
+    opacity: 0.8,
+    backgroundColor: '#3a2a1a',
   },
   // 选择器按钮
   selector: {
