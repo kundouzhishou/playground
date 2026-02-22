@@ -80,41 +80,32 @@ export async function transcribeAudio(audioUri) {
   try {
     console.log('[Whisper] 开始上传识别...');
 
-    // 读取音频文件为 base64
-    const base64Audio = await FileSystem.readAsStringAsync(audioUri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
+    // 使用 expo-file-system 的 uploadAsync 上传文件
+    const response = await FileSystem.uploadAsync(
+      'https://api.openai.com/v1/audio/transcriptions',
+      audioUri,
+      {
+        httpMethod: 'POST',
+        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+        fieldName: 'file',
+        mimeType: 'audio/m4a',
+        parameters: {
+          model: OPENAI_CONFIG.whisperModel,
+          language: 'zh',
+          response_format: 'text',
+        },
+        headers: {
+          Authorization: `Bearer ${OPENAI_CONFIG.apiKey}`,
+        },
+      }
+    );
 
-    // 将 base64 转为 Blob
-    const binaryString = atob(base64Audio);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
-    const audioBlob = new Blob([bytes], { type: 'audio/m4a' });
-
-    // 使用 FormData 上传
-    const formData = new FormData();
-    formData.append('file', audioBlob, 'recording.m4a');
-    formData.append('model', OPENAI_CONFIG.whisperModel);
-    formData.append('language', 'zh');
-    formData.append('response_format', 'text');
-
-    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${OPENAI_CONFIG.apiKey}`,
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error('[Whisper] API 错误:', response.status, errText);
+    if (response.status !== 200) {
+      console.error('[Whisper] API 错误:', response.status, response.body);
       throw new Error(`Whisper API 错误: ${response.status}`);
     }
 
-    const text = (await response.text()).trim();
+    const text = response.body.trim();
     console.log('[Whisper] 识别结果:', text);
     return text;
   } catch (err) {
