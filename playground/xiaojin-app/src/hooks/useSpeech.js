@@ -90,7 +90,7 @@ export const useSpeech = () => {
       setIsListening(true);
       startRecordingTimer();
     } catch (e) {
-      rlog('Speech', 'ERROR', 启动录音失败:', e);
+      rlog('Speech', 'ERROR', '启动录音失败:', e);
       setError('无法启动录音: ' + e.message);
     }
   }, [clearSilenceTimer, startRecordingTimer]);
@@ -132,10 +132,10 @@ export const useSpeech = () => {
         }, SILENCE_WINDOW_MS);
       } else {
         setPartialText('');
-        rlog('Speech', 未识别到有效文本');
+        rlog('Speech', '未识别到有效文本');
       }
     } catch (e) {
-      rlog('Speech', 'ERROR', 识别失败:', e);
+      rlog('Speech', 'ERROR', '识别失败:', e);
       setError('语音识别失败: ' + e.message);
       setPartialText('');
     }
