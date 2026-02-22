@@ -25,5 +25,7 @@ dist/
 logs
 *.log
 
-# OpenAI API Key 配置（包含敏感信息）
+# API Key 配置（包含敏感信息）
 src/config/openai.js
+src/config/apiKeys.js
+src/config/elevenlabs.js

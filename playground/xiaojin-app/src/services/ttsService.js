@@ -1,21 +1,20 @@
 /**
- * OpenAI TTS 语音合成服务
- * 使用 OpenAI TTS API 生成高质量语音，通过 expo-av 播放
- * 支持语速调节（0.25-4.0）
+ * ElevenLabs TTS 语音合成服务
+ * 使用 ElevenLabs API 生成老金声音克隆语音，通过 expo-av 播放
  */
 
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
-import { OPENAI_CONFIG } from '../config/openai';
+import { ELEVENLABS_CONFIG } from '../config/apiKeys';
 
 // 当前播放的 Sound 实例
 let currentSound = null;
 
 /**
- * 使用 OpenAI TTS 合成并播放语音
+ * 使用 ElevenLabs TTS 合成并播放语音
  * @param {string} text - 要朗读的文本
  * @param {object} options - 选项
- * @param {number} options.speed - 语速（0.25-4.0，默认 1.0）
+ * @param {number} options.speed - 语速（暂未使用，ElevenLabs 通过 stability 控制）
  * @param {function} options.onDone - 播放完成回调
  * @param {function} options.onError - 播放错误回调
  */
@@ -27,28 +26,33 @@ export async function speakWithOpenAI(text, { speed = 1.0, onDone, onError } = {
       playsInSilentModeIOS: true,
     });
 
-    console.log('[TTS] 请求 OpenAI TTS，文本长度:', text.length, '语速:', speed);
+    console.log('[TTS] 请求 ElevenLabs TTS，文本长度:', text.length);
 
-    // 调用 OpenAI TTS API
-    const response = await fetch('https://api.openai.com/v1/audio/speech', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_CONFIG.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: OPENAI_CONFIG.ttsModel,
-        voice: OPENAI_CONFIG.ttsVoice,
-        input: text,
-        speed: speed,
-        response_format: 'mp3',
-      }),
-    });
+    // 调用 ElevenLabs TTS API
+    const response = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_CONFIG.voiceId}`,
+      {
+        method: 'POST',
+        headers: {
+          'Accept': 'audio/mpeg',
+          'Content-Type': 'application/json',
+          'xi-api-key': ELEVENLABS_CONFIG.apiKey,
+        },
+        body: JSON.stringify({
+          text: text,
+          model_id: ELEVENLABS_CONFIG.modelId,
+          voice_settings: {
+            stability: ELEVENLABS_CONFIG.stability,
+            similarity_boost: ELEVENLABS_CONFIG.similarityBoost,
+          },
+        }),
+      }
+    );
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error('[TTS] API 错误:', response.status, errText);
-      throw new Error(`TTS API 错误: ${response.status}`);
+      console.error('[TTS] ElevenLabs API 错误:', response.status, errText);
+      throw new Error(`ElevenLabs TTS API 错误: ${response.status}`);
     }
 
     // 将音频数据保存为临时文件
@@ -89,7 +93,7 @@ export async function speakWithOpenAI(text, { speed = 1.0, onDone, onError } = {
       }
     });
 
-    console.log('[TTS] 开始播放');
+    console.log('[TTS] 开始播放（ElevenLabs 老金声音）');
   } catch (err) {
     console.error('[TTS] 失败:', err);
     currentSound = null;
