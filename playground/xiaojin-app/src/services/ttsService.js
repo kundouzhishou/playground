@@ -59,23 +59,22 @@ export async function speakWithOpenAI(text, { speed = 1.0, voiceId, onDone, onEr
       throw new Error(`ElevenLabs TTS API 错误: ${response.status}`);
     }
 
-    // 将音频数据保存为临时文件
-    const audioBlob = await response.blob();
-    const reader = new FileReader();
-    const base64Data = await new Promise((resolve, reject) => {
-      reader.onloadend = () => {
-        // data:audio/mpeg;base64,XXXX → 取 base64 部分
-        const base64 = reader.result.split(',')[1];
-        resolve(base64);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(audioBlob);
-    });
+    // 将音频数据保存为临时文件（用 arrayBuffer → base64，兼容 React Native）
+    rlog('TTS', '下载音频数据...');
+    const arrayBuffer = await response.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64Data = btoa(binary);
+    rlog('TTS', '音频 base64 长度:', base64Data.length);
 
-    const tempFile = FileSystem.cacheDirectory + 'tts_output.mp3';
+    const tempFile = FileSystem.cacheDirectory + 'tts_output_' + Date.now() + '.mp3';
     await FileSystem.writeAsStringAsync(tempFile, base64Data, {
       encoding: FileSystem.EncodingType.Base64,
     });
+    rlog('TTS', '音频已保存:', tempFile);
 
     // 停止之前的播放
     await stopOpenAITTS();
@@ -99,7 +98,7 @@ export async function speakWithOpenAI(text, { speed = 1.0, voiceId, onDone, onEr
 
     rlog('TTS', '开始播放，声音 ID:', activeVoiceId);
   } catch (err) {
-    rlog('TTS', 'ERROR', '失败:', err);
+    rlog('TTS', 'ERROR', '失败:', err?.message || err?.toString() || JSON.stringify(err));
     currentSound = null;
     onError?.(err);
   }
