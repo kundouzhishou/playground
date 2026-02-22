@@ -80,32 +80,32 @@ export async function transcribeAudio(audioUri) {
   try {
     console.log('[Whisper] 开始上传识别...');
 
-    // 使用 expo-file-system 的 uploadAsync 上传文件
-    const response = await FileSystem.uploadAsync(
-      'https://api.openai.com/v1/audio/transcriptions',
-      audioUri,
-      {
-        httpMethod: 'POST',
-        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-        fieldName: 'file',
-        mimeType: 'audio/m4a',
-        parameters: {
-          model: OPENAI_CONFIG.whisperModel,
-          language: 'zh',
-          response_format: 'text',
-        },
-        headers: {
-          Authorization: `Bearer ${OPENAI_CONFIG.apiKey}`,
-        },
-      }
-    );
+    // 使用 fetch + FormData 上传（FileSystem.uploadAsync 的 MULTIPART 在部分环境不可用）
+    const formData = new FormData();
+    formData.append('file', {
+      uri: audioUri,
+      type: 'audio/m4a',
+      name: 'recording.m4a',
+    });
+    formData.append('model', OPENAI_CONFIG.whisperModel);
+    formData.append('language', 'zh');
+    formData.append('response_format', 'text');
 
-    if (response.status !== 200) {
-      console.error('[Whisper] API 错误:', response.status, response.body);
+    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_CONFIG.apiKey}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errBody = await response.text();
+      console.error('[Whisper] API 错误:', response.status, errBody);
       throw new Error(`Whisper API 错误: ${response.status}`);
     }
 
-    const text = response.body.trim();
+    const text = (await response.text()).trim();
     console.log('[Whisper] 识别结果:', text);
     return text;
   } catch (err) {
