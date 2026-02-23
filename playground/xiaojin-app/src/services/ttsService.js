@@ -34,7 +34,7 @@ export async function speakWithOpenAI(text, { speed = 1.0, voiceId, onDone, onEr
 
     // 调用 ElevenLabs TTS API
     const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${activeVoiceId}`,
+      `https://elevenlabs-proxy.kundouzhishou.workers.dev/v1/text-to-speech/${activeVoiceId}`,
       {
         method: 'POST',
         headers: {
