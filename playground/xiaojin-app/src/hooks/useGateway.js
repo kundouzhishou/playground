@@ -245,11 +245,17 @@ export const useGateway = () => {
       // 处理聊天事件（支持流式 delta 和 final）
       if (message.type === 'event' && message.event === 'chat') {
         const payload = message.payload;
-        
-        // 过滤非本 session 的消息，只处理本 session 或无 session 标记的消息
-        const msgSession = payload?.sessionKey || payload?.session;
-        if (msgSession && msgSession !== GATEWAY_CONFIG.sessionKey) {
-          return; // 忽略其他 session（如 Telegram）的消息
+
+        // 调试日志：打印 payload 结构，便于排查 session 过滤问题
+        console.log('[Gateway] chat event payload keys:', Object.keys(payload || {}));
+        console.log('[Gateway] chat event state:', payload?.state, 'sessionKey:', payload?.sessionKey, 'session:', payload?.session);
+
+        // 只处理 Agent 的流式回复事件（delta/final/thinking/error）
+        // 过滤掉 Telegram 等其他 session 推送的非流式消息
+        const validStates = ['delta', 'final', 'thinking', 'error'];
+        if (!validStates.includes(payload?.state)) {
+          console.log('[Gateway] 忽略非流式事件，state:', payload?.state);
+          return;
         }
 
         if (payload?.state === 'delta') {
