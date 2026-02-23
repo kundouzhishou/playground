@@ -65,6 +65,36 @@ memory/
 - Expo 账号: notjayson, Token 存在 ~/.openclaw/credentials/expo-token
 - EAS Build 额度：$45/月，每次 iOS 构建 $2，不用太省
 
+### Gateway 稳定性问题与防护方案
+
+**根本原因：**
+- Session 堆积：cron/subagent 每次创建新 session，完成后不释放内存
+- Context 溢出：main session 长对话 context 到 99% 后处理变慢
+- 对话历史损坏：长时间运行后重复 tool_use ID，API 400 报错
+- 无自动清理机制（issue #12297）
+
+**当前防护方案（已部署在 ms2）：**
+- `gateway-watchdog.sh` — 每 5 分钟，内存超 800MB 自动重启 Gateway
+- `auto-compact.sh` — 每 5 分钟，context 超 75% 自动 /compact
+- `openclaw-healthcheck.sh` — 每 3 分钟健康检查
+
+**日志：**
+- `~/.openclaw/gateway-watchdog.log`
+- `~/.openclaw/auto-compact.log`
+
+### 软路由代理链配置（2026-02-23）
+
+**架构：** 家庭设备 → 软路由 Xray 分流 → claude.ai/anthropic 走代理链 → 香港 Trojan → 美国 SOCKS5（74.122.57.59）→ 目标
+
+**关键配置：**
+- 美国 SOCKS5 节点：74.122.57.59:49768，用户 f2UgzSNI0gzMpe6（ProxyCheap，Static Residential，有效期至 2027-02-23）
+- OpenAI 分流规则域名：anthropic.com claude.ai claude.com api.anthropic.com cdn.anthropic.com console.anthropic.com api.claude.ai openai.com api.openai.com chat.openai.com chatgpt.com
+- Xray proxySettings 实现代理链：OpenAI 出口先走 default（香港 Trojan）再连美国 SOCKS5
+- 持久化：patch-xray-proxy-chain.sh 每分钟 cron 检查，Passwall 重启后自动修补
+- geosite.dat 符号链接：/usr/bin/geosite.dat → /usr/share/v2ray/geosite.dat
+
+**注意：** ISP 层面路由器直连美国 SOCKS5 不通，必须先走香港 Trojan 中转
+
 ### 已配置服务
 - Discord AI 日报推送 → #ai-news 频道，每天 9:00 UTC+8
 - Discord 小金行动日志频道 (ID: 1474442017349042466)
