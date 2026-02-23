@@ -32,7 +32,7 @@ memory/
 ### 老金
 - 东八区，中文沟通，务实开发者
 - 想建立个人影响力
-- 项目：狗大(Gouda)宠物社交、Polymarket 跟踪交易
+- 项目：狗搭(Gouda)宠物社交、Polymarket 跟踪交易
 - 偏好：Twitter 是最好的 AI 信息源，不喜欢废话
 - 开发规范：遵循 BDD（行为驱动开发），先写行为描述再实现
 - iOS 构建：只用 production profile，不要给 development build
