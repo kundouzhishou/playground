@@ -32,7 +32,9 @@ memory/
 ### 老金
 - 东八区，中文沟通，务实开发者
 - 想建立个人影响力
-- 项目：狗搭(Gouda)宠物社交、Polymarket 跟踪交易
+- 项目：狗搭(Gouda)宠物社交、Polymarket 跟踪交易、小金语音 App
+- 狗搭 GitHub repo: github.com/kundouzhishou/gouda（私有，Expo/React Native）
+- GitHub token: 已保存到 ~/.openclaw/credentials/github-token
 - 偏好：Twitter 是最好的 AI 信息源，不喜欢废话
 - 开发规范：遵循 BDD（行为驱动开发），先写行为描述再实现
 - iOS 构建：只用 production profile，不要给 development build
