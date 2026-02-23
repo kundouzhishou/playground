@@ -48,12 +48,14 @@ memory/
 ### 自主性边界
 - 不涉及安全性或项目重要改动的事情，自主完成，不需要问
 - 拿不准的再询问
+- **凭据/账号/密钥**：永远先搜 `~/.openclaw/credentials/`、历史 `.jsonl` 会话、MEMORY.md，搜不到再问。绝不在未搜索的情况下开口问老金要。
 - Skill 安装方式：`/plugin marketplace add <author/name>` → `/plugin install <name>`（不要 git clone）
 
 ### 服务器
 - ms1 (Mac Pro): macOS 11.4, Xcode 12.5, 不能再升级系统，无法本地编译新版 iOS App
 - ms2 (老 Mac): Linux, 运行 OpenClaw
-- ms1 局域网 IP: 192.168.10.223, 用户: jayson
+- ms1 局域网 IP: 192.168.10.223, 用户: jayson，SSH 别名: ms1（ms2 免密直连）
+- ms1 硬件: MacBook Pro 14,3, i7 3.1GHz 4核, 16GB RAM, macOS 11.4
 - ms2 局域网 IP: 192.168.10.167, 用户: jayson
 - Tailscale VPN (Tailnet: kundouzhishou@gmail.com):
   - ms1: 100.82.248.39 (macOS)
@@ -72,6 +74,7 @@ memory/
 - 加密备份：age 加密 → .backup/xiaojin-full.tar.gz.age，密钥在老金 1Password
 - GitHub Pages: https://kundouzhishou.github.io/playground/
 - Playground repo: github.com/kundouzhishou/playground (public)
+- ElevenLabs 转发代理 Worker: https://elevenlabs-proxy.kundouzhishou.workers.dev
 
 ### 重要决策
 - 2026-02-20: 记忆系统选择自建轻量版（借鉴 OpenViking，不直接用）

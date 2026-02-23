@@ -3,704 +3,639 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>小金 · 语音助手</title>
+<title>小金语音</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg: #0a0a0f;
-    --surface: #13131a;
-    --border: #1e1e2e;
-    --text-primary: #f0f0f5;
-    --text-secondary: #7070a0;
-    --accent: #c8a96e;
-    --accent-dim: rgba(200,169,110,0.15);
-    --red: #ff4455;
-    --red-dim: rgba(255,68,85,0.15);
-    --bar-h: 72px;
+    --bg: #ffffff;
+    --toolbar-btn-bg: #f0f0f0;
+    --toolbar-btn-size: 56px;
+    --sphere-size: min(55vw, 55vh);
+    --text-primary: #111;
+    --text-secondary: #888;
   }
 
   html, body {
     width: 100%; height: 100%;
     background: var(--bg);
-    color: var(--text-primary);
-    font-family: -apple-system, 'PingFang SC', 'Hiragino Sans GB', sans-serif;
     overflow: hidden;
-    user-select: none;
+    -webkit-font-smoothing: antialiased;
   }
 
-  /* ── 顶部 ── */
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+  }
+
+  /* ── 状态栏占位 ── */
+  .statusbar { height: 44px; width: 100%; flex-shrink: 0; }
+
+  /* ── 顶部图标 ── */
   .topbar {
-    position: fixed; top: 0; left: 0; right: 0;
-    height: 56px;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 20px;
-    z-index: 10;
-    background: linear-gradient(to bottom, rgba(10,10,15,0.95) 60%, transparent);
-  }
-  .logo {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 17px; font-weight: 600; letter-spacing: 0.5px;
-    color: var(--accent);
-  }
-  .logo-icon {
-    width: 30px; height: 30px;
-    background: linear-gradient(135deg, #c8a96e, #e8c98e);
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px;
-    box-shadow: 0 0 12px rgba(200,169,110,0.3);
-  }
-  .top-actions { display: flex; align-items: center; gap: 14px; }
-  .top-btn {
-    background: none; border: none; cursor: pointer;
-    color: var(--text-secondary); font-size: 18px;
-    width: 36px; height: 36px;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 10px;
-    transition: color 0.2s, background 0.2s;
-  }
-  .top-btn:active { background: var(--surface); }
-  .top-btn.active { color: var(--accent); }
-
-  /* CC 标签 */
-  .cc-label {
-    font-size: 11px; font-weight: 700;
-    border: 1.5px solid currentColor;
-    border-radius: 4px;
-    padding: 1px 4px;
-    letter-spacing: 0.5px;
-  }
-
-  /* ── 中间区域 ── */
-  .stage {
-    position: fixed; inset: 0;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    padding: 80px 24px 100px;
-  }
-
-  /* Canvas 动画 */
-  #anim-canvas {
     position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-  }
-
-  /* 对话文字 */
-  .dialog-wrap {
-    position: relative; z-index: 2;
-    width: 100%; max-width: 340px;
-    text-align: center;
-    margin-top: 16px;
-  }
-  .dialog-hint {
-    font-size: 14px; color: var(--text-secondary);
-    letter-spacing: 0.3px;
-    transition: opacity 0.4s;
-  }
-  .dialog-user {
-    font-size: 18px; font-weight: 500;
-    color: var(--text-primary);
-    line-height: 1.5;
-    opacity: 0;
-    transform: translateY(8px);
-    transition: opacity 0.5s, transform 0.5s;
-  }
-  .dialog-user.visible { opacity: 1; transform: translateY(0); }
-
-  .dialog-ai {
-    font-size: 22px; font-weight: 400;
-    color: var(--text-primary);
-    line-height: 1.6;
-    opacity: 0;
-    transform: translateY(8px);
-    transition: opacity 0.6s, transform 0.6s;
-  }
-  .dialog-ai.visible { opacity: 1; transform: translateY(0); }
-
-  /* 思考 loading dots */
-  .thinking-dots {
-    display: none; align-items: center; justify-content: center; gap: 6px;
-    margin-top: 12px;
-  }
-  .thinking-dots.show { display: flex; }
-  .dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--accent);
-    animation: dotBounce 1.2s ease-in-out infinite;
-  }
-  .dot:nth-child(2) { animation-delay: 0.2s; }
-  .dot:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes dotBounce {
-    0%,80%,100% { transform: scale(0.6); opacity: 0.4; }
-    40% { transform: scale(1); opacity: 1; }
-  }
-
-  /* 跳过按钮 */
-  .skip-btn {
-    position: fixed; top: 62px; right: 16px;
-    background: rgba(255,255,255,0.07);
-    border: 1px solid var(--border);
-    color: var(--text-secondary);
-    font-size: 12px; padding: 5px 12px;
-    border-radius: 20px; cursor: pointer;
-    opacity: 0; pointer-events: none;
-    transition: opacity 0.3s;
+    top: 54px; right: 20px;
+    display: flex; gap: 18px;
     z-index: 20;
   }
-  .skip-btn.show { opacity: 1; pointer-events: auto; }
+  .topbar-icon {
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    color: #c0c0c0; font-size: 18px;
+    cursor: pointer; border-radius: 50%;
+    transition: color 0.2s;
+  }
+  .topbar-icon:hover { color: #888; }
+  .topbar-icon.skip {
+    font-size: 15px; font-weight: 600;
+    color: #aaa; letter-spacing: -0.3px;
+    display: none;
+  }
+
+  /* ── 主内容区 ── */
+  .stage {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    position: relative;
+    padding-bottom: 20px;
+  }
+
+  /* ── 球外壳（负责位移过渡）── */
+  .sphere-wrap {
+    position: relative;
+    width: var(--sphere-size);
+    height: var(--sphere-size);
+    transition: width 0.6s cubic-bezier(.4,0,.2,1),
+                height 0.6s cubic-bezier(.4,0,.2,1),
+                transform 0.6s cubic-bezier(.4,0,.2,1),
+                top 0.6s cubic-bezier(.4,0,.2,1);
+    flex-shrink: 0;
+    z-index: 5;
+  }
+
+  /* ── AI 回复时：球缩小浮到左上 ── */
+  .stage.ai-reply .sphere-wrap {
+    position: absolute;
+    top: 0; left: 20px;
+    width: 72px; height: 72px;
+    transform: none;
+  }
+
+  /* ── 球本体 ── */
+  .sphere {
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+    /* transition for gradient color change */
+    transition: box-shadow 0.8s ease;
+    /* 关键：背景用伪元素叠加，让颜色过渡丝滑 */
+  }
+
+  /* 球核心渐变层（黑色/未连接） */
+  .sphere::before {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 32% 28%,
+      #555 0%, #1a1a1a 45%, #000 100%);
+    opacity: 1;
+    transition: opacity 1.5s ease;
+  }
+  /* 蓝白渐变层（连接后） */
+  .sphere::after {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 32% 28%,
+        #e8f6ff 0%,
+        #60bfff 18%,
+        #1a8fe8 42%,
+        #0060c8 70%,
+        #003d8a 100%);
+    opacity: 0;
+    transition: opacity 1.5s ease;
+  }
+
+  /* 高光层（始终在最上） */
+  .sphere-gloss {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    background:
+      radial-gradient(ellipse 60% 40% at 35% 22%,
+        rgba(255,255,255,0.55) 0%,
+        transparent 70%),
+      radial-gradient(ellipse 30% 20% at 70% 75%,
+        rgba(255,255,255,0.12) 0%,
+        transparent 70%);
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  /* 液体流动层（用户说话时才可见）*/
+  .sphere-liquid {
+    position: absolute; inset: -20%;
+    border-radius: 50%;
+    background:
+      radial-gradient(ellipse 80% 40% at 50% 50%,
+        rgba(100,200,255,0.35) 0%,
+        transparent 70%),
+      radial-gradient(ellipse 50% 80% at 70% 30%,
+        rgba(150,220,255,0.25) 0%,
+        transparent 60%);
+    opacity: 0;
+    z-index: 2;
+    transition: opacity 0.5s ease;
+    animation: liquid-flow 2.5s ease-in-out infinite;
+    will-change: transform;
+  }
+  @keyframes liquid-flow {
+    0%   { transform: translate(0,0) rotate(0deg) scale(1); }
+    25%  { transform: translate(4%,-3%) rotate(15deg) scale(1.04); }
+    50%  { transform: translate(-3%,4%) rotate(-10deg) scale(0.97); }
+    75%  { transform: translate(5%,2%) rotate(20deg) scale(1.03); }
+    100% { transform: translate(0,0) rotate(0deg) scale(1); }
+  }
+
+  /* ── 球动画状态 ── */
+
+  /* 1. 未连接：慢呼吸 */
+  @keyframes breathe-slow {
+    0%,100% { transform: scale(0.95); }
+    50%      { transform: scale(1.05); }
+  }
+  /* 2. 待机：上下浮动 */
+  @keyframes float {
+    0%,100% { transform: translateY(0px); }
+    50%      { transform: translateY(-4px); }
+  }
+  /* 3. 思考：收缩+轻微旋转感（用 scale+skew 模拟）*/
+  @keyframes think {
+    0%   { transform: scale(0.92) rotate(0deg); }
+    30%  { transform: scale(0.88) rotate(-2deg); }
+    60%  { transform: scale(0.93) rotate(2deg); }
+    100% { transform: scale(0.92) rotate(0deg); }
+  }
+  /* 4. AI说话：节奏扩张 */
+  @keyframes speak-pulse {
+    0%   { transform: scale(1); }
+    20%  { transform: scale(1.07); }
+    40%  { transform: scale(1.02); }
+    60%  { transform: scale(1.09); }
+    80%  { transform: scale(1.04); }
+    100% { transform: scale(1); }
+  }
+
+  .sphere.anim-breathe { animation: breathe-slow 3s ease-in-out infinite; }
+  .sphere.anim-float   { animation: float 4s ease-in-out infinite; }
+  .sphere.anim-think   { animation: think 2s ease-in-out infinite; }
+  .sphere.anim-speak   { animation: speak-pulse 1.2s ease-in-out infinite; }
+
+  /* 用户说话时：液体流动层显示 + 快速呼吸 */
+  @keyframes user-breathe {
+    0%,100% { transform: scale(1); }
+    50%      { transform: scale(1.06); }
+  }
+  .sphere.anim-user { animation: user-breathe 1s ease-in-out infinite; }
+  .sphere.anim-user .sphere-liquid { opacity: 1; }
+
+  /* 已连接时球的阴影 */
+  .sphere.connected {
+    box-shadow: 0 8px 40px rgba(0,120,255,0.35),
+                0 2px 12px rgba(0,80,200,0.2);
+  }
+
+  /* ── 状态文字 ── */
+  .status-label {
+    margin-top: 28px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+    opacity: 1;
+    transition: opacity 0.4s;
+  }
+  .stage.ai-reply .status-label { display: none; }
+
+  /* ── AI 回复文字区 ── */
+  .reply-text {
+    position: absolute;
+    top: 90px;
+    left: 24px; right: 24px;
+    font-size: 26px;
+    font-weight: 400;
+    color: var(--text-primary);
+    line-height: 1.45;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease 0.2s;
+    z-index: 4;
+  }
+  .stage.ai-reply .reply-text { opacity: 1; pointer-events: auto; }
 
   /* ── 底部工具栏 ── */
   .toolbar {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    height: var(--bar-h);
-    display: flex; align-items: center; justify-content: center; gap: 24px;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    background: linear-gradient(to top, rgba(10,10,15,0.98) 70%, transparent);
+    width: 100%;
+    padding: 16px 0 30px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-shrink: 0;
+    position: relative;
     z-index: 10;
   }
 
-  .tool-btn {
-    width: 52px; height: 52px; border-radius: 50%;
-    border: none; cursor: pointer;
+  .btn {
+    width: var(--toolbar-btn-size);
+    height: var(--toolbar-btn-size);
+    border-radius: 50%;
+    background: var(--toolbar-btn-bg);
     display: flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text-primary);
-    transition: transform 0.15s, background 0.2s, border-color 0.2s, box-shadow 0.3s;
-    position: relative;
-    flex-shrink: 0;
+    font-size: 22px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.3s, transform 0.15s;
+    -webkit-tap-highlight-color: transparent;
   }
-  .tool-btn:active { transform: scale(0.92); }
+  .btn:active { transform: scale(0.92); }
 
-  /* 麦克风按钮 - 主按钮，大一点 */
-  #btn-mic {
-    width: 62px; height: 62px; font-size: 24px;
-    background: var(--accent-dim);
-    border-color: var(--accent);
-    color: var(--accent);
-    box-shadow: 0 0 0 0 rgba(200,169,110,0);
+  .btn.muted {
+    background: #ffe0e5;
   }
-  #btn-mic.recording {
-    background: var(--red-dim);
-    border-color: var(--red);
-    color: var(--red);
-    animation: micPulse 1s ease-in-out infinite;
-  }
-  @keyframes micPulse {
-    0%,100% { box-shadow: 0 0 0 0 rgba(255,68,85,0.4); }
-    50% { box-shadow: 0 0 0 10px rgba(255,68,85,0); }
-  }
+  .btn.muted svg { color: #e0002a; }
 
-  #btn-mute.muted { color: var(--red); border-color: var(--red); }
-  #btn-end { color: #ff6677; border-color: rgba(255,102,119,0.3); }
-
-  /* 状态标签 */
-  .state-label {
-    position: fixed; bottom: calc(var(--bar-h) + 4px); left: 0; right: 0;
-    text-align: center;
-    font-size: 12px; color: var(--text-secondary);
-    letter-spacing: 0.3px;
-    transition: opacity 0.3s;
-    z-index: 9;
+  /* ── 上传面板（用户说话时弹出）── */
+  .upload-panel {
+    position: absolute;
+    bottom: 90px;
+    left: 50%; transform: translateX(-50%);
+    width: calc(100% - 40px);
+    max-width: 380px;
+    background: #f5f5f7;
+    border-radius: 18px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-50%) translateY(12px);
+    transition: opacity 0.35s ease, transform 0.35s cubic-bezier(.4,0,.2,1);
+    z-index: 15;
   }
-
-  /* 选项弹出层 */
-  .sheet-overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.6);
-    z-index: 100;
-    opacity: 0; pointer-events: none;
-    transition: opacity 0.25s;
+  .upload-panel.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
   }
-  .sheet-overlay.show { opacity: 1; pointer-events: auto; }
-  .sheet {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    background: #16161f;
-    border-radius: 20px 20px 0 0;
-    padding: 16px 20px 32px;
-    transform: translateY(100%);
-    transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
-    z-index: 101;
-  }
-  .sheet.show { transform: translateY(0); }
-  .sheet-handle {
-    width: 36px; height: 4px; border-radius: 2px;
-    background: rgba(255,255,255,0.15);
-    margin: 0 auto 20px;
-  }
-  .sheet-title { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; }
-  .sheet-options { display: flex; gap: 16px; }
-  .sheet-opt {
-    flex: 1; background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 18px 12px;
-    text-align: center; cursor: pointer;
+  .upload-option {
+    padding: 15px 20px;
+    font-size: 17px;
+    color: #333;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 14px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
     transition: background 0.2s;
   }
-  .sheet-opt:active { background: #1e1e2e; }
-  .sheet-opt-icon { font-size: 28px; margin-bottom: 8px; }
-  .sheet-opt-label { font-size: 13px; color: var(--text-secondary); }
+  .upload-option:last-child { border-bottom: none; }
+  .upload-option:hover { background: rgba(0,0,0,0.04); }
+  .upload-option span.icon { font-size: 22px; }
 
-  /* toast */
-  .toast {
-    position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
-    background: rgba(255,255,255,0.08);
-    border: 1px solid var(--border);
-    backdrop-filter: blur(12px);
-    border-radius: 20px;
-    padding: 8px 18px;
-    font-size: 13px; color: var(--text-secondary);
-    white-space: nowrap;
+  /* ── SVG 图标 ── */
+  svg { width: 24px; height: 24px; stroke: currentColor; fill: none;
+        stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ── 状态切换提示（调试用，可隐藏）── */
+  .dev-hint {
+    position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.65); color: #fff;
+    font-size: 12px; padding: 4px 12px; border-radius: 20px;
     opacity: 0; pointer-events: none;
     transition: opacity 0.3s;
-    z-index: 50;
+    z-index: 100;
   }
-  .toast.show { opacity: 1; }
+  .dev-hint.show { opacity: 1; }
 </style>
 </head>
 <body>
 
-<!-- 顶部 -->
+<div class="statusbar"></div>
+
+<!-- 顶部图标 -->
 <div class="topbar">
-  <div class="logo">
-    <div class="logo-icon">✦</div>
-    小金
+  <div class="topbar-icon" title="字幕">
+    <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M7 12h4M13 12h4M7 16h2M11 16h6"/></svg>
   </div>
-  <div class="top-actions">
-    <button class="top-btn" id="btn-cc" title="字幕">
-      <span class="cc-label">CC</span>
-    </button>
-    <button class="top-btn" id="btn-settings" title="设置">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-      </svg>
-    </button>
+  <div class="topbar-icon" title="分享">
+    <svg viewBox="0 0 24 24"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
   </div>
+  <div class="topbar-icon" title="设置">
+    <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="12" y1="18" x2="20" y2="18"/><circle cx="4" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="8" cy="18" r="1.5" fill="currentColor" stroke="none"/></svg>
+  </div>
+  <div class="topbar-icon skip" id="skipBtn">跳过</div>
 </div>
 
-<!-- 跳过 -->
-<button class="skip-btn" id="btn-skip">跳过 ›</button>
-
-<!-- 舞台 -->
-<div class="stage">
-  <canvas id="anim-canvas"></canvas>
-  <div class="dialog-wrap">
-    <p class="dialog-hint" id="dialog-hint">点击麦克风开始对话</p>
-    <p class="dialog-user" id="dialog-user"></p>
-    <div class="thinking-dots" id="thinking-dots">
-      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+<!-- 主舞台 -->
+<div class="stage" id="stage">
+  <div class="sphere-wrap" id="sphereWrap">
+    <div class="sphere anim-breathe" id="sphere">
+      <div class="sphere-liquid" id="sphereLiquid"></div>
+      <div class="sphere-gloss"></div>
     </div>
-    <p class="dialog-ai" id="dialog-ai"></p>
   </div>
+  <div class="status-label" id="statusLabel">正在连接…</div>
+  <div class="reply-text" id="replyText"></div>
 </div>
 
-<!-- 状态标签 -->
-<div class="state-label" id="state-label"></div>
-
-<!-- 底部工具栏 -->
+<!-- 工具栏 -->
 <div class="toolbar">
-  <button class="tool-btn" id="btn-camera" title="拍照/上传">📷</button>
-  <button class="tool-btn" id="btn-mic" title="麦克风">🎙</button>
-  <button class="tool-btn" id="btn-mute" title="静音">🔊</button>
-  <button class="tool-btn" id="btn-end" title="结束">✕</button>
-</div>
+  <div class="btn" id="btnCamera" title="摄像头">
+    <svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+  </div>
+  <div class="btn" id="btnMic" title="麦克风">
+    <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 013 3v8a3 3 0 01-6 0V4a3 3 0 013-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+  </div>
+  <div class="btn" id="btnMore" title="更多">
+    <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5" fill="#888" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="#888" stroke="none"/><circle cx="19" cy="12" r="1.5" fill="#888" stroke="none"/></svg>
+  </div>
+  <div class="btn" id="btnClose" title="关闭">
+    <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </div>
 
-<!-- 相机/上传 Sheet -->
-<div class="sheet-overlay" id="sheet-overlay"></div>
-<div class="sheet" id="sheet-camera">
-  <div class="sheet-handle"></div>
-  <div class="sheet-title">选择方式</div>
-  <div class="sheet-options">
-    <div class="sheet-opt" id="opt-camera">
-      <div class="sheet-opt-icon">📷</div>
-      <div class="sheet-opt-label">拍照</div>
-    </div>
-    <div class="sheet-opt" id="opt-album">
-      <div class="sheet-opt-icon">🖼</div>
-      <div class="sheet-opt-label">相册</div>
-    </div>
-    <div class="sheet-opt" id="opt-file">
-      <div class="sheet-opt-icon">📎</div>
-      <div class="sheet-opt-label">文件</div>
-    </div>
+  <!-- 上传面板 -->
+  <div class="upload-panel" id="uploadPanel">
+    <div class="upload-option"><span class="icon">🖼️</span>从相册上传照片</div>
+    <div class="upload-option"><span class="icon">📷</span>拍照</div>
+    <div class="upload-option"><span class="icon">🖥️</span>共享屏幕</div>
   </div>
 </div>
 
-<!-- toast -->
-<div class="toast" id="toast"></div>
+<div class="dev-hint" id="devHint"></div>
 
 <script>
-// ═══════════════════════════════════════════
-// 状态机
-// ═══════════════════════════════════════════
-const STATES = { IDLE: 'idle', RECORDING: 'recording', THINKING: 'thinking', PLAYING: 'playing' };
-let currentState = STATES.IDLE;
-let ccEnabled = false;
-let muted = false;
-let autoTimer = null;
+// ── 状态机 ──
+const STATES = {
+  DISCONNECTED: 'disconnected', // 未连接：黑球慢呼吸
+  CONNECTING:   'connecting',   // 连接中：黑→蓝渐变
+  IDLE:         'idle',         // 待机：蓝球浮动
+  USER_TALKING: 'user-talking', // 用户说话：液体流动
+  AI_THINKING:  'ai-thinking',  // AI 思考：收缩旋转
+  AI_TALKING:   'ai-talking',   // AI 说话：节奏扩张
+};
 
-const DEMO_TURNS = [
-  {
-    user: '今天北京天气怎么样？',
-    ai: '北京今天晴转多云，气温 −2°C 到 8°C，风力较大，出门记得加件厚外套 🧥'
-  },
-  {
-    user: '帮我设个明早 8 点的闹钟',
-    ai: '好的，已为你设置明天早上 8:00 的闹钟 ⏰ 记得早点休息哦'
-  },
-  {
-    user: '给我讲个冷笑话',
-    ai: '为什么程序员不喜欢大自然？\n因为有太多 bug 🐛'
-  }
+const sphere      = document.getElementById('sphere');
+const sphereLiquid= document.getElementById('sphereLiquid');
+const stage       = document.getElementById('stage');
+const statusLabel = document.getElementById('statusLabel');
+const replyText   = document.getElementById('replyText');
+const skipBtn     = document.getElementById('skipBtn');
+const btnMic      = document.getElementById('btnMic');
+const btnCamera   = document.getElementById('btnCamera');
+const btnClose    = document.getElementById('btnClose');
+const uploadPanel = document.getElementById('uploadPanel');
+const devHint     = document.getElementById('devHint');
+
+let currentState = STATES.DISCONNECTED;
+let isMuted      = false;
+let aiTimer      = null;
+
+const ANIMS = ['anim-breathe','anim-float','anim-think','anim-speak','anim-user'];
+
+// 对话样本
+const replies = [
+  '今天北京天气晴朗，气温 12°C，适合外出散步。',
+  '我已经帮你把会议安排到下午三点了，需要我发提醒吗？',
+  '根据你的喜好，我推荐这首《晴天》，周杰伦的经典之作。',
+  '这个问题很有趣。从哲学角度来看，意识的本质至今仍是最大的谜题之一。',
 ];
-let demoIndex = 0;
+let replyIdx = 0;
 
-// ═══════════════════════════════════════════
-// Canvas 动画
-// ═══════════════════════════════════════════
-const canvas = document.getElementById('anim-canvas');
-const ctx = canvas.getContext('2d');
-let W, H, cx, cy, animFrame;
-let particles = [];
-let time = 0;
-
-function resizeCanvas() {
-  W = canvas.width = window.innerWidth;
-  H = canvas.height = window.innerHeight;
-  cx = W / 2; cy = H / 2;
-  initParticles();
+function hint(msg) {
+  devHint.textContent = msg;
+  devHint.classList.add('show');
+  clearTimeout(devHint._t);
+  devHint._t = setTimeout(()=>devHint.classList.remove('show'), 1800);
 }
 
-// ── 粒子 ──
-function initParticles() {
-  particles = [];
-  const N = 60;
-  for (let i = 0; i < N; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const radius = 60 + Math.random() * 80;
-    particles.push({
-      angle,
-      radius,
-      baseRadius: radius,
-      speed: (Math.random() - 0.5) * 0.012,
-      size: Math.random() * 2 + 0.5,
-      alpha: Math.random() * 0.6 + 0.2,
-      hue: 38 + (Math.random() - 0.5) * 20
-    });
+function clearAnims() {
+  ANIMS.forEach(c => sphere.classList.remove(c));
+}
+
+function setConnected(yes) {
+  if (yes) {
+    sphere.classList.add('connected');
+    sphere.style.setProperty('--glow','1');
+    // 蓝色层淡入
+    sphere.style.setProperty('opacity','1');
+    // 使用 CSS 类切换两个伪元素
+    sphere.dataset.connected = 'true';
+    updatePseudoGradient(true);
+  } else {
+    sphere.classList.remove('connected');
+    sphere.dataset.connected = '';
+    updatePseudoGradient(false);
   }
 }
 
-// ── 绘制各状态 ──
-function drawIdle(t) {
-  // 呼吸光圈
-  const pulse = Math.sin(t * 0.8) * 0.5 + 0.5; // 0~1
-  const r1 = 55 + pulse * 8;
-  const r2 = 80 + pulse * 12;
-  const r3 = 108 + pulse * 16;
-
-  // 外晕
-  let g = ctx.createRadialGradient(cx, cy, r1 * 0.3, cx, cy, r3);
-  g.addColorStop(0, `rgba(200,169,110,${0.08 + pulse * 0.06})`);
-  g.addColorStop(1, 'rgba(200,169,110,0)');
-  ctx.beginPath(); ctx.arc(cx, cy, r3, 0, Math.PI * 2);
-  ctx.fillStyle = g; ctx.fill();
-
-  // 中圈
-  g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r2);
-  g.addColorStop(0, `rgba(200,169,110,${0.12 + pulse * 0.08})`);
-  g.addColorStop(0.6, `rgba(200,169,110,${0.05 + pulse * 0.04})`);
-  g.addColorStop(1, 'rgba(200,169,110,0)');
-  ctx.beginPath(); ctx.arc(cx, cy, r2, 0, Math.PI * 2);
-  ctx.fillStyle = g; ctx.fill();
-
-  // 核心圆
-  g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r1);
-  g.addColorStop(0, `rgba(232,201,142,${0.25 + pulse * 0.1})`);
-  g.addColorStop(0.5, `rgba(200,169,110,${0.12 + pulse * 0.06})`);
-  g.addColorStop(1, 'rgba(200,169,110,0)');
-  ctx.beginPath(); ctx.arc(cx, cy, r1, 0, Math.PI * 2);
-  ctx.fillStyle = g; ctx.fill();
-
-  // 细边框圆
-  ctx.beginPath(); ctx.arc(cx, cy, r1, 0, Math.PI * 2);
-  ctx.strokeStyle = `rgba(200,169,110,${0.15 + pulse * 0.1})`;
-  ctx.lineWidth = 1; ctx.stroke();
-}
-
-function drawRecording(t) {
-  // 模拟音量
-  const vol = 0.4 + 0.6 * Math.abs(Math.sin(t * 3.5)) + 0.2 * Math.random();
-
-  // 声波环
-  for (let ring = 0; ring < 4; ring++) {
-    const phase = (t * 1.2 - ring * 0.3) % (Math.PI * 2);
-    const expand = (ring / 4) + ((t * 0.6) % 1);
-    const r = 50 + expand * 120 * vol;
-    const alpha = (1 - expand) * 0.4;
-    if (alpha <= 0) continue;
-    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(255,68,85,${alpha})`;
-    ctx.lineWidth = 1.5; ctx.stroke();
+// 动态注入样式来切换 ::before / ::after opacity
+function updatePseudoGradient(connected) {
+  let el = document.getElementById('pseudo-style');
+  if (!el) {
+    el = document.createElement('style');
+    el.id = 'pseudo-style';
+    document.head.appendChild(el);
   }
-
-  // 波形条（横向声波模拟）
-  const bars = 32;
-  const barW = 3;
-  const totalW = bars * (barW + 3);
-  const startX = cx - totalW / 2;
-  const baseY = cy;
-  for (let i = 0; i < bars; i++) {
-    const h = (20 + 60 * Math.abs(Math.sin(i * 0.6 + t * 4)) * vol) | 0;
-    const x = startX + i * (barW + 3);
-    const alpha = 0.4 + 0.5 * (1 - Math.abs(i - bars / 2) / (bars / 2));
-    ctx.fillStyle = `rgba(255,68,85,${alpha})`;
-    ctx.beginPath();
-    ctx.roundRect(x, baseY - h / 2, barW, h, 2);
-    ctx.fill();
-  }
-
-  // 中心点
-  const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 40);
-  g.addColorStop(0, `rgba(255,100,120,${0.3 * vol})`);
-  g.addColorStop(1, 'rgba(255,68,85,0)');
-  ctx.beginPath(); ctx.arc(cx, cy, 40, 0, Math.PI * 2);
-  ctx.fillStyle = g; ctx.fill();
-}
-
-function drawThinking(t) {
-  // 粒子旋转
-  particles.forEach((p, i) => {
-    p.angle += p.speed * 1.5;
-    const warp = Math.sin(p.angle * 3 + t) * 15;
-    const r = p.baseRadius + warp;
-    const x = cx + Math.cos(p.angle) * r;
-    const y = cy + Math.sin(p.angle) * r * 0.45;
-
-    ctx.beginPath(); ctx.arc(x, y, p.size, 0, Math.PI * 2);
-    ctx.fillStyle = `hsla(${p.hue}, 55%, 65%, ${p.alpha * (0.5 + 0.5 * Math.sin(t * 2 + i))})`;
-    ctx.fill();
-  });
-
-  // 中心旋转圆弧
-  for (let a = 0; a < 3; a++) {
-    const startA = t * (1.2 + a * 0.3) + (a * Math.PI * 2) / 3;
-    ctx.beginPath();
-    ctx.arc(cx, cy, 38 + a * 10, startA, startA + Math.PI * 1.2);
-    ctx.strokeStyle = `rgba(200,169,110,${0.5 - a * 0.12})`;
-    ctx.lineWidth = 2 - a * 0.4;
-    ctx.stroke();
+  if (connected) {
+    el.textContent = `.sphere::before{opacity:0!important}.sphere::after{opacity:1!important}`;
+  } else {
+    el.textContent = `.sphere::before{opacity:1!important}.sphere::after{opacity:0!important}`;
   }
 }
 
-function drawPlaying(t) {
-  // 流动波形
-  const bands = 3;
-  for (let b = 0; b < bands; b++) {
-    const freq = 0.04 + b * 0.015;
-    const amp = 28 + b * 8;
-    const speed = t * (1.8 + b * 0.6);
-    const alpha = 0.5 - b * 0.12;
-    const hue = 38 + b * 5;
-
-    ctx.beginPath();
-    ctx.moveTo(0, cy);
-    for (let x = 0; x <= W; x += 4) {
-      const y = cy +
-        Math.sin(x * freq + speed) * amp +
-        Math.sin(x * freq * 2.1 - speed * 0.7) * amp * 0.4;
-      ctx.lineTo(x, y);
-    }
-    ctx.strokeStyle = `hsla(${hue}, 60%, 62%, ${alpha})`;
-    ctx.lineWidth = 2.5 - b * 0.5;
-    ctx.stroke();
-  }
-
-  // 中心光晕
-  const pulse = Math.sin(t * 2) * 0.5 + 0.5;
-  const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 70 + pulse * 20);
-  g.addColorStop(0, `rgba(200,169,110,${0.15 + pulse * 0.08})`);
-  g.addColorStop(1, 'rgba(200,169,110,0)');
-  ctx.beginPath(); ctx.arc(cx, cy, 90, 0, Math.PI * 2);
-  ctx.fillStyle = g; ctx.fill();
+function setLiquid(show) {
+  sphereLiquid.style.opacity = show ? '1' : '0';
 }
 
-function animate() {
-  ctx.clearRect(0, 0, W, H);
-  time += 0.016;
-  switch (currentState) {
-    case STATES.IDLE:      drawIdle(time);      break;
-    case STATES.RECORDING: drawRecording(time); break;
-    case STATES.THINKING:  drawThinking(time);  break;
-    case STATES.PLAYING:   drawPlaying(time);   break;
-  }
-  animFrame = requestAnimationFrame(animate);
-}
+function toState(next) {
+  clearTimeout(aiTimer);
+  const prev = currentState;
+  currentState = next;
+  clearAnims();
+  setLiquid(false);
+  stage.classList.remove('ai-reply');
+  skipBtn.style.display = 'none';
+  uploadPanel.classList.remove('visible');
 
-// ═══════════════════════════════════════════
-// UI 更新
-// ═══════════════════════════════════════════
-const elHint   = document.getElementById('dialog-hint');
-const elUser   = document.getElementById('dialog-user');
-const elAI     = document.getElementById('dialog-ai');
-const elDots   = document.getElementById('thinking-dots');
-const elLabel  = document.getElementById('state-label');
-const elSkip   = document.getElementById('btn-skip');
-const btnMic   = document.getElementById('btn-mic');
-const btnMute  = document.getElementById('btn-mute');
+  switch(next) {
+    case STATES.DISCONNECTED:
+      setConnected(false);
+      sphere.classList.add('anim-breathe');
+      statusLabel.textContent = '正在连接…';
+      hint('状态：未连接');
+      break;
 
-function setState(s) {
-  clearTimeout(autoTimer);
-  currentState = s;
-  elUser.classList.remove('visible');
-  elAI.classList.remove('visible');
-  elDots.classList.remove('show');
-  elSkip.classList.remove('show');
-  elHint.style.opacity = '0';
-  btnMic.classList.remove('recording');
+    case STATES.CONNECTING:
+      setConnected(true); // 触发渐变过渡（1.5s）
+      sphere.classList.add('anim-breathe');
+      statusLabel.textContent = '连接中…';
+      hint('状态：连接中');
+      // 1.5s 后自动切换到 IDLE
+      aiTimer = setTimeout(()=>toState(STATES.IDLE), 1600);
+      break;
 
-  switch (s) {
     case STATES.IDLE:
-      elHint.style.opacity = '1';
-      elLabel.textContent = '';
+      setConnected(true);
+      sphere.classList.add('anim-float');
+      statusLabel.textContent = '小金正在聆听';
+      hint('状态：待机');
       break;
 
-    case STATES.RECORDING: {
-      const turn = DEMO_TURNS[demoIndex % DEMO_TURNS.length];
-      elUser.textContent = '';
-      btnMic.classList.add('recording');
-      elLabel.textContent = '正在听…';
-      // 2.5s 后自动进入 thinking
-      autoTimer = setTimeout(() => {
-        elUser.textContent = turn.user;
-        setTimeout(() => elUser.classList.add('visible'), 50);
-        setState(STATES.THINKING);
-      }, 2500);
+    case STATES.USER_TALKING:
+      setConnected(true);
+      sphere.classList.add('anim-user');
+      setLiquid(true);
+      uploadPanel.classList.add('visible');
+      statusLabel.textContent = '请说话…';
+      hint('状态：用户说话');
       break;
-    }
 
-    case STATES.THINKING: {
-      const turn = DEMO_TURNS[demoIndex % DEMO_TURNS.length];
-      if (!elUser.textContent) {
-        elUser.textContent = turn.user;
-        setTimeout(() => elUser.classList.add('visible'), 50);
-      } else {
-        elUser.classList.add('visible');
-      }
-      elDots.classList.add('show');
-      elLabel.textContent = '小金正在思考…';
-      // 2s 后进入 playing
-      autoTimer = setTimeout(() => {
-        setState(STATES.PLAYING);
-      }, 2000);
+    case STATES.AI_THINKING:
+      setConnected(true);
+      sphere.classList.add('anim-think');
+      statusLabel.textContent = '小金正在思考…';
+      hint('状态：AI 思考');
+      replyText.textContent = '';
+      // 1.8s 后进入 AI 说话
+      aiTimer = setTimeout(()=>toState(STATES.AI_TALKING), 1800);
       break;
-    }
 
-    case STATES.PLAYING: {
-      const turn = DEMO_TURNS[demoIndex % DEMO_TURNS.length];
-      elUser.classList.add('visible');
-      elAI.textContent = turn.ai;
-      setTimeout(() => elAI.classList.add('visible'), 100);
-      elSkip.classList.add('show');
-      elLabel.textContent = '小金正在说话…';
-      demoIndex++;
-      // 4s 后自动回到待机
-      autoTimer = setTimeout(() => {
-        setState(STATES.IDLE);
-      }, 4000);
+    case STATES.AI_TALKING:
+      setConnected(true);
+      sphere.classList.add('anim-speak');
+      stage.classList.add('ai-reply');
+      skipBtn.style.display = 'flex';
+      statusLabel.textContent = '';
+      hint('状态：AI 说话');
+      typeText(replies[replyIdx++ % replies.length]);
       break;
-    }
   }
 }
 
-// ═══════════════════════════════════════════
-// 按钮事件
-// ═══════════════════════════════════════════
-btnMic.addEventListener('click', () => {
-  if (currentState === STATES.IDLE || currentState === STATES.PLAYING) {
-    setState(STATES.RECORDING);
-  } else if (currentState === STATES.RECORDING) {
-    // 手动停止录音 → 思考
-    clearTimeout(autoTimer);
-    const turn = DEMO_TURNS[demoIndex % DEMO_TURNS.length];
-    elUser.textContent = turn.user;
-    setState(STATES.THINKING);
+// 打字机效果
+function typeText(text) {
+  replyText.textContent = '';
+  let i = 0;
+  const timer = setInterval(()=>{
+    replyText.textContent += text[i++];
+    if (i >= text.length) clearInterval(timer);
+  }, 48);
+}
+
+// ── 交互逻辑 ──
+
+// 麦克风按钮：核心状态切换
+btnMic.addEventListener('click', ()=>{
+  if (currentState === STATES.DISCONNECTED) {
+    toState(STATES.CONNECTING);
+    return;
+  }
+  if (currentState === STATES.IDLE) {
+    toState(STATES.USER_TALKING);
+    return;
+  }
+  if (currentState === STATES.USER_TALKING) {
+    toState(STATES.AI_THINKING);
+    return;
+  }
+  if (currentState === STATES.AI_THINKING || currentState === STATES.AI_TALKING) {
+    toState(STATES.IDLE);
+    return;
   }
 });
 
-btnMute.addEventListener('click', () => {
-  muted = !muted;
-  btnMute.classList.toggle('muted', muted);
-  btnMute.textContent = muted ? '🔇' : '🔊';
-  showToast(muted ? '已静音' : '已取消静音');
+// 静音 / 取消静音（长按麦克风）
+let micHold = null;
+btnMic.addEventListener('mousedown', ()=>{
+  micHold = setTimeout(()=>{
+    isMuted = !isMuted;
+    if (isMuted) {
+      btnMic.classList.add('muted');
+      btnMic.innerHTML = `<svg viewBox="0 0 24 24" style="stroke:#e0002a">
+        <path d="M12 1a3 3 0 013 3v8a3 3 0 01-6 0V4a3 3 0 013-3z"/>
+        <path d="M19 10v2a7 7 0 01-14 0v-2"/>
+        <line x1="12" y1="19" x2="12" y2="23"/>
+        <line x1="8" y1="23" x2="16" y2="23"/>
+        <line x1="4" y1="4" x2="20" y2="20" stroke="#e0002a"/>
+      </svg>`;
+    } else {
+      btnMic.classList.remove('muted');
+      btnMic.innerHTML = `<svg viewBox="0 0 24 24">
+        <path d="M12 1a3 3 0 013 3v8a3 3 0 01-6 0V4a3 3 0 013-3z"/>
+        <path d="M19 10v2a7 7 0 01-14 0v-2"/>
+        <line x1="12" y1="19" x2="12" y2="23"/>
+        <line x1="8" y1="23" x2="16" y2="23"/>
+      </svg>`;
+    }
+    hint(isMuted ? '🔇 已静音（长按切换）' : '🎙️ 已取消静音');
+  }, 600);
+});
+btnMic.addEventListener('mouseup', ()=>clearTimeout(micHold));
+btnMic.addEventListener('mouseleave', ()=>clearTimeout(micHold));
+// 移动端
+btnMic.addEventListener('touchstart', (e)=>{
+  e.preventDefault();
+  micHold = setTimeout(()=>{
+    isMuted = !isMuted;
+    btnMic.classList.toggle('muted', isMuted);
+    hint(isMuted ? '🔇 已静音' : '🎙️ 已取消静音');
+  }, 600);
+});
+btnMic.addEventListener('touchend', ()=>clearTimeout(micHold));
+
+// 摄像头按钮：显示上传面板
+btnCamera.addEventListener('click', ()=>{
+  if (currentState === STATES.USER_TALKING) {
+    uploadPanel.classList.toggle('visible');
+  } else {
+    hint('请先开始说话');
+  }
 });
 
-document.getElementById('btn-end').addEventListener('click', () => {
-  clearTimeout(autoTimer);
-  demoIndex = 0;
-  setState(STATES.IDLE);
-  showToast('对话已结束');
+// 关闭按钮：回到未连接
+btnClose.addEventListener('click', ()=>{
+  toState(STATES.DISCONNECTED);
+  isMuted = false;
+  btnMic.classList.remove('muted');
 });
 
-elSkip.addEventListener('click', () => {
-  clearTimeout(autoTimer);
-  setState(STATES.IDLE);
+// 跳过按钮
+skipBtn.addEventListener('click', ()=>{
+  toState(STATES.IDLE);
+  replyText.textContent = '';
 });
 
-// CC 字幕
-document.getElementById('btn-cc').addEventListener('click', () => {
-  ccEnabled = !ccEnabled;
-  document.getElementById('btn-cc').classList.toggle('active', ccEnabled);
-  showToast(ccEnabled ? '字幕已开启' : '字幕已关闭');
+// 点击球体快速演示下一步
+document.getElementById('sphereWrap').addEventListener('click', ()=>{
+  const map = {
+    [STATES.DISCONNECTED]: STATES.CONNECTING,
+    [STATES.CONNECTING]:   STATES.IDLE,
+    [STATES.IDLE]:         STATES.USER_TALKING,
+    [STATES.USER_TALKING]: STATES.AI_THINKING,
+    [STATES.AI_THINKING]:  STATES.AI_TALKING,
+    [STATES.AI_TALKING]:   STATES.IDLE,
+  };
+  if (map[currentState]) toState(map[currentState]);
 });
 
-// 设置
-document.getElementById('btn-settings').addEventListener('click', () => {
-  showToast('设置功能开发中…');
-});
+// ── 启动 ──
+updatePseudoGradient(false);
+toState(STATES.DISCONNECTED);
 
-// 相机/上传 sheet
-const overlay = document.getElementById('sheet-overlay');
-const sheet   = document.getElementById('sheet-camera');
-function openSheet() {
-  overlay.classList.add('show');
-  sheet.classList.add('show');
-}
-function closeSheet() {
-  overlay.classList.remove('show');
-  sheet.classList.remove('show');
-}
-document.getElementById('btn-camera').addEventListener('click', openSheet);
-overlay.addEventListener('click', closeSheet);
-['opt-camera','opt-album','opt-file'].forEach(id => {
-  const labels = { 'opt-camera':'拍照功能开发中', 'opt-album':'相册功能开发中', 'opt-file':'文件功能开发中' };
-  document.getElementById(id).addEventListener('click', () => {
-    closeSheet();
-    setTimeout(() => showToast(labels[id] + '…'), 200);
-  });
-});
-
-// ── Toast ──
-let toastTimer;
-function showToast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
-}
-
-// ═══════════════════════════════════════════
-// 初始化
-// ═══════════════════════════════════════════
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
-setState(STATES.IDLE);
-animate();
+// 自动演示：2s 后开始连接
+setTimeout(()=>toState(STATES.CONNECTING), 2000);
 </script>
 </body>
 </html>

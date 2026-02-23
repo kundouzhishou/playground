@@ -156,7 +156,7 @@ export async function transcribeAudio_elevenlabs(audioUri) {
 
     rlog('STT', '发送请求到 ElevenLabs...');
 
-    const response = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
+    const response = await fetch('https://elevenlabs-proxy.kundouzhishou.workers.dev/v1/speech-to-text', {
       method: 'POST',
       headers: {
         'xi-api-key': apiKey,
