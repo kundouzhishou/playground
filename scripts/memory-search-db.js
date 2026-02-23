@@ -5,7 +5,8 @@ const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
 
-const MEMORY_DIR = path.join(__dirname, '..', 'memory');
+const WORKSPACE_DIR = path.join(__dirname, '..');
+const MEMORY_DIR = path.join(WORKSPACE_DIR, 'memory');
 const DB_PATH = path.join(MEMORY_DIR, '.search.db');
 
 // 递归扫描 .md 文件
@@ -47,6 +48,9 @@ function build() {
 
   const insert = db.prepare('INSERT INTO memory_fts (filepath, line_num, content) VALUES (?, ?, ?)');
   const files = scanMarkdownFiles(MEMORY_DIR);
+  // 也把 MEMORY.md 加进来
+  const memoryMdPath = path.join(WORKSPACE_DIR, 'MEMORY.md');
+  if (fs.existsSync(memoryMdPath)) files.push(memoryMdPath);
   let totalLines = 0;
 
   const insertMany = db.transaction(() => {
