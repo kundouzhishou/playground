@@ -110,6 +110,10 @@ export const useSpeech = () => {
       setError(null);
       // 清除沉默计时器（用户在沉默窗口内再次说话）
       clearSilenceTimer();
+      // 先确保释放旧的录音对象，避免 "Only one Recording object can be prepared at a given time"
+      if (getRecording()) {
+        await cancelRecording().catch(() => {});
+      }
 
       await startRecording();
       setIsListening(true);
