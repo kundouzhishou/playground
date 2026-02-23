@@ -39,17 +39,12 @@
     background: linear-gradient(to bottom, rgba(10,10,15,0.95) 60%, transparent);
   }
   .logo {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 17px; font-weight: 600; letter-spacing: 0.5px;
-    color: var(--accent);
+    display: flex; align-items: center;
   }
   .logo-icon {
-    width: 30px; height: 30px;
-    background: linear-gradient(135deg, #c8a96e, #e8c98e);
-    border-radius: 8px;
+    width: 36px; height: 36px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 16px;
-    box-shadow: 0 0 12px rgba(200,169,110,0.3);
+    filter: drop-shadow(0 0 8px rgba(255,215,0,0.5));
   }
   .top-actions { display: flex; align-items: center; gap: 14px; }
   .top-btn {
@@ -156,7 +151,7 @@
   .toolbar {
     position: fixed; bottom: 0; left: 0; right: 0;
     height: var(--bar-h);
-    display: flex; align-items: center; justify-content: center; gap: 24px;
+    display: flex; align-items: center; justify-content: center; gap: 28px;
     padding-bottom: env(safe-area-inset-bottom, 0px);
     background: linear-gradient(to top, rgba(10,10,15,0.98) 70%, transparent);
     z-index: 10;
@@ -176,26 +171,21 @@
   }
   .tool-btn:active { transform: scale(0.92); }
 
-  /* 麦克风按钮 - 主按钮，大一点 */
-  #btn-mic {
+  /* 麦克风开关按钮 - 默认开启状态（金色） */
+  #btn-mic-toggle {
     width: 62px; height: 62px; font-size: 24px;
     background: var(--accent-dim);
     border-color: var(--accent);
     color: var(--accent);
     box-shadow: 0 0 0 0 rgba(200,169,110,0);
   }
-  #btn-mic.recording {
+  /* 麦克风关闭状态（红色） */
+  #btn-mic-toggle.mic-off {
     background: var(--red-dim);
     border-color: var(--red);
     color: var(--red);
-    animation: micPulse 1s ease-in-out infinite;
-  }
-  @keyframes micPulse {
-    0%,100% { box-shadow: 0 0 0 0 rgba(255,68,85,0.4); }
-    50% { box-shadow: 0 0 0 10px rgba(255,68,85,0); }
   }
 
-  #btn-mute.muted { color: var(--red); border-color: var(--red); }
   #btn-end { color: #ff6677; border-color: rgba(255,102,119,0.3); }
 
   /* 状态标签 */
@@ -268,8 +258,20 @@
 <!-- 顶部 -->
 <div class="topbar">
   <div class="logo">
-    <div class="logo-icon">✦</div>
-    小金
+    <!-- 金色小人图标 SVG -->
+    <div class="logo-icon">
+      <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- 头部 -->
+        <circle cx="17" cy="9" r="5.5" fill="#FFD700" opacity="0.95"/>
+        <!-- 身体 -->
+        <path d="M9.5 24.5 C9.5 19.5 12.5 17 17 17 C21.5 17 24.5 19.5 24.5 24.5" stroke="#FFD700" stroke-width="2.8" stroke-linecap="round" fill="none" opacity="0.95"/>
+        <!-- 两臂 -->
+        <path d="M11 20 L7 23" stroke="#FFD700" stroke-width="2.2" stroke-linecap="round" opacity="0.85"/>
+        <path d="M23 20 L27 23" stroke="#FFD700" stroke-width="2.2" stroke-linecap="round" opacity="0.85"/>
+        <!-- 光晕圆点装饰 -->
+        <circle cx="17" cy="9" r="7" fill="#FFD700" opacity="0.12"/>
+      </svg>
+    </div>
   </div>
   <div class="top-actions">
     <button class="top-btn" id="btn-cc" title="字幕">
@@ -302,11 +304,27 @@
 <!-- 状态标签 -->
 <div class="state-label" id="state-label"></div>
 
-<!-- 底部工具栏 -->
+<!-- 底部工具栏：3个按钮 -->
 <div class="toolbar">
   <button class="tool-btn" id="btn-camera" title="拍照/上传">📷</button>
-  <button class="tool-btn" id="btn-mic" title="麦克风">🎙</button>
-  <button class="tool-btn" id="btn-mute" title="静音">🔊</button>
+  <button class="tool-btn" id="btn-mic-toggle" title="麦克风开关">
+    <!-- 麦克风开启 SVG（默认） -->
+    <svg id="mic-icon-on" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="9" y="2" width="6" height="11" rx="3"/>
+      <path d="M5 10a7 7 0 0 0 14 0"/>
+      <line x1="12" y1="19" x2="12" y2="22"/>
+      <line x1="9" y1="22" x2="15" y2="22"/>
+    </svg>
+    <!-- 麦克风关闭 SVG（红色+斜线，默认隐藏） -->
+    <svg id="mic-icon-off" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff4455" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+      <rect x="9" y="2" width="6" height="11" rx="3" opacity="0.5"/>
+      <path d="M5 10a7 7 0 0 0 14 0" opacity="0.5"/>
+      <line x1="12" y1="19" x2="12" y2="22" opacity="0.5"/>
+      <line x1="9" y1="22" x2="15" y2="22" opacity="0.5"/>
+      <!-- 斜线 -->
+      <line x1="3" y1="3" x2="21" y2="21" stroke-width="2.5"/>
+    </svg>
+  </button>
   <button class="tool-btn" id="btn-end" title="结束">✕</button>
 </div>
 
@@ -341,7 +359,7 @@
 const STATES = { IDLE: 'idle', RECORDING: 'recording', THINKING: 'thinking', PLAYING: 'playing' };
 let currentState = STATES.IDLE;
 let ccEnabled = false;
-let muted = false;
+let micEnabled = true;  // 麦克风是否开启（默认开启）
 let autoTimer = null;
 
 const DEMO_TURNS = [
@@ -397,20 +415,17 @@ function initParticles() {
 
 // ── 绘制各状态 ──
 function drawIdle(t) {
-  // 呼吸光圈
-  const pulse = Math.sin(t * 0.8) * 0.5 + 0.5; // 0~1
+  const pulse = Math.sin(t * 0.8) * 0.5 + 0.5;
   const r1 = 55 + pulse * 8;
   const r2 = 80 + pulse * 12;
   const r3 = 108 + pulse * 16;
 
-  // 外晕
   let g = ctx.createRadialGradient(cx, cy, r1 * 0.3, cx, cy, r3);
   g.addColorStop(0, `rgba(200,169,110,${0.08 + pulse * 0.06})`);
   g.addColorStop(1, 'rgba(200,169,110,0)');
   ctx.beginPath(); ctx.arc(cx, cy, r3, 0, Math.PI * 2);
   ctx.fillStyle = g; ctx.fill();
 
-  // 中圈
   g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r2);
   g.addColorStop(0, `rgba(200,169,110,${0.12 + pulse * 0.08})`);
   g.addColorStop(0.6, `rgba(200,169,110,${0.05 + pulse * 0.04})`);
@@ -418,7 +433,6 @@ function drawIdle(t) {
   ctx.beginPath(); ctx.arc(cx, cy, r2, 0, Math.PI * 2);
   ctx.fillStyle = g; ctx.fill();
 
-  // 核心圆
   g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r1);
   g.addColorStop(0, `rgba(232,201,142,${0.25 + pulse * 0.1})`);
   g.addColorStop(0.5, `rgba(200,169,110,${0.12 + pulse * 0.06})`);
@@ -426,19 +440,15 @@ function drawIdle(t) {
   ctx.beginPath(); ctx.arc(cx, cy, r1, 0, Math.PI * 2);
   ctx.fillStyle = g; ctx.fill();
 
-  // 细边框圆
   ctx.beginPath(); ctx.arc(cx, cy, r1, 0, Math.PI * 2);
   ctx.strokeStyle = `rgba(200,169,110,${0.15 + pulse * 0.1})`;
   ctx.lineWidth = 1; ctx.stroke();
 }
 
 function drawRecording(t) {
-  // 模拟音量
   const vol = 0.4 + 0.6 * Math.abs(Math.sin(t * 3.5)) + 0.2 * Math.random();
 
-  // 声波环
   for (let ring = 0; ring < 4; ring++) {
-    const phase = (t * 1.2 - ring * 0.3) % (Math.PI * 2);
     const expand = (ring / 4) + ((t * 0.6) % 1);
     const r = 50 + expand * 120 * vol;
     const alpha = (1 - expand) * 0.4;
@@ -448,7 +458,6 @@ function drawRecording(t) {
     ctx.lineWidth = 1.5; ctx.stroke();
   }
 
-  // 波形条（横向声波模拟）
   const bars = 32;
   const barW = 3;
   const totalW = bars * (barW + 3);
@@ -464,7 +473,6 @@ function drawRecording(t) {
     ctx.fill();
   }
 
-  // 中心点
   const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 40);
   g.addColorStop(0, `rgba(255,100,120,${0.3 * vol})`);
   g.addColorStop(1, 'rgba(255,68,85,0)');
@@ -473,7 +481,6 @@ function drawRecording(t) {
 }
 
 function drawThinking(t) {
-  // 粒子旋转
   particles.forEach((p, i) => {
     p.angle += p.speed * 1.5;
     const warp = Math.sin(p.angle * 3 + t) * 15;
@@ -486,7 +493,6 @@ function drawThinking(t) {
     ctx.fill();
   });
 
-  // 中心旋转圆弧
   for (let a = 0; a < 3; a++) {
     const startA = t * (1.2 + a * 0.3) + (a * Math.PI * 2) / 3;
     ctx.beginPath();
@@ -498,7 +504,6 @@ function drawThinking(t) {
 }
 
 function drawPlaying(t) {
-  // 流动波形
   const bands = 3;
   for (let b = 0; b < bands; b++) {
     const freq = 0.04 + b * 0.015;
@@ -520,7 +525,6 @@ function drawPlaying(t) {
     ctx.stroke();
   }
 
-  // 中心光晕
   const pulse = Math.sin(t * 2) * 0.5 + 0.5;
   const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 70 + pulse * 20);
   g.addColorStop(0, `rgba(200,169,110,${0.15 + pulse * 0.08})`);
@@ -544,14 +548,15 @@ function animate() {
 // ═══════════════════════════════════════════
 // UI 更新
 // ═══════════════════════════════════════════
-const elHint   = document.getElementById('dialog-hint');
-const elUser   = document.getElementById('dialog-user');
-const elAI     = document.getElementById('dialog-ai');
-const elDots   = document.getElementById('thinking-dots');
-const elLabel  = document.getElementById('state-label');
-const elSkip   = document.getElementById('btn-skip');
-const btnMic   = document.getElementById('btn-mic');
-const btnMute  = document.getElementById('btn-mute');
+const elHint      = document.getElementById('dialog-hint');
+const elUser      = document.getElementById('dialog-user');
+const elAI        = document.getElementById('dialog-ai');
+const elDots      = document.getElementById('thinking-dots');
+const elLabel     = document.getElementById('state-label');
+const elSkip      = document.getElementById('btn-skip');
+const btnMicToggle = document.getElementById('btn-mic-toggle');
+const micIconOn   = document.getElementById('mic-icon-on');
+const micIconOff  = document.getElementById('mic-icon-off');
 
 function setState(s) {
   clearTimeout(autoTimer);
@@ -561,7 +566,6 @@ function setState(s) {
   elDots.classList.remove('show');
   elSkip.classList.remove('show');
   elHint.style.opacity = '0';
-  btnMic.classList.remove('recording');
 
   switch (s) {
     case STATES.IDLE:
@@ -572,9 +576,7 @@ function setState(s) {
     case STATES.RECORDING: {
       const turn = DEMO_TURNS[demoIndex % DEMO_TURNS.length];
       elUser.textContent = '';
-      btnMic.classList.add('recording');
       elLabel.textContent = '正在听…';
-      // 2.5s 后自动进入 thinking
       autoTimer = setTimeout(() => {
         elUser.textContent = turn.user;
         setTimeout(() => elUser.classList.add('visible'), 50);
@@ -593,7 +595,6 @@ function setState(s) {
       }
       elDots.classList.add('show');
       elLabel.textContent = '小金正在思考…';
-      // 2s 后进入 playing
       autoTimer = setTimeout(() => {
         setState(STATES.PLAYING);
       }, 2000);
@@ -608,7 +609,6 @@ function setState(s) {
       elSkip.classList.add('show');
       elLabel.textContent = '小金正在说话…';
       demoIndex++;
-      // 4s 后自动回到待机
       autoTimer = setTimeout(() => {
         setState(STATES.IDLE);
       }, 4000);
@@ -618,27 +618,44 @@ function setState(s) {
 }
 
 // ═══════════════════════════════════════════
-// 按钮事件
+// 麦克风开关逻辑
 // ═══════════════════════════════════════════
-btnMic.addEventListener('click', () => {
-  if (currentState === STATES.IDLE || currentState === STATES.PLAYING) {
-    setState(STATES.RECORDING);
-  } else if (currentState === STATES.RECORDING) {
-    // 手动停止录音 → 思考
-    clearTimeout(autoTimer);
-    const turn = DEMO_TURNS[demoIndex % DEMO_TURNS.length];
-    elUser.textContent = turn.user;
-    setState(STATES.THINKING);
+function updateMicUI() {
+  if (micEnabled) {
+    btnMicToggle.classList.remove('mic-off');
+    micIconOn.style.display = '';
+    micIconOff.style.display = 'none';
+    elLabel.textContent = '';
+  } else {
+    btnMicToggle.classList.add('mic-off');
+    micIconOn.style.display = 'none';
+    micIconOff.style.display = '';
+    elLabel.textContent = '麦克风已关闭';
+    // 麦克风关闭时停止录音
+    if (currentState === STATES.RECORDING) {
+      clearTimeout(autoTimer);
+      setState(STATES.IDLE);
+    }
+  }
+}
+
+btnMicToggle.addEventListener('click', () => {
+  if (!micEnabled) {
+    // 开启麦克风
+    micEnabled = true;
+    updateMicUI();
+    showToast('麦克风已开启');
+  } else {
+    // 关闭麦克风
+    micEnabled = false;
+    updateMicUI();
+    showToast('麦克风已关闭');
   }
 });
 
-btnMute.addEventListener('click', () => {
-  muted = !muted;
-  btnMute.classList.toggle('muted', muted);
-  btnMute.textContent = muted ? '🔇' : '🔊';
-  showToast(muted ? '已静音' : '已取消静音');
-});
-
+// ═══════════════════════════════════════════
+// 按钮事件
+// ═══════════════════════════════════════════
 document.getElementById('btn-end').addEventListener('click', () => {
   clearTimeout(autoTimer);
   demoIndex = 0;
@@ -682,6 +699,24 @@ overlay.addEventListener('click', closeSheet);
     closeSheet();
     setTimeout(() => showToast(labels[id] + '…'), 200);
   });
+});
+
+// 舞台点击：麦克风开启时才能触发录音
+document.querySelector('.stage').addEventListener('click', (e) => {
+  if (e.target === canvas || e.target.closest('.dialog-wrap')) {
+    if (!micEnabled) {
+      showToast('请先开启麦克风');
+      return;
+    }
+    if (currentState === STATES.IDLE || currentState === STATES.PLAYING) {
+      setState(STATES.RECORDING);
+    } else if (currentState === STATES.RECORDING) {
+      clearTimeout(autoTimer);
+      const turn = DEMO_TURNS[demoIndex % DEMO_TURNS.length];
+      elUser.textContent = turn.user;
+      setState(STATES.THINKING);
+    }
+  }
 });
 
 // ── Toast ──
