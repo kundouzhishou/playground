@@ -72,13 +72,72 @@ export async function stopRecording() {
   }
 }
 
+// 本地 faster-whisper STT 服务地址（ms2 on Tailscale）
+const LOCAL_STT_URL = 'http://100.100.159.39:8877/transcribe';
+
 /**
- * 将录音文件上传到 ElevenLabs STT API 进行识别
- * （原 Whisper 实现已替换，文件名保留以避免改 import 路径）
+ * 将录音文件上传到本地 faster-whisper 服务进行识别
+ * （原 ElevenLabs 实现已注释保留，方便回滚）
  * @param {string} audioUri - 录音文件 URI
  * @returns {Promise<string>} 识别出的文本
  */
 export async function transcribeAudio(audioUri) {
+  try {
+    rlog('STT', '开始上传到本地 faster-whisper 服务', audioUri);
+
+    const formData = new FormData();
+    formData.append('file', {
+      uri: audioUri,
+      type: 'audio/m4a',
+      name: 'recording.m4a',
+    });
+
+    rlog('STT', '发送请求到本地 STT 服务:', LOCAL_STT_URL);
+
+    // 超时控制：30 秒（本地网络快，但 Whisper 推理需要几秒）
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+    let response;
+    try {
+      response = await fetch(LOCAL_STT_URL, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    rlog('STT', '响应状态:', response.status);
+
+    const responseText = await response.text();
+    rlog('STT', '响应内容:', responseText.slice(0, 500));
+
+    if (!response.ok) {
+      rlog('STT', 'ERROR', '本地 STT 服务错误:', response.status, responseText);
+      throw new Error(`本地 STT 服务错误: ${response.status}`);
+    }
+
+    const result = JSON.parse(responseText);
+    const text = (result.text || '').trim();
+    rlog('STT', '识别语言:', result.language, '| 识别文本:', text);
+    return text;
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      rlog('STT', 'ERROR', '本地 STT 服务请求超时（30s）');
+      throw new Error('语音识别超时，请重试');
+    }
+    rlog('STT', 'ERROR', err.message);
+    throw err;
+  }
+}
+
+/* ========== 原 ElevenLabs STT 实现（注释保留，方便回滚） ==========
+export async function transcribeAudio_elevenlabs(audioUri) {
   try {
     rlog('STT', '开始上传', audioUri);
 
@@ -124,6 +183,7 @@ export async function transcribeAudio(audioUri) {
     throw err;
   }
 }
+========== ElevenLabs STT 实现结束 ========== */
 
 /**
  * 获取当前录音实例（用于 VAD metering 轮询）
