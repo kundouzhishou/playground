@@ -10,17 +10,17 @@ const { execSync } = require('child_process');
 
 const MEMORY_DIR = path.join(__dirname, '..', 'memory');
 const WATERMARK_PATH = path.join(MEMORY_DIR, '.extract-watermark.json');
-const SCRIPTS_DIR = __dirname;
 
 // 确保目录存在
 if (!fs.existsSync(MEMORY_DIR)) fs.mkdirSync(MEMORY_DIR, { recursive: true });
 
-// 读取 watermark（上次处理时间戳）
+// 读取 watermark
 function readWatermark() {
   try {
     const data = JSON.parse(fs.readFileSync(WATERMARK_PATH, 'utf-8'));
     return data.lastExtractMs || 0;
-  } catch {
+  } catch (e) {
+    console.log(`无法读取或解析 watermark 文件 ${WATERMARK_PATH}，将从 0 开始。`);
     return 0;
   }
 }
@@ -111,65 +111,146 @@ function wsRequest(ws, id, method, params = {}) {
   });
 }
 
-// 从对话消息中提取关键信息
-function extractKeyInfo(messages, watermarkMs) {
-  const entries = [];
+// 从 Gateway 获取 agent:main:main session 的历史消息，并进行过滤
+async function getAgentMainHistory(ws, watermarkMs) {
+  const agentMainSessionKey = 'agent:main:main';
+  const conversationsToSave = [];
 
-  for (const msg of messages) {
-    // 只处理 watermark 之后的消息
-    const msgTime = msg.ts || msg.timestamp || 0;
-    if (msgTime <= watermarkMs) continue;
+  try {
+    console.log(`正在获取 session: ${agentMainSessionKey} 的历史消息...`);
+    // 获取完整的历史消息，之后再过滤。limit 可以根据需要调整
+    const historyResult = await wsRequest(ws, `h-${agentMainSessionKey}`, 'chat.history', { sessionKey: agentMainSessionKey, limit: 200 });
+    const messages = historyResult.messages || historyResult || [];
 
-    // 只提取用户消息和助手的文本回复，跳过 tool 调用
-    if (msg.role === 'user' && typeof msg.content === 'string' && msg.content.trim()) {
-      const text = msg.content.trim();
-      // 跳过太短的消息（如 "ok"、"好"）
-      if (text.length < 5) continue;
-      entries.push({ time: msgTime, role: 'user', text });
-    } else if (msg.role === 'assistant' && typeof msg.content === 'string' && msg.content.trim()) {
-      // 助手回复只保留较长的（可能包含决策/总结）
-      const text = msg.content.trim();
-      if (text.length < 50) continue;
-      // 跳过明显的 tool 输出
-      if (text.startsWith('{') || text.startsWith('[')) continue;
-      entries.push({ time: msgTime, role: 'assistant', text: text.slice(0, 500) });
+    if (!Array.isArray(messages) || messages.length === 0) {
+      console.log(`Session: ${agentMainSessionKey} 没有找到历史消息。`);
+      return { conversations: [], newWatermark: watermarkMs };
     }
-  }
 
-  return entries;
+    let latestMessageTime = watermarkMs;
+
+    // 过滤消息，只保留 watermark 之后的老金用户消息和我的助手回复
+    const filteredMessages = messages.filter(msg => {
+      const msgTime = msg.ts || msg.timestamp || 0;
+      // 排除 watermark 之前的消息
+      if (msgTime <= watermarkMs) return false;
+
+      // 排除系统消息
+      if (msg.role === 'system') return false;
+
+      // 排除 subagent 内部消息
+      // subagent 消息通常在 meta.subagent 中有信息
+      if (msg.meta?.subagent) return false;
+
+      // 排除工具调用和结果消息
+      // 工具调用可能表现为 role=assistant, content 是一个对象或特定格式的字符串
+      // Gateway 的 chat.history 可能会返回不同 `kind` 的消息
+      if (msg.kind === 'tool_code' || msg.kind === 'tool_result' || msg.kind === 'tool_error') return false;
+
+      // 排除 message.type 为 'event' 的消息，这些通常是内部事件
+      if (msg.type === 'event') return false;
+
+      // 过滤 role=user 消息
+      if (msg.role === 'user') {
+        const senderId = msg.meta?.user?.id || msg.senderId;
+        // 假设老金的 sender_id 是 271939480
+        const GOLD_SENDER_ID = '271939480';
+        if (senderId === GOLD_SENDER_ID) {
+          // 确保 content 是字符串且非空
+          if (typeof msg.content === 'string' && msg.content.trim().length > 0) {
+            return true;
+          }
+        }
+      }
+
+      // 过滤 role=assistant 消息 (我的回复)
+      if (msg.role === 'assistant') {
+        // 排除 content 为空或明显是工具、命令执行相关的信息
+        if (typeof msg.content !== 'string' || msg.content.trim().length === 0) return false;
+        // 排除明显是命令执行或工具调用的输出
+        // 例如，如果消息内容以 "Running command:" 开头，或者包含多行代码块
+        if (msg.content.includes('Running command:') || (msg.content.startsWith('```') && msg.content.endsWith('```'))) {
+          return false;
+        }
+        return true;
+      }
+
+      return false; // 其他类型的消息不包含
+    });
+
+    for (const msg of filteredMessages) {
+      conversationsToSave.push(msg);
+      const msgTime = msg.ts || msg.timestamp || 0;
+      if (msgTime > latestMessageTime) {
+        latestMessageTime = msgTime;
+      }
+    }
+
+    // 确保 newWatermark 至少是当前脚本运行时的最新消息时间，避免未来重复处理
+    return { conversations: conversationsToSave, newWatermark: latestMessageTime };
+
+  } catch (err) {
+    console.error(`获取 session: ${agentMainSessionKey} 历史消息失败: ${err.message}`);
+    return { conversations: [], newWatermark: watermarkMs };
+  }
 }
 
-// 将提取的信息追加到日期日志文件
-function appendToLog(sessionName, entries) {
-  if (entries.length === 0) return;
+// 将对话追加到当天的存档文件 (JSON 格式)
+function appendToRawConversationLog(messages) {
+  if (messages.length === 0) return;
 
-  // 按日期分组
   const byDate = {};
-  for (const entry of entries) {
-    const date = new Date(entry.time).toISOString().slice(0, 10);
+  for (const msg of messages) {
+    const date = new Date(msg.ts || msg.timestamp || 0).toISOString().slice(0, 10);
     if (!byDate[date]) byDate[date] = [];
-    byDate[date].push(entry);
+    byDate[date].push(msg);
   }
 
-  for (const [date, dateEntries] of Object.entries(byDate)) {
-    const logPath = path.join(MEMORY_DIR, `${date}.md`);
+  for (const [date, dateMessages] of Object.entries(byDate)) {
+    const logDir = path.join(MEMORY_DIR, 'conversations', 'raw');
+    if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
+    const logPath = path.join(logDir, `${date}.json`);
 
-    // 构建追加内容
-    let content = `\n## ${sessionName} 对话摘要\n\n`;
-    for (const entry of dateEntries) {
-      const prefix = entry.role === 'user' ? '👤' : '🤖';
-      // 截取关键部分
-      const text = entry.text.length > 300 ? entry.text.slice(0, 300) + '...' : entry.text;
-      content += `- ${prefix} ${text}\n`;
+    let existingMessages = [];
+    if (fs.existsSync(logPath)) {
+      try {
+        existingMessages = JSON.parse(fs.readFileSync(logPath, 'utf-8'));
+        if (!Array.isArray(existingMessages)) {
+          console.warn(`WARN: 现有文件 ${logPath} 不是有效的 JSON 数组，将清空并重新开始。`);
+          existingMessages = [];
+        }
+      } catch (e) {
+        console.warn(`WARN: 解析文件 ${logPath} 失败 (${e.message})，将清空并重新开始。`);
+        existingMessages = [];
+      }
     }
 
-    // 如果文件不存在，先创建标题
-    if (!fs.existsSync(logPath)) {
-      fs.writeFileSync(logPath, `# ${date} 日志\n`, 'utf-8');
-    }
+    // 使用 Map 来去重并保持插入顺序
+    const uniqueMessagesMap = new Map();
+    // 先加入已有的消息
+    existingMessages.forEach(msg => {
+      // 使用 msg.id 作为唯一键，或者组合 ts 和 content 的哈希值
+      const key = msg.id || `${msg.ts}-${msg.role}-${crypto.createHash('md5').update(JSON.stringify(msg)).digest('hex')}`;
+      uniqueMessagesMap.set(key, msg);
+    });
 
-    fs.appendFileSync(logPath, content, 'utf-8');
-    console.log(`  已追加到 ${date}.md（${dateEntries.length} 条）`);
+    let addedCount = 0;
+    // 再加入新的消息，如果重复则覆盖（保持最新）
+    dateMessages.forEach(msg => {
+      const key = msg.id || `${msg.ts}-${msg.role}-${crypto.createHash('md5').update(JSON.stringify(msg)).digest('hex')}`;
+      if (!uniqueMessagesMap.has(key)) {
+        addedCount++;
+      }
+      uniqueMessagesMap.set(key, msg);
+    });
+
+    if (addedCount > 0) {
+      const allMessages = Array.from(uniqueMessagesMap.values()).sort((a, b) => (a.ts || a.timestamp) - (b.ts || b.timestamp));
+      fs.writeFileSync(logPath, JSON.stringify(allMessages, null, 2), 'utf-8');
+      console.log(`  已追加 ${addedCount} 条新消息到 ${logPath}`);
+    } else {
+      console.log(`  ${logPath} 没有新消息需要追加。`);
+    }
   }
 }
 
@@ -191,57 +272,24 @@ async function main() {
   let newWatermark = watermarkMs;
 
   try {
-    // 获取 session 列表
-    const sessionsResult = await wsRequest(ws, 's1', 'sessions.list');
-    const sessions = sessionsResult.sessions || sessionsResult || [];
-    console.log(`找到 ${Array.isArray(sessions) ? sessions.length : 0} 个 session`);
-
-    if (Array.isArray(sessions)) {
-      for (const session of sessions) {
-        const sessionKey = session.key || session.sessionKey || session.id;
-        const sessionName = session.label || session.name || sessionKey;
-        if (!sessionKey) continue;
-
-        try {
-          console.log(`处理 session: ${sessionName}`);
-          const historyResult = await wsRequest(ws, `h-${sessionKey}`, 'chat.history', { sessionKey });
-          const messages = historyResult.messages || historyResult || [];
-
-          if (!Array.isArray(messages) || messages.length === 0) continue;
-
-          // 提取关键信息
-          const entries = extractKeyInfo(messages, watermarkMs);
-          if (entries.length > 0) {
-            appendToLog(sessionName, entries);
-            // 更新 watermark 为最新消息时间
-            const maxTime = Math.max(...entries.map(e => e.time));
-            if (maxTime > newWatermark) newWatermark = maxTime;
-          }
-        } catch (err) {
-          console.error(`  session ${sessionName} 处理失败: ${err.message}`);
-        }
-      }
+    const { conversations, newWatermark: latestTime } = await getAgentMainHistory(ws, watermarkMs);
+    if (conversations.length > 0) {
+      appendToRawConversationLog(conversations);
+      newWatermark = latestTime;
+    } else {
+      console.log('没有新的对话消息需要存档。');
     }
   } catch (err) {
-    console.error(`获取 session 列表失败: ${err.message}`);
+    console.error(`处理 agent:main:main 对话历史失败: ${err.message}`);
+  } finally {
+    // 关闭连接
+    ws.close();
   }
 
-  // 关闭连接
-  ws.close();
-
-  // 更新 watermark（即使没有新消息也更新为当前时间，避免重复扫描）
+  // 更新 watermark
   const finalWatermark = newWatermark > watermarkMs ? newWatermark : Date.now();
   saveWatermark(finalWatermark);
   console.log(`Watermark 更新为: ${new Date(finalWatermark).toISOString()}`);
-
-  // 更新索引
-  console.log('\n更新索引...');
-  try {
-    execSync(`node ${path.join(SCRIPTS_DIR, 'memory-index.js')}`, { stdio: 'inherit' });
-    execSync(`node ${path.join(SCRIPTS_DIR, 'memory-search-db.js')} build`, { stdio: 'inherit' });
-  } catch (err) {
-    console.error(`索引更新失败: ${err.message}`);
-  }
 
   console.log('\n=== 记忆提取完成 ===');
 }
@@ -250,3 +298,4 @@ main().catch(err => {
   console.error(`致命错误: ${err.message}`);
   process.exit(1);
 });
+

@@ -1,13 +1,13 @@
 {
-  "updated": "2026-02-22T11:13:08.150Z",
+  "updated": "2026-02-23T01:20:15.284Z",
   "totalFiles": 1,
   "files": [
     {
       "file": "2026-02-22.md",
       "path": "2026-02-22.md",
       "title": "2026-02-22 日志",
-      "modified": "2026-02-22T10:34:55.345Z",
-      "size": 4146,
+      "modified": "2026-02-22T15:59:21.265Z",
+      "size": 9661,
       "summary": "- 已将全程中文交流规则写入 SOUL.md（所有回复、代码注释、commit message 等均使用简体中文） - 老金确认不着急赶结果，要做对的事情 - Gateway 安全模型：所有 WS 客户端必须包含 device 身份（密钥对+签名），token 认证只是验证身份，scope 通过设备配对分配 - `dangerouslyDisableDeviceAuth` 只对 Control U"
     }
   ]
