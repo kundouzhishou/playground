@@ -1,0 +1,10 @@
+# Ignore everything outside the project
+../../*
+!../../playground/xiaojin-app/**
+
+# Standard ignores
+node_modules/
+.expo/
+.git/
+*.log
+.DS_Store

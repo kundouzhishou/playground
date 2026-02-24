@@ -3,23 +3,22 @@ import {
   StyleSheet,
   View,
   Text,
-  TextInput,
   SafeAreaView,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-  TouchableOpacity,
   Pressable,
   Animated,
+  Easing,
+  Alert,
+  Share,
+  Dimensions,
+  ScrollView,
 } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ChatHistory } from './src/components/ChatHistory';
-import { MicrophoneButton } from './src/components/MicrophoneButton';
-import { StatusBar } from './src/components/StatusBar';
-import { ModeSwitch } from './src/components/ModeSwitch';
 import { PairingScreen } from './src/components/PairingScreen';
-import { VoiceSelector } from './src/components/VoiceSelector';
+import { SphereView, SphereState, SPHERE_FULL_SIZE, SPHERE_MINI_SIZE } from './src/components/SphereView';
+import { TopBar } from './src/components/TopBar';
+import { BottomToolbar } from './src/components/BottomToolbar';
+import { SettingsPanel } from './src/components/SettingsPanel';
 import { useGateway, GatewayStatus } from './src/hooks/useGateway';
 import { useSpeech } from './src/hooks/useSpeech';
 import { useShake } from './src/hooks/useShake';
@@ -36,18 +35,17 @@ const APP_VERSION = appJson.expo.version;
 const BUILD_ID = Constants.expoConfig?.extra?.buildId || 'dev';
 const UPDATE_ID = Constants.manifest2?.id?.slice(0, 8) || Constants.manifest?.id?.slice(0, 8) || null;
 
+const { width: SCREEN_W } = Dimensions.get('window');
+
 // 结束关键词
 const EXIT_KEYWORDS = ['再见', '结束', '拜拜', '没事了'];
 
 /**
  * 检测老金模式切换指令
- * @param {string} text - 用户语音识别文本
- * @returns {{ action: 'activate'|'deactivate'|null, target: string|null }}
  */
 function detectModeSwitch(text) {
   if (!text) return { action: null, target: null };
 
-  // 激活老金模式
   const activatePatterns = [
     /接下来(.+?)跟你说/,
     /切换到老金/,
@@ -57,36 +55,28 @@ function detectModeSwitch(text) {
   for (const pattern of activatePatterns) {
     const match = text.match(pattern);
     if (match) {
-      // 从捕获组中提取关系和名字
-      // 示例："我儿子MC" → 关系=儿子, 名字=MC
-      // 示例："我朋友张垚" → 关系=朋友, 名字=张垚
-      // 示例："我老婆" → 关系=老婆, 名字=null
       let relation = null;
       let name = null;
       const raw = match[1] ? match[1].trim() : null;
-      
+
       if (raw) {
-        // 匹配"我+关系+名字"模式
         const relationMatch = raw.match(/^(?:我)?(?:的)?(儿子|女儿|老婆|老公|妻子|丈夫|爸爸|妈妈|朋友|同事|哥哥|姐姐|弟弟|妹妹|爷爷|奶奶|外公|外婆|叔叔|阿姨|同学|室友|闺蜜|兄弟)(.*)$/);
         if (relationMatch) {
           relation = relationMatch[1];
           name = relationMatch[2] ? relationMatch[2].trim() : null;
         } else {
-          // 没有匹配到关系词，整段当作名字
           name = raw;
         }
       }
-      
-      // 生成显示标签和 sessionKey 用的标识
+
       const displayLabel = relation && name ? `${relation} ${name}` : (relation || name || '访客');
       const sessionId = name || relation || 'guest';
-      
+
       console.log('[LaojinMode] 检测到激活指令，关系:', relation, '名字:', name, '标识:', sessionId);
       return { action: 'activate', target: sessionId, relation, name, displayLabel };
     }
   }
 
-  // 退出老金模式
   const deactivatePatterns = [
     /退出老金/,
     /我回来了/,
@@ -105,35 +95,27 @@ function detectModeSwitch(text) {
 
 export default function App() {
   const [messages, setMessages] = useState([]);
-  const [isAutoMode, setIsAutoMode] = useState(true);
   const [isThinking, setIsThinking] = useState(false);
-  const [isLongPressing, setIsLongPressing] = useState(false);
-  const [inputText, setInputText] = useState('');
-  // 对话模式状态
   const [isConversationActive, setIsConversationActive] = useState(false);
-  // 老金模式状态
   const [isLaojinMode, setIsLaojinMode] = useState(false);
-  // 调试日志
-  const debugLogs = useRemoteLogs();
-  // 老金模式下的对话者名字
   const [laojinTarget, setLaojinTarget] = useState(null);
-  // 老金模式激活前用户选择的声音（用于退出时恢复）
-  const previousVoiceIdRef = useRef(null);
+  const [showSettings, setShowSettings] = useState(false);
+  // 当前显示的 AI 回复文本（用于球体 UI 大字显示）
+  const [displayReplyText, setDisplayReplyText] = useState('');
 
-  // 根据老金模式状态计算当前 sessionKey
+  const debugLogs = useRemoteLogs();
+  const previousVoiceIdRef = useRef(null);
+  const streamingMsgAddedRef = useRef(false);
+  const thinkingIntervalRef = useRef(null);
+
+  // 球体尺寸动画（AI 说话时缩小）
+  const sphereSizeAnim = useRef(new Animated.Value(SPHERE_FULL_SIZE)).current;
+  // 球体位置动画（AI 说话时移到左上角）
+  const sphereAlignAnim = useRef(new Animated.Value(0)).current; // 0=居中, 1=左上
+
   const currentSessionKey = isLaojinMode
     ? `${GATEWAY_CONFIG.sessionKey}-laojin-${laojinTarget || 'guest'}`
     : GATEWAY_CONFIG.sessionKey;
-
-  // 用 ref 跟踪是否已经为当前流式回复创建了助手消息占位
-  const streamingMsgAddedRef = useRef(false);
-  // 思考提示音 interval
-  const thinkingIntervalRef = useRef(null);
-  // 呼吸灯动画值
-  const breathAnim = useRef(new Animated.Value(0)).current;
-  const breathAnimRef = useRef(null);
-  // 当前呼吸灯颜色
-  const [breathColor, setBreathColor] = useState(null);
 
   const {
     connected,
@@ -145,6 +127,7 @@ export default function App() {
     pairingInfo,
     error: gatewayError,
   } = useGateway();
+
   const {
     isListening,
     isSpeaking,
@@ -171,7 +154,6 @@ export default function App() {
   // ========== 声音选择持久化 ==========
   const VOICE_STORAGE_KEY = '@xiaojin_voice_id';
 
-  // 启动时从 AsyncStorage 读取上次选择的声音
   useEffect(() => {
     AsyncStorage.getItem(VOICE_STORAGE_KEY).then((stored) => {
       setSelectedVoiceId(stored || DEFAULT_VOICE_ID);
@@ -180,67 +162,66 @@ export default function App() {
     });
   }, []);
 
-  // 切换声音时保存到 AsyncStorage
   const handleVoiceChange = useCallback((voiceId) => {
     setSelectedVoiceId(voiceId);
     AsyncStorage.setItem(VOICE_STORAGE_KEY, voiceId).catch(() => {});
   }, [setSelectedVoiceId]);
 
-  // ========== 呼吸灯动画 ==========
-  const startBreathAnimation = useCallback((color) => {
-    setBreathColor(color);
-    // 停止之前的动画
-    if (breathAnimRef.current) {
-      breathAnimRef.current.stop();
+  // ========== 球体状态计算 ==========
+  const getSphereState = useCallback(() => {
+    // 连接状态优先
+    if (gatewayStatus === GatewayStatus.DISCONNECTED || gatewayStatus === GatewayStatus.ERROR) {
+      return SphereState.DISCONNECTED;
     }
-    breathAnim.setValue(0);
-    breathAnimRef.current = Animated.loop(
-      Animated.sequence([
-        Animated.timing(breathAnim, {
-          toValue: 1,
-          duration: 2000,
-          useNativeDriver: false,
-        }),
-        Animated.timing(breathAnim, {
-          toValue: 0,
-          duration: 2000,
-          useNativeDriver: false,
-        }),
-      ])
-    );
-    breathAnimRef.current.start();
-  }, [breathAnim]);
-
-  const stopBreathAnimation = useCallback(() => {
-    if (breathAnimRef.current) {
-      breathAnimRef.current.stop();
-      breathAnimRef.current = null;
+    if (gatewayStatus === GatewayStatus.CONNECTING ||
+        gatewayStatus === GatewayStatus.WAITING_CHALLENGE ||
+        gatewayStatus === GatewayStatus.SIGNING ||
+        gatewayStatus === GatewayStatus.WAITING_PAIRING) {
+      return SphereState.CONNECTING;
     }
-    breathAnim.setValue(0);
-    setBreathColor(null);
-  }, [breathAnim]);
 
-  // 根据状态切换呼吸灯颜色
+    // 已连接：根据交互状态
+    if (isSpeaking) return SphereState.AI_TALKING;
+    if (isThinking || isStreaming) return SphereState.AI_THINKING;
+    if (isListening) return SphereState.USER_TALKING;
+    return SphereState.IDLE;
+  }, [gatewayStatus, isListening, isSpeaking, isThinking, isStreaming]);
+
+  const sphereState = getSphereState();
+
+  // ========== 球体 AI 说话缩放动画 ==========
   useEffect(() => {
-    if (!isConversationActive) {
-      stopBreathAnimation();
-      return;
+    const isAiTalking = sphereState === SphereState.AI_TALKING;
+    Animated.parallel([
+      Animated.timing(sphereSizeAnim, {
+        toValue: isAiTalking ? SPHERE_MINI_SIZE : SPHERE_FULL_SIZE,
+        duration: 500,
+        easing: Easing.bezier(0.4, 0, 0.2, 1),
+        useNativeDriver: false,
+      }),
+      Animated.timing(sphereAlignAnim, {
+        toValue: isAiTalking ? 1 : 0,
+        duration: 500,
+        easing: Easing.bezier(0.4, 0, 0.2, 1),
+        useNativeDriver: false,
+      }),
+    ]).start();
+
+    // 不是 AI 说话时清空显示文本
+    if (!isAiTalking) {
+      // 延迟清空，让缩放动画完成
+      const timer = setTimeout(() => {
+        if (getSphereState() !== SphereState.AI_TALKING) {
+          setDisplayReplyText('');
+        }
+      }, 600);
+      return () => clearTimeout(timer);
     }
-    if (isListening) {
-      startBreathAnimation('rgba(255, 120, 50, OPACITY)'); // 橙色 — 录音中
-    } else if (isThinking) {
-      startBreathAnimation('rgba(50, 120, 255, OPACITY)'); // 蓝色 — 思考中
-    } else if (isSpeaking) {
-      startBreathAnimation('rgba(50, 200, 100, OPACITY)'); // 绿色 — 朗读中
-    } else {
-      startBreathAnimation('rgba(100, 100, 100, OPACITY)'); // 灰色 — 等待中
-    }
-  }, [isConversationActive, isListening, isThinking, isSpeaking]);
+  }, [sphereState]);
 
   // ========== 思考提示音 ==========
   useEffect(() => {
     if (isThinking && isConversationActive) {
-      // 立即播放一次，然后每 3 秒播放
       playSound('thinking');
       thinkingIntervalRef.current = setInterval(() => {
         playSound('thinking');
@@ -259,18 +240,34 @@ export default function App() {
     };
   }, [isThinking, isConversationActive]);
 
-  // ========== 无活动超时（已禁用，单轮模式不需要） ==========
+  // ========== 状态文本 ==========
+  const getStatusLabel = useCallback(() => {
+    switch (sphereState) {
+      case SphereState.DISCONNECTED:
+        return '正在连接…';
+      case SphereState.CONNECTING:
+        return '连接中…';
+      case SphereState.IDLE:
+        return isConversationActive ? '小金正在聆听' : '点击麦克风开始';
+      case SphereState.USER_TALKING:
+        return partialText || '请说话…';
+      case SphereState.AI_THINKING:
+        return '小金正在思考…';
+      case SphereState.AI_TALKING:
+        return ''; // AI 说话时不显示状态文本
+      default:
+        return '';
+    }
+  }, [sphereState, isConversationActive, partialText]);
 
   // ========== 对话模式控制 ==========
   const startConversation = useCallback(async () => {
     if (isConversationActive) return;
     console.log('[Conversation] 唤醒对话模式');
     setIsConversationActive(true);
-    // 如果正在朗读，先停止
     if (isSpeaking) {
       await stopSpeaking();
     }
-    // 播放开始音效并开始录音
     await playSound('start');
     startListening('auto');
   }, [isConversationActive, isSpeaking, stopSpeaking, startListening]);
@@ -278,8 +275,8 @@ export default function App() {
   const endConversation = useCallback(async () => {
     console.log('[Conversation] 结束对话模式');
     setIsConversationActive(false);
+    setDisplayReplyText('');
     await playSound('end');
-    // 停止一切进行中的操作
     if (isSpeaking) stopSpeaking();
   }, [isSpeaking, stopSpeaking]);
 
@@ -292,76 +289,67 @@ export default function App() {
   // ========== 监听语音识别结果 ==========
   useEffect(() => {
     if (recognizedText && !isListening) {
-      // 去掉时间戳后缀（用于强制触发更新）
       const cleanText = recognizedText.replace(/\s+\d{13}$/, '');
-      clearRecognizedText(); // 立刻清空，防止重复触发
+      clearRecognizedText();
       if (!cleanText.trim()) return;
-      // 检测结束关键词
+
       if (isConversationActive && checkExitKeyword(cleanText)) {
         console.log('[Conversation] 检测到结束关键词:', cleanText);
         endConversation();
         return;
       }
 
-      // 检测老金模式切换指令（在发送消息之前拦截）
+      // 老金模式切换
       const modeSwitch = detectModeSwitch(cleanText);
       if (modeSwitch.action === 'activate' && !isLaojinMode) {
         console.log('[LaojinMode] 激活老金模式');
-        // 保存当前声音，切换到老金声音
         previousVoiceIdRef.current = selectedVoiceId;
         setSelectedVoiceId(LAOJIN_VOICE_ID);
         setIsLaojinMode(true);
         setLaojinTarget(modeSwitch.target);
-        // 切换 session：清空当前消息，显示系统提示
         const displayLabel = modeSwitch.displayLabel || '访客';
-        console.log(`[Session] 切换到老金模式 session，对话者: ${displayLabel}`);
         setMessages([{
           text: `已进入老金模式，对话者：${displayLabel}`,
           isUser: false,
           isSystem: true,
           timestamp: Date.now(),
         }]);
-        // 播放确认语音（用老金的声音）
         speakWithOpenAI('好的，已切换到老金模式', {
           voiceId: LAOJIN_VOICE_ID,
           onDone: () => {
             console.log('[LaojinMode] 确认语音播放完成');
           },
         });
-        return; // 不发送这条消息到 Gateway
+        return;
       }
       if (modeSwitch.action === 'deactivate' && isLaojinMode) {
         console.log('[LaojinMode] 退出老金模式');
-        // 恢复之前的声音
         const restoredVoice = previousVoiceIdRef.current || DEFAULT_VOICE_ID;
         setSelectedVoiceId(restoredVoice);
         AsyncStorage.setItem(VOICE_STORAGE_KEY, restoredVoice).catch(() => {});
         setIsLaojinMode(false);
         setLaojinTarget(null);
         previousVoiceIdRef.current = null;
-        // 切换回默认 session：清空当前消息，显示系统提示
-        console.log(`[Session] 切换回默认 session: ${GATEWAY_CONFIG.sessionKey}`);
         setMessages([{
           text: '已退出老金模式',
           isUser: false,
           isSystem: true,
           timestamp: Date.now(),
         }]);
-        // 播放确认语音（用恢复后的声音）
         speakWithOpenAI('好的，已退出老金模式', {
           voiceId: restoredVoice,
           onDone: () => {
             console.log('[LaojinMode] 退出确认语音播放完成');
           },
         });
-        return; // 不发送这条消息到 Gateway
+        return;
       }
 
       handleUserMessage(cleanText);
     }
   }, [recognizedText, isListening]);
 
-  // ========== 监听流式文本 ==========
+  // ========== 监听流式文本（更新显示） ==========
   useEffect(() => {
     if (isStreaming && streamingText) {
       setMessages((prev) => {
@@ -398,13 +386,11 @@ export default function App() {
     if (speechError) {
       playSound('error');
       Alert.alert('语音错误', speechError, [
-              { text: '分享', onPress: () => require('react-native').Share.share({ message: speechError }) },
-              { text: '关闭', style: 'cancel' },
-            ]);
+        { text: '分享', onPress: () => Share.share({ message: speechError }) },
+        { text: '关闭', style: 'cancel' },
+      ]);
     }
   }, [speechError]);
-
-  // ========== 单轮模式：朗读结束后等待用户手动点击，不自动录音 ==========
 
   // ========== 消息处理 ==========
   const handleUserMessage = useCallback(async (text) => {
@@ -422,25 +408,22 @@ export default function App() {
     setMessages((prev) => [...prev, userMessage]);
     streamingMsgAddedRef.current = false;
 
-    // 老金模式下，在消息前注入上下文提示
     let messageToSend = text;
     if (isLaojinMode) {
       const contextPrefix = `[系统提示：当前与你对话的是老金的${laojinTarget || '家人'}，不是老金本人。请用老金的语气回复——温暖、直接、务实、不废话。你在代表老金说话。根据对话者的身份调整你的态度，比如对小孩要耐心温柔。]\n\n`;
       messageToSend = contextPrefix + text;
-      console.log('[LaojinMode] 注入上下文前缀，对话者:', laojinTarget || '老金的家人');
     }
 
     try {
       setIsThinking(true);
-      console.log(`[Session] 使用 session: ${currentSessionKey}`);
       await sendMessage(messageToSend, currentSessionKey);
     } catch (error) {
       console.error('Send message error:', error);
       playSound('error');
       Alert.alert('发送失败', error.message, [
-              { text: '分享', onPress: () => require('react-native').Share.share({ message: error.message }) },
-              { text: '关闭', style: 'cancel' },
-            ]);
+        { text: '分享', onPress: () => Share.share({ message: error.message }) },
+        { text: '关闭', style: 'cancel' },
+      ]);
       setIsThinking(false);
     }
   }, [sendMessage, isConversationActive, isLaojinMode, laojinTarget, currentSessionKey]);
@@ -451,6 +434,9 @@ export default function App() {
     if (isConversationActive) {
       await playSound('received');
     }
+
+    // 设置显示文本（球体 UI 大字显示）
+    setDisplayReplyText(text);
 
     setMessages((prev) => {
       if (streamingMsgAddedRef.current) {
@@ -471,7 +457,7 @@ export default function App() {
 
     streamingMsgAddedRef.current = false;
 
-    // 朗读回复，完成后自动开始下一轮录音
+    // 朗读回复
     await speak(text, {
       voiceId: selectedVoiceId,
       onDone: () => {
@@ -493,81 +479,44 @@ export default function App() {
     enabled: connected && !isConversationActive,
   });
 
-  // ========== 点击屏幕唤醒/打断 ==========
-  const handleScreenPress = useCallback(() => {
-    if (!connected) return;
-
-    if (!isConversationActive) {
-      // 待机状态 → 唤醒对话
-      startConversation();
-    } else if (isSpeaking) {
-      // 对话中正在朗读 → 停止朗读（不自动开始录音，等用户手动点击）
-      stopSpeaking();
-    } else if (isListening) {
-      // 已经在录音 → 停止录音
-      stopListening();
-    } else if (!isThinking) {
-      // 空闲状态 → 开始录音
-      playSound('start');
-      startListening('auto');
-    }
-  }, [connected, isConversationActive, isSpeaking, isListening, isThinking, stopSpeaking, stopListening, startListening, startConversation]);
-
   // ========== 麦克风按钮 ==========
   const handleMicrophonePress = useCallback(() => {
     if (isListening) {
-      // 正在录音 → 停止录音
       stopListening();
     } else if (isSpeaking) {
-      // 正在朗读 → 停止朗读
       stopSpeaking();
     } else if (!isConversationActive) {
-      // 未激活 → 启动对话（会自动开始录音）
       startConversation();
     } else if (!isThinking) {
-      // 对话已激活，空闲状态 → 开始录音
       playSound('start');
       startListening('auto');
     }
   }, [isListening, isSpeaking, isConversationActive, isThinking, startListening, stopListening, stopSpeaking, startConversation]);
 
-  const handleMicrophoneLongPress = useCallback(() => {
-    if (false) {
-      if (isSpeaking) {
-        stopSpeaking();
-      }
-      setIsLongPressing(true);
-      if (!isConversationActive) {
-        setIsConversationActive(true);
-      }
+  // ========== 点击屏幕 ==========
+  const handleScreenPress = useCallback(() => {
+    if (!connected) return;
+
+    if (!isConversationActive) {
+      startConversation();
+    } else if (isSpeaking) {
+      stopSpeaking();
+    } else if (isListening) {
+      stopListening();
+    } else if (!isThinking) {
       playSound('start');
-      startListening('manual');
+      startListening('auto');
     }
-  }, [isAutoMode, isSpeaking, isConversationActive, startListening, stopSpeaking]);
+  }, [connected, isConversationActive, isSpeaking, isListening, isThinking, stopSpeaking, stopListening, startListening, startConversation]);
 
-  const handleMicrophonePressOut = useCallback(() => {
-    if (!isAutoMode && isLongPressing) {
-      setIsLongPressing(false);
-      stopListening();
+  // ========== 关闭按钮 ==========
+  const handleClose = useCallback(() => {
+    if (isConversationActive) {
+      endConversation();
     }
-  }, [isAutoMode, isLongPressing, stopListening]);
+  }, [isConversationActive, endConversation]);
 
-  const handleModeToggle = useCallback(() => {
-    if (isListening) {
-      stopListening();
-    }
-    setIsAutoMode((prev) => !prev);
-  }, [isListening, stopListening]);
-
-  // 文字输入发送
-  const handleTextSend = useCallback(() => {
-    const text = inputText.trim();
-    if (!text) return;
-    setInputText('');
-    handleUserMessage(text);
-  }, [inputText, handleUserMessage]);
-
-  // 语速调节
+  // ========== 语速调节 ==========
   const handleSpeedChange = useCallback((delta) => {
     setSpeechSpeed((prev) => {
       const next = Math.round((prev + delta) * 10) / 10;
@@ -575,13 +524,31 @@ export default function App() {
     });
   }, [setSpeechSpeed]);
 
-  // ========== 呼吸灯背景色插值 ==========
-  const breathOpacity = breathAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.05, 0.15],
-  });
+  // ========== 检查更新 ==========
+  const handleCheckUpdate = useCallback(async () => {
+    try {
+      const Updates = require('expo-updates');
+      Alert.alert('检查更新', '正在检查...');
+      const update = await Updates.checkForUpdateAsync();
+      if (update.isAvailable) {
+        Alert.alert('发现新版本', '正在下载更新...', [{ text: '好' }]);
+        await Updates.fetchUpdateAsync();
+        Alert.alert('更新完成', '重启 App 生效', [
+          { text: '稍后', style: 'cancel' },
+          { text: '立即重启', onPress: () => Updates.reloadAsync() },
+        ]);
+      } else {
+        Alert.alert('已是最新', '当前已是最新版本');
+      }
+    } catch (e) {
+      Alert.alert('检查失败', e.message, [
+        { text: '分享', onPress: () => Share.share({ message: e.message }) },
+        { text: '关闭', style: 'cancel' },
+      ]);
+    }
+  }, []);
 
-  // 如果正在等待配对审批，显示配对界面（延迟 2 秒，避免启动闪屏）
+  // ========== 配对界面 ==========
   const [pairingDelayPassed, setPairingDelayPassed] = useState(false);
   useEffect(() => {
     const timer = setTimeout(() => setPairingDelayPassed(true), 2000);
@@ -595,186 +562,113 @@ export default function App() {
 
   if (showPairing) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.containerDark}>
         <ExpoStatusBar style="light" />
         <PairingScreen pairingInfo={pairingInfo} error={gatewayError} />
       </SafeAreaView>
     );
   }
 
+  // ── AI 说话时球体缩小到左上角的位移 ──
+  const sphereTranslateX = sphereAlignAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -(SCREEN_W / 2) + SPHERE_MINI_SIZE / 2 + 24],
+  });
+  const sphereTranslateY = sphereAlignAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -120],
+  });
+
+  const isAiTalking = sphereState === SphereState.AI_TALKING;
+
   return (
     <SafeAreaView style={styles.container}>
-      <ExpoStatusBar style="light" />
+      <ExpoStatusBar style="dark" />
 
-      {/* 呼吸灯背景层 */}
-      {isConversationActive && breathColor && (
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            StyleSheet.absoluteFill,
-            {
-              backgroundColor: breathColor.replace('OPACITY', '1'),
-              opacity: breathOpacity,
-              zIndex: 1,
-            },
-          ]}
-        />
+      {/* 顶部栏 */}
+      <TopBar onSettings={() => setShowSettings(true)} />
+
+      {/* 老金模式提示 */}
+      {isLaojinMode && (
+        <View style={styles.laojinBanner}>
+          <Text style={styles.laojinBannerText}>
+            🎭 老金模式{laojinTarget ? ` · ${laojinTarget}` : ''}
+          </Text>
+        </View>
       )}
 
-      {/* 点击屏幕任意位置唤醒/打断 */}
-      <Pressable style={styles.pressableOverlay} onPress={handleScreenPress}>
-        <View style={styles.innerContainer}>
-          {/* 顶部标题 */}
-          <View style={styles.header}>
-            <Text style={styles.title}>🔧 小金语音</Text>
-            <View style={styles.headerRow}>
-              <Text style={styles.version}>v{APP_VERSION} · {UPDATE_ID ? `OTA:${UPDATE_ID}` : `build:${BUILD_ID}`}</Text>
-              <TouchableOpacity
-                style={styles.updateButton}
-                onPress={async () => {
-                  try {
-                    const Updates = require('expo-updates');
-                    Alert.alert('检查更新', '正在检查...');
-                    const update = await Updates.checkForUpdateAsync();
-                    if (update.isAvailable) {
-                      Alert.alert('发现新版本', '正在下载更新...', [{ text: '好' }]);
-                      await Updates.fetchUpdateAsync();
-                      Alert.alert('更新完成', '重启 App 生效', [
-                        { text: '稍后', style: 'cancel' },
-                        { text: '立即重启', onPress: () => Updates.reloadAsync() },
-                      ]);
-                    } else {
-                      Alert.alert('已是最新', '当前已是最新版本');
-                    }
-                  } catch (e) {
-                    Alert.alert('检查失败', e.message, [
-              { text: '分享', onPress: () => require('react-native').Share.share({ message: e.message }) },
-              { text: '关闭', style: 'cancel' },
-            ]);
-                  }
-                }}
-              >
-                <Text style={styles.updateButtonText}>🔄</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.updateButton}
-                onPress={() => {
-                  const recent = debugLogs.slice(-20);
-                  if (recent.length === 0) {
-                    Alert.alert('调试日志', '暂无日志');
-                  } else {
-                    const logText = recent.join('\n');
-                    Alert.alert(
-                      '调试日志 (最近20条)',
-                      logText,
-                      [
-                        { text: '分享', onPress: () => {
-                          const { Share } = require('react-native');
-                          Share.share({ message: logText });
-                        }},
-                        { text: '清空', style: 'destructive', onPress: () => clearLogs() },
-                        { text: '关闭', style: 'cancel' },
-                      ]
-                    );
-                  }
-                }}
-              >
-                <Text style={styles.updateButtonText}>🐞</Text>
-              </TouchableOpacity>
-              {isConversationActive && (
-                <Text style={styles.conversationBadge}>● 对话中</Text>
-              )}
-            </View>
+      {/* 主舞台 */}
+      <Pressable style={styles.stage} onPress={handleScreenPress}>
+        {/* 球体容器 */}
+        <Animated.View
+          style={[
+            styles.sphereContainer,
+            {
+              transform: [
+                { translateX: sphereTranslateX },
+                { translateY: sphereTranslateY },
+              ],
+            },
+          ]}
+        >
+          <Animated.View style={{ width: sphereSizeAnim, height: sphereSizeAnim }}>
+            <SphereView state={sphereState} />
+          </Animated.View>
+        </Animated.View>
+
+        {/* 状态文本（非 AI 说话时显示） */}
+        {!isAiTalking && (
+          <View style={styles.statusLabelContainer}>
+            <Text style={styles.statusLabel}>{getStatusLabel()}</Text>
           </View>
+        )}
 
-          {/* 老金模式提示条 */}
-          {isLaojinMode && (
-            <View style={styles.laojinBanner}>
-              <Text style={styles.laojinBannerText}>
-                🎭 老金模式{laojinTarget ? ` · 对话者：${laojinTarget}` : ''}
-              </Text>
-            </View>
-          )}
-
-          {/* 聊天区域 */}
-          <View style={styles.chatArea}>
-            <ChatHistory
-              messages={messages}
-              isThinking={isThinking}
-              isStreaming={isStreaming}
-            />
-          </View>
-
-
-
-          {!isConversationActive && (
-            <View style={styles.wakeHint}>
-              <Text style={styles.wakeHintText}>
-                点击麦克风开始录音
-              </Text>
-            </View>
-          )}
-        </View>
-      </Pressable>
-
-      {/* 底部控制区 */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.bottomContainer}
-      >
-        {/* 状态栏 */}
-        <View style={styles.statusContainer}>
-          <StatusBar
-            gatewayStatus={gatewayStatus}
-            isListening={isListening}
-            isSpeaking={isSpeaking}
-            isThinking={isThinking}
-          />
-        </View>
-
-        {/* 实时识别文字 / 录音状态显示 */}
-        {partialText ? (
-          <View style={styles.partialTextContainer}>
-            <Text style={styles.partialText}>{partialText}</Text>
-          </View>
+        {/* AI 回复文本（AI 说话时大字显示） */}
+        {isAiTalking && displayReplyText ? (
+          <ScrollView
+            style={styles.replyScrollView}
+            contentContainerStyle={styles.replyScrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <Text style={styles.replyText}>{displayReplyText}</Text>
+          </ScrollView>
         ) : null}
 
-        {/* 麦克风按钮 */}
-        <View style={styles.micContainer}>
-          <MicrophoneButton
-            isListening={isListening}
-            onPress={handleMicrophonePress}
-            onLongPress={handleMicrophoneLongPress}
-            onPressOut={handleMicrophonePressOut}
-            disabled={!connected || isThinking}
-          />
-        </View>
-
-        {/* 语速调节 + 声音选择 */}
-        <View style={styles.speedContainer}>
-          <TouchableOpacity
-            style={styles.speedButton}
-            onPress={() => handleSpeedChange(-0.1)}
-          >
-            <Text style={styles.speedButtonText}>−</Text>
-          </TouchableOpacity>
-          <Text style={styles.speedLabel}>语速 {speechSpeed.toFixed(1)}x</Text>
-          <TouchableOpacity
-            style={styles.speedButton}
-            onPress={() => handleSpeedChange(0.1)}
-          >
-            <Text style={styles.speedButtonText}>+</Text>
-          </TouchableOpacity>
-
-          <View style={styles.voiceSelectorWrapper}>
-            <VoiceSelector
-              selectedVoiceId={selectedVoiceId || DEFAULT_VOICE_ID}
-              onVoiceChange={handleVoiceChange}
-              disabled={isLaojinMode}
-            />
+        {/* 流式文本预览（AI 思考中，文本还在流入） */}
+        {sphereState === SphereState.AI_THINKING && streamingText ? (
+          <View style={styles.streamingPreview}>
+            <Text style={styles.streamingText} numberOfLines={3}>
+              {streamingText}
+            </Text>
           </View>
-        </View>
-      </KeyboardAvoidingView>
+        ) : null}
+      </Pressable>
+
+      {/* 底部工具栏 */}
+      <BottomToolbar
+        isListening={isListening}
+        onMicPress={handleMicrophonePress}
+        onMorePress={() => setShowSettings(true)}
+        onClosePress={handleClose}
+        disabled={!connected || isThinking}
+      />
+
+      {/* 设置面板 */}
+      <SettingsPanel
+        visible={showSettings}
+        onClose={() => setShowSettings(false)}
+        speechSpeed={speechSpeed}
+        onSpeedChange={handleSpeedChange}
+        selectedVoiceId={selectedVoiceId || DEFAULT_VOICE_ID}
+        onVoiceChange={handleVoiceChange}
+        isLaojinMode={isLaojinMode}
+        appVersion={APP_VERSION}
+        updateId={UPDATE_ID}
+        buildId={BUILD_ID}
+        debugLogs={debugLogs}
+        onClearLogs={clearLogs}
+        onCheckUpdate={handleCheckUpdate}
+      />
     </SafeAreaView>
   );
 }
@@ -782,182 +676,79 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#ffffff',
+  },
+  containerDark: {
+    flex: 1,
     backgroundColor: '#1a1a1a',
   },
-  pressableOverlay: {
-    flex: 1,
-    zIndex: 2,
-  },
-  innerContainer: {
-    flex: 1,
-  },
-  header: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2a',
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 4,
-    gap: 8,
-  },
-  updateButton: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  updateButtonText: {
-    fontSize: 14,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    textAlign: 'center',
-  },
-  version: {
-    fontSize: 12,
-    color: '#666666',
-    textAlign: 'center',
-  },
-  conversationBadge: {
-    fontSize: 12,
-    color: '#4CAF50',
-    fontWeight: '600',
-  },
-  // 老金模式提示条
+  // 老金模式横幅
   laojinBanner: {
-    backgroundColor: 'rgba(255, 152, 0, 0.15)',
-    paddingVertical: 8,
+    backgroundColor: 'rgba(255, 152, 0, 0.1)',
+    paddingVertical: 6,
     paddingHorizontal: 16,
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 152, 0, 0.3)',
   },
   laojinBannerText: {
-    color: '#FFB74D',
-    fontSize: 14,
+    color: '#E67E22',
+    fontSize: 13,
     fontWeight: '600',
   },
-  chatArea: {
+  // 主舞台
+  stage: {
     flex: 1,
-  },
-  conversationHint: {
     alignItems: 'center',
-    paddingVertical: 12,
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  // 球体容器
+  sphereContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 5,
+  },
+  // 状态文本
+  statusLabelContainer: {
+    marginTop: 28,
     paddingHorizontal: 20,
   },
-  conversationHintText: {
-    fontSize: 18,
-    color: '#ffffff',
-    fontWeight: '600',
-  },
-  conversationSubHint: {
-    fontSize: 12,
-    color: '#666666',
-    marginTop: 4,
-  },
-  wakeHint: {
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  wakeHintText: {
-    fontSize: 14,
-    color: '#555555',
-  },
-  bottomContainer: {
-    backgroundColor: '#1a1a1a',
-    paddingBottom: 20,
-    zIndex: 3,
-  },
-  statusContainer: {
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  partialTextContainer: {
-    alignItems: 'center',
-    marginBottom: 8,
-    marginHorizontal: 40,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: 'rgba(42, 42, 42, 0.8)',
-    borderRadius: 12,
-  },
-  partialText: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 16,
-    marginBottom: 12,
-  },
-  textInput: {
-    flex: 1,
-    height: 42,
-    backgroundColor: '#2a2a2a',
-    borderRadius: 21,
-    paddingHorizontal: 16,
-    color: '#ffffff',
+  statusLabel: {
     fontSize: 15,
-  },
-  sendButton: {
-    marginLeft: 8,
-    backgroundColor: '#007AFF',
-    borderRadius: 21,
-    paddingHorizontal: 16,
-    height: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sendButtonDisabled: {
-    backgroundColor: '#3a3a3a',
-    opacity: 0.5,
-  },
-  sendButtonText: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  micContainer: {
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  modeContainer: {
-    marginBottom: 8,
-  },
-  speedContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 16,
-    paddingVertical: 6,
-  },
-  speedButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#2a2a2a',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  speedButtonText: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  speedLabel: {
-    color: '#999999',
-    fontSize: 13,
-    marginHorizontal: 16,
-    minWidth: 70,
+    color: '#999',
     textAlign: 'center',
+    letterSpacing: 0.3,
   },
-  voiceSelectorWrapper: {
-    marginLeft: 12,
+  // AI 回复大字
+  replyScrollView: {
+    position: 'absolute',
+    top: 80,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 28,
+  },
+  replyScrollContent: {
+    paddingTop: 10,
+    paddingBottom: 40,
+  },
+  replyText: {
+    fontSize: 24,
+    fontWeight: '400',
+    color: '#111',
+    lineHeight: 36,
+    letterSpacing: -0.3,
+  },
+  // 流式文本预览
+  streamingPreview: {
+    position: 'absolute',
+    bottom: 20,
+    left: 28,
+    right: 28,
+  },
+  streamingText: {
+    fontSize: 14,
+    color: '#bbb',
+    lineHeight: 20,
+    textAlign: 'center',
   },
 });
