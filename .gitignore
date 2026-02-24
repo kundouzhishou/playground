@@ -1,2 +1,6 @@
 node_modules/
 memory/.search.db
+.env
+.env.*
+*.log
+.DS_Store

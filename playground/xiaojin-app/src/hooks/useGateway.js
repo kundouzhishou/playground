@@ -246,12 +246,15 @@ export const useGateway = () => {
       if (message.type === 'event' && message.event === 'chat') {
         const payload = message.payload;
 
-        // 调试日志：打印 payload 结构，便于排查 session 过滤问题
-        console.log('[Gateway] chat event payload keys:', Object.keys(payload || {}));
-        console.log('[Gateway] chat event state:', payload?.state, 'sessionKey:', payload?.sessionKey, 'session:', payload?.session);
+        // Session 过滤：只处理当前语音会话的消息，忽略 Telegram 等其他 session
+        const targetSession = GATEWAY_CONFIG.sessionKey;
+        const eventSession = payload?.sessionKey || payload?.session;
+        if (eventSession && eventSession !== targetSession) {
+          console.log('[Gateway] 忽略其他 session 的消息:', eventSession);
+          return;
+        }
 
         // 只处理 Agent 的流式回复事件（delta/final/thinking/error）
-        // 过滤掉 Telegram 等其他 session 推送的非流式消息
         const validStates = ['delta', 'final', 'thinking', 'error'];
         if (!validStates.includes(payload?.state)) {
           console.log('[Gateway] 忽略非流式事件，state:', payload?.state);

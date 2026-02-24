@@ -1,22 +1,13 @@
 {
-  "name": "workspace",
+  "name": "playground",
   "version": "1.0.0",
-  "description": "实验性项目和 Demo 合集。",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "description": "老金的实验场 — OpenClaw workspace + playground 项目",
+  "private": true,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/kundouzhishou/playground.git"
   },
-  "keywords": [],
-  "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/kundouzhishou/playground/issues"
-  },
-  "homepage": "https://github.com/kundouzhishou/playground#readme",
   "dependencies": {
     "better-sqlite3": "^12.6.2",
     "tweetnacl": "^1.0.3",
