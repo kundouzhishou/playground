@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>小金助手 · 安装指南</title>
+  <style>
+    /* ===== 全局样式 ===== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --secondary: #8b5cf6;
+      --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
+      --gradient-light: linear-gradient(135deg, #eef2ff 0%, #f3e8ff 100%);
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --bg: #ffffff;
+      --bg-secondary: #f8fafc;
+      --border: #e2e8f0;
+      --code-bg: #1e293b;
+      --success: #10b981;
+      --tip-bg: #f0fdf4;
+      --tip-border: #86efac;
+      --radius: 12px;
+      --shadow: 0 4px 24px rgba(99, 102, 241, 0.12);
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
+                   "Microsoft YaHei", "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 16px;
+    }
+
+    /* ===== 顶部横幅 ===== */
+    .hero {
+      background: var(--gradient);
+      color: #fff;
+      text-align: center;
+      padding: 64px 24px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      opacity: 0.4;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 999px;
+      padding: 6px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      margin-bottom: 20px;
+      backdrop-filter: blur(10px);
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+      text-shadow: 0 2px 20px rgba(0,0,0,0.15);
+    }
+
+    .hero p {
+      font-size: 1.15rem;
+      opacity: 0.9;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* ===== 主容器 ===== */
+    .container {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* ===== 准备工作卡片 ===== */
+    .prereq-section {
+      margin: -40px auto 0;
+      max-width: 780px;
+      padding: 0 20px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .prereq-card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 32px;
+      border: 1px solid var(--border);
+    }
+
+    .prereq-card h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text);
+    }
+
+    .prereq-card h2 .icon {
+      width: 36px;
+      height: 36px;
+      background: var(--gradient-light);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .prereq-list {
+      list-style: none;
+      display: grid;
+      gap: 12px;
+    }
+
+    .prereq-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 0.95rem;
+    }
+
+    .prereq-list li .check {
+      color: var(--success);
+      font-size: 16px;
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .prereq-list li a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .prereq-list li a:hover {
+      text-decoration: underline;
+    }
+
+    .tag-optional {
+      display: inline-block;
+      background: #fef3c7;
+      color: #92400e;
+      border-radius: 4px;
+      padding: 1px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      vertical-align: middle;
+      margin-left: 6px;
+    }
+
+    /* ===== 步骤区域 ===== */
+    .steps-section {
+      padding: 48px 0 0;
+    }
+
+    .section-title {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .section-title h2 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .section-title p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* ===== 步骤卡片 ===== */
+    .step-card {
+      background: #fff;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 28px;
+      overflow: hidden;
+      transition: box-shadow 0.2s ease;
+    }
+
+    .step-card:hover {
+      box-shadow: var(--shadow);
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 24px 28px;
+      background: var(--gradient-light);
+      border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+    }
+
+    .step-number {
+      width: 52px;
+      height: 52px;
+      background: var(--gradient);
+      border-radius: 50%;
+      color: #fff;
+      font-size: 1.4rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    }
+
+    .step-title-group h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .step-title-group .step-subtitle {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .step-body {
+      padding: 24px 28px;
+    }
+
+    .step-body p {
+      color: var(--text);
+      margin-bottom: 16px;
+      font-size: 0.95rem;
+    }
+
+    .step-body ul {
+      list-style: none;
+      margin-bottom: 16px;
+    }
+
+    .step-body ul li {
+      padding: 6px 0 6px 24px;
+      position: relative;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+
+    .step-body ul li::before {
+      content: "→";
+      position: absolute;
+      left: 0;
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    /* ===== 代码块 ===== */
+    .code-block {
+      background: var(--code-bg);
+      border-radius: 8px;
+      margin: 16px 0;
+      overflow: hidden;
+    }
+
+    .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: rgba(255,255,255,0.05);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .code-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .copy-btn {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #94a3b8;
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255,255,255,0.18);
+      color: #e2e8f0;
+    }
+
+    .copy-btn.copied {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #6ee7b7;
+    }
+
+    .code-content {
+      padding: 16px 20px;
+      overflow-x: auto;
+    }
+
+    .code-content code {
+      font-family: "SF Mono", "Fira Code", "Cascadia Code", "Consolas", monospace;
+      font-size: 0.9rem;
+      color: #e2e8f0;
+      white-space: pre;
+      display: block;
+      line-height: 1.6;
+    }
+
+    /* 行内代码 */
+    code:not(.block) {
+      background: rgba(99, 102, 241, 0.08);
+      color: var(--primary-dark);
+      border: 1px solid rgba(99, 102, 241, 0.15);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 0.875em;
+      font-family: "SF Mono", "Fira Code", monospace;
+    }
+
+    /* ===== 验证提示框 ===== */
+    .verify-box {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: var(--tip-bg);
+      border: 1px solid var(--tip-border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-top: 16px;
+    }
+
+    .verify-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .verify-box .verify-text {
+      font-size: 0.9rem;
+      color: #166534;
+    }
+
+    .verify-box .verify-text strong {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    /* ===== 警告/提示框 ===== */
+    .info-box {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 16px 0;
+    }
+
+    .info-box .info-icon {
+      font-size: 16px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .info-box .info-text {
+      font-size: 0.9rem;
+      color: #1e40af;
+      line-height: 1.6;
+    }
+
+    /* ===== Telegram 步骤列表 ===== */
+    .tg-steps {
+      list-style: none;
+      counter-reset: tg;
+      margin: 16px 0;
+    }
+
+    .tg-steps li {
+      counter-increment: tg;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.95rem;
+    }
+
+    .tg-steps li:last-child {
+      border-bottom: none;
+    }
+
+    .tg-steps li::before {
+      content: counter(tg);
+      background: var(--gradient);
+      color: #fff;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* ===== 常见问题 ===== */
+    .faq-section {
+      padding: 48px 0;
+    }
+
+    .faq-list {
+      display: grid;
+      gap: 16px;
+    }
+
+    .faq-item {
+      background: #fff;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 20px 24px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .faq-question {
+      font-weight: 700;
+      color: var(--primary-dark);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.95rem;
+    }
+
+    .faq-question .q-badge {
+      background: var(--gradient);
+      color: #fff;
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .faq-answer {
+      color: var(--text);
+      font-size: 0.9rem;
+      padding-left: 34px;
+      line-height: 1.7;
+    }
+
+    .faq-answer a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .faq-answer a:hover {
+      text-decoration: underline;
+    }
+
+    /* ===== 完成横幅 ===== */
+    .done-section {
+      background: var(--gradient);
+      border-radius: var(--radius);
+      padding: 40px 32px;
+      text-align: center;
+      color: #fff;
+      margin: 0 0 48px;
+      box-shadow: var(--shadow);
+    }
+
+    .done-section .done-emoji {
+      font-size: 3.5rem;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .done-section h2 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .done-section p {
+      opacity: 0.9;
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+    }
+
+    .done-links {
+      margin-top: 24px;
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .done-link {
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.35);
+      color: #fff;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.15s ease;
+      backdrop-filter: blur(8px);
+    }
+
+    .done-link:hover {
+      background: rgba(255,255,255,0.3);
+    }
+
+    /* ===== 页脚 ===== */
+    footer {
+      text-align: center;
+      padding: 24px 20px 40px;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      border-top: 1px solid var(--border);
+    }
+
+    footer .heart {
+      color: #f43f5e;
+    }
+
+    /* ===== 响应式 ===== */
+    @media (max-width: 600px) {
+      .hero {
+        padding: 48px 20px 64px;
+      }
+
+      .step-header {
+        padding: 18px 20px;
+        gap: 14px;
+      }
+
+      .step-body {
+        padding: 18px 20px;
+      }
+
+      .step-number {
+        width: 44px;
+        height: 44px;
+        font-size: 1.2rem;
+      }
+
+      .prereq-card {
+        padding: 24px 20px;
+      }
+
+      .done-section {
+        padding: 32px 20px;
+      }
+
+      .faq-item {
+        padding: 16px 18px;
+      }
+
+      .code-content {
+        padding: 12px 16px;
+      }
+
+      .code-content code {
+        font-size: 0.82rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== 顶部横幅 ===== -->
+<header class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">🤖 零基础安装指南</div>
+    <h1>小金助手 · 安装指南</h1>
+    <p>5 步搞定，让 AI 助手在你的 Mac 上跑起来</p>
+  </div>
+</header>
+
+<!-- ===== 准备工作 ===== -->
+<section class="prereq-section">
+  <div class="prereq-card">
+    <h2>
+      <span class="icon">📋</span>
+      准备工作
+    </h2>
+    <ul class="prereq-list">
+      <li>
+        <span class="check">✅</span>
+        <div>
+          <strong>macOS 系统（10.15 Catalina 及以上）</strong><br>
+          点击左上角苹果 → "关于本机" 可查看系统版本
+        </div>
+      </li>
+      <li>
+        <span class="check">🔑</span>
+        <div>
+          <strong>AI API Key（二选一）</strong><br>
+          · Claude API Key：前往 <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> 注册申请<br>
+          · OpenAI API Key：前往 <a href="https://platform.openai.com" target="_blank">platform.openai.com</a> 注册申请
+        </div>
+      </li>
+      <li>
+        <span class="check">💬</span>
+        <div>
+          <strong>Telegram 账号</strong>
+          <span class="tag-optional">可选</span><br>
+          用于手机随时和小金助手聊天，没有也可以先跳过
+        </div>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- ===== 安装步骤 ===== -->
+<main class="container">
+  <section class="steps-section">
+    <div class="section-title">
+      <h2>安装步骤</h2>
+      <p>按顺序执行，遇到问题看下方常见问题</p>
+    </div>
+
+    <!-- 步骤 1：Homebrew -->
+    <div class="step-card">
+      <div class="step-header">
+        <div class="step-number">1</div>
+        <div class="step-title-group">
+          <h3>安装 Homebrew</h3>
+          <div class="step-subtitle">macOS 的软件包管理器，已有可跳过</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <p>打开"终端"（Terminal）App，复制下面这行命令粘贴进去，按回车。过程中可能需要输入你的 Mac 登录密码。</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-label">Terminal</span>
+            <button class="copy-btn" onclick="copyCode(this)">复制</button>
+          </div>
+          <div class="code-content">
+            <code>/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"</code>
+          </div>
+        </div>
+
+        <div class="info-box">
+          <span class="info-icon">💡</span>
+          <div class="info-text">
+            <strong>Apple Silicon（M1/M2/M3/M4）Mac 用户注意：</strong>
+            安装完成后，还需要运行下面这行命令让 Homebrew 生效：<br>
+            <code>eval "$(/opt/homebrew/bin/brew shellenv)"</code>
+          </div>
+        </div>
+
+        <div class="verify-box">
+          <span class="verify-icon">✅</span>
+          <div class="verify-text">
+            <strong>验证方法</strong>
+            输入 <code>brew --version</code>，显示版本号（如 <code>Homebrew 4.x.x</code>）即表示成功
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 步骤 2：Node.js -->
+    <div class="step-card">
+      <div class="step-header">
+        <div class="step-number">2</div>
+        <div class="step-title-group">
+          <h3>安装 Node.js</h3>
+          <div class="step-subtitle">运行 OpenClaw 所需的 JavaScript 运行环境</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <p>在终端中运行：</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-label">Terminal</span>
+            <button class="copy-btn" onclick="copyCode(this)">复制</button>
+          </div>
+          <div class="code-content">
+            <code>brew install node</code>
+          </div>
+        </div>
+
+        <p>安装过程可能需要几分钟，等待完成即可。</p>
+
+        <div class="verify-box">
+          <span class="verify-icon">✅</span>
+          <div class="verify-text">
+            <strong>验证方法</strong>
+            运行 <code>node -v</code>，显示版本号（如 <code>v22.x.x</code>）即表示成功
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 步骤 3：OpenClaw -->
+    <div class="step-card">
+      <div class="step-header">
+        <div class="step-number">3</div>
+        <div class="step-title-group">
+          <h3>安装 OpenClaw</h3>
+          <div class="step-subtitle">小金助手的核心程序</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <p>在终端中运行：</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-label">Terminal</span>
+            <button class="copy-btn" onclick="copyCode(this)">复制</button>
+          </div>
+          <div class="code-content">
+            <code>npm install -g openclaw</code>
+          </div>
+        </div>
+
+        <div class="verify-box">
+          <span class="verify-icon">✅</span>
+          <div class="verify-text">
+            <strong>验证方法</strong>
+            运行 <code>openclaw --version</code>，显示版本号即表示安装成功
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 步骤 4：启动 -->
+    <div class="step-card">
+      <div class="step-header">
+        <div class="step-number">4</div>
+        <div class="step-title-group">
+          <h3>启动 OpenClaw</h3>
+          <div class="step-subtitle">按照引导完成初始配置</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <p>在终端中运行：</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-label">Terminal</span>
+            <button class="copy-btn" onclick="copyCode(this)">复制</button>
+          </div>
+          <div class="code-content">
+            <code>openclaw start</code>
+          </div>
+        </div>
+
+        <p>程序会引导你完成以下配置：</p>
+        <ul>
+          <li>选择 AI 提供商：<strong>Claude</strong> 或 <strong>OpenAI</strong></li>
+          <li>输入你的 API Key</li>
+          <li>其余选项可以直接回车使用默认值</li>
+        </ul>
+
+        <div class="verify-box">
+          <span class="verify-icon">✅</span>
+          <div class="verify-text">
+            <strong>验证方法</strong>
+            打开浏览器访问 <a href="http://localhost:3000" target="_blank"><code>http://localhost:3000</code></a>，能看到界面即表示成功启动！
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 步骤 5：Telegram -->
+    <div class="step-card">
+      <div class="step-header">
+        <div class="step-number">5</div>
+        <div class="step-title-group">
+          <h3>绑定 Telegram</h3>
+          <div class="step-subtitle">可选但强烈推荐，随时随地用手机聊天</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <p>绑定 Telegram 后，你可以用手机直接和小金助手聊天，非常方便。</p>
+
+        <ol class="tg-steps">
+          <li>打开 Telegram，在搜索框搜索 <code>@BotFather</code> 并点击进入</li>
+          <li>发送 <code>/newbot</code>，按提示给你的 Bot 起个名字（比如"我的小金"）和用户名</li>
+          <li>BotFather 会给你一串 <strong>Bot Token</strong>，格式类似 <code>1234567890:ABCDEF...</code>，复制保存好</li>
+          <li>回到 OpenClaw 配置界面，在 Telegram 插件设置中填入这个 Token</li>
+          <li>配置保存后，在 Telegram 搜索你刚创建的 Bot，点击开始聊天 🎉</li>
+        </ol>
+
+        <div class="verify-box">
+          <span class="verify-icon">✅</span>
+          <div class="verify-text">
+            <strong>验证方法</strong>
+            在 Telegram 中给你的 Bot 发一条消息，收到回复即表示配置成功！
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 常见问题 ===== -->
+  <section class="faq-section">
+    <div class="section-title">
+      <h2>常见问题</h2>
+      <p>遇到问题先看这里</p>
+    </div>
+
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-question">
+          <span class="q-badge">Q</span>
+          提示 <code>npm: command not found</code> 怎么办？
+        </div>
+        <div class="faq-answer">
+          说明 Node.js 没有安装成功，请重新执行第二步：<code>brew install node</code>。如果 <code>brew</code> 也找不到，则需要先重新执行第一步安装 Homebrew。
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          <span class="q-badge">Q</span>
+          API Key 在哪里申请？
+        </div>
+        <div class="faq-answer">
+          · <strong>Claude API Key</strong>：访问 <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>，注册账号后在 API Keys 页面创建<br>
+          · <strong>OpenAI API Key</strong>：访问 <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a>，登录后创建新 Key<br><br>
+          申请需要信用卡，建议先充值少量金额（$5 即可）开始体验。
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          <span class="q-badge">Q</span>
+          Gateway 是什么？
+        </div>
+        <div class="faq-answer">
+          Gateway 是 OpenClaw 的核心后台服务，负责接收来自 Telegram / 浏览器等渠道的消息，并调用 AI 生成回复。运行 <code>openclaw start</code> 时 Gateway 会自动启动。你也可以用 <code>openclaw gateway status</code> 查看运行状态。
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          <span class="q-badge">Q</span>
+          Apple Silicon Mac 上 <code>brew</code> 命令找不到？
+        </div>
+        <div class="faq-answer">
+          M 系列芯片的 Mac，Homebrew 安装在 <code>/opt/homebrew/</code> 目录下，需要手动让终端识别。在终端运行：<br>
+          <code>eval "$(/opt/homebrew/bin/brew shellenv)"</code><br><br>
+          要永久生效，可以将这行加入 <code>~/.zprofile</code> 文件中。
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          <span class="q-badge">Q</span>
+          如何关闭 / 重启 OpenClaw？
+        </div>
+        <div class="faq-answer">
+          · 查看状态：<code>openclaw gateway status</code><br>
+          · 停止服务：<code>openclaw gateway stop</code><br>
+          · 重启服务：<code>openclaw gateway restart</code>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 完成横幅 ===== -->
+  <section class="done-section">
+    <span class="done-emoji">🎉</span>
+    <h2>全部完成，开始使用吧！</h2>
+    <p>🌐 浏览器访问 <strong>http://localhost:3000</strong> 打开控制台</p>
+    <p>📱 通过 Telegram Bot 随时随地聊天</p>
+    <div class="done-links">
+      <a href="http://localhost:3000" class="done-link">🚀 打开控制台</a>
+      <a href="https://t.me/BotFather" target="_blank" class="done-link">🤖 前往 BotFather</a>
+    </div>
+  </section>
+</main>
+
+<!-- ===== 页脚 ===== -->
+<footer>
+  <p>由 <span class="heart">❤️</span> <strong>小金助手</strong> 生成 &nbsp;·&nbsp; OpenClaw 安装指南</p>
+</footer>
+
+<!-- ===== 复制代码功能 ===== -->
+<script>
+  function copyCode(btn) {
+    // 找到最近的 code-block，然后拿到代码文本
+    const block = btn.closest('.code-block');
+    const code = block.querySelector('code');
+    const text = code.innerText.trim();
+
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = '已复制 ✓';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = '复制';
+        btn.classList.remove('copied');
+      }, 2000);
+    }).catch(() => {
+      // 降级：创建临时文本框
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      btn.textContent = '已复制 ✓';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = '复制';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+</script>
+
+</body>
+</html>
