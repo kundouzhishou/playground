@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>贝宁互联网基础服务调研报告</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0f1117; color: #e2e8f0; font-family: -apple-system, 'PingFang SC', sans-serif; line-height: 1.7; }
+.container { max-width: 860px; margin: 0 auto; padding: 40px 20px; }
+header { border-bottom: 1px solid #2d3748; padding-bottom: 24px; margin-bottom: 32px; }
+header h1 { font-size: 1.8rem; color: #fff; margin-bottom: 8px; }
+.meta { color: #718096; font-size: 0.9rem; }
+.meta span { margin-right: 16px; }
+h2 { font-size: 1.3rem; color: #90cdf4; margin: 36px 0 16px; border-left: 3px solid #4299e1; padding-left: 12px; }
+h3 { font-size: 1.1rem; color: #bee3f8; margin: 24px 0 12px; }
+h4 { font-size: 1rem; color: #90cdf4; margin: 16px 0 8px; }
+p { margin-bottom: 12px; color: #cbd5e0; }
+.conclusion { background: #1a2744; border: 1px solid #4299e1; border-radius: 8px; padding: 20px 24px; margin: 24px 0; }
+.conclusion p { color: #e2e8f0; }
+ul, ol { padding-left: 20px; margin-bottom: 12px; color: #cbd5e0; }
+li { margin-bottom: 6px; }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
+th { background: #2d3748; color: #90cdf4; padding: 10px 12px; text-align: left; border: 1px solid #4a5568; }
+td { padding: 9px 12px; border: 1px solid #2d3748; color: #cbd5e0; }
+tr:nth-child(even) td { background: #1a202c; }
+strong { color: #e2e8f0; }
+.tag { display: inline-block; background: #2d3748; color: #90cdf4; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; margin-right: 6px; }
+footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid #2d3748; color: #4a5568; font-size: 0.85rem; text-align: center; }
+@media (max-width: 600px) { header h1 { font-size: 1.4rem; } table { font-size: 0.8rem; } }
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+  <h1>🌍 贝宁共和国互联网基础服务调研报告</h1>
+  <div class="meta">
+    <span>📊 Signal · 小金团队研究分析师</span>
+    <span>📅 2026-02-25</span>
+    <span>🎯 外卖 / 打车 / 租房平台可行性评估</span>
+  </div>
+</header>
+
+<div class="conclusion">
+  <h3>⚡ 核心结论</h3>
+  <p><strong>推荐优先切入方向：打车/出行平台（摩托车出行为主）</strong>，次选外卖/餐饮配送。</p>
+  <ul>
+    <li>贝宁互联网普及率仅 32%，但移动连接数已超过人口总数（110%），移动优先是唯一路径</li>
+    <li>科托努（Cotonou）是唯一有规模的城市市场，人口约 200 万</li>
+    <li>Bolt/Uber 均未进入贝宁，打车市场空白明显</li>
+    <li>移动支付基础设施（MTN MoMo、Moov Money）已存在，是平台化的关键支撑</li>
+    <li>主要风险：市场规模小、人均收入极低（名义 GDP 人均约 $1,790）</li>
+  </ul>
+  <p style="margin-top:8px;color:#718096;font-size:0.85rem">置信度：中等（数据来源 DataReportal 2026、Wikipedia、World Bank）</p>
+</div>
+
+<h2>一、基础情况</h2>
+<h3>1.1 人口与主要城市</h3>
+<table>
+<tr><th>指标</th><th>数据</th><th>来源</th></tr>
+<tr><td>总人口</td><td>约 1,490 万（2025年末）</td><td>DataReportal 2026</td></tr>
+<tr><td>年增长率</td><td>+2.4%/年</td><td>DataReportal 2026</td></tr>
+<tr><td>城镇化率</td><td>51.4%</td><td>DataReportal 2026</td></tr>
+<tr><td>中位年龄</td><td>18 岁（极年轻）</td><td>DataReportal 2026</td></tr>
+<tr><td>18-34岁人口占比</td><td>约 27.6%</td><td>DataReportal 2026</td></tr>
+</table>
+<p><strong>主要城市：</strong>科托努（最大城市，经济首都，约 200 万人）、波多诺伏（法定首都，约 30 万）、帕拉库（北部最大城市，约 25 万）。</p>
+<p><strong>关键判断：</strong>贝宁实际上是一个"单城市"市场，科托努集中了绝大多数中产阶级和互联网用户。</p>
+
+<h3>1.2 经济水平</h3>
+<table>
+<tr><th>指标</th><th>数据</th><th>来源</th></tr>
+<tr><td>名义 GDP</td><td>约 $274 亿（2026年估）</td><td>Wikipedia/IMF</td></tr>
+<tr><td>名义人均 GDP</td><td>约 $1,790</td><td>Wikipedia/IMF</td></tr>
+<tr><td>PPP 人均 GDP</td><td>约 $4,980</td><td>Wikipedia/IMF</td></tr>
+<tr><td>贫困率</td><td>约 36-49%</td><td>World Bank</td></tr>
+<tr><td>货币</td><td>西非法郎（XOF），与欧元挂钩</td><td>Wikipedia</td></tr>
+</table>
+
+<h3>1.3 互联网与智能手机普及率</h3>
+<table>
+<tr><th>指标</th><th>数据</th><th>来源</th></tr>
+<tr><td>互联网用户数</td><td>480 万（2025年末）</td><td>DataReportal 2026</td></tr>
+<tr><td>互联网普及率</td><td><strong>32.2%</strong></td><td>DataReportal 2026</td></tr>
+<tr><td>移动连接数</td><td>1,640 万（相当于人口的 110%）</td><td>DataReportal 2026</td></tr>
+<tr><td>宽带移动连接占比</td><td><strong>78.7%</strong>（3G/4G/5G）</td><td>DataReportal 2026</td></tr>
+<tr><td>社交媒体用户</td><td>250 万（16.8%）</td><td>DataReportal 2026</td></tr>
+</table>
+
+<h3>1.4 主要电信运营商</h3>
+<table>
+<tr><th>运营商</th><th>背景</th><th>移动支付产品</th></tr>
+<tr><td><strong>MTN Benin</strong></td><td>南非 MTN 集团旗下，非洲最大运营商</td><td>MTN Mobile Money (MoMo)</td></tr>
+<tr><td><strong>Moov Africa Benin</strong></td><td>摩洛哥电信旗下子公司</td><td>Moov Money</td></tr>
+</table>
+
+<h2>二、现有互联网服务</h2>
+<h3>2.1 外卖/餐饮配送</h3>
+<p><strong>现状：市场基本空白。</strong>Jumia Food 2023年已退出大部分非洲市场，Bolt Food 未进入贝宁，无已知规模化本地外卖平台。科托努存在一些非正式的 WhatsApp 点餐群组。</p>
+
+<h3>2.2 打车/出行</h3>
+<p><strong>现状：国际平台未进入，本地市场以摩托车出租（Zémidjan）为主。</strong>Uber/Bolt 均未进入贝宁。Zémidjan 是科托努最主要的城市交通方式，司机数量庞大，完全非正式化。</p>
+<p><strong>关键机会：</strong>Zémidjan 摩托车出行的平台化是贝宁最独特的机会，类比 Gojek 早期模式。</p>
+
+<h3>2.3 租房/房产</h3>
+<p>线上租房平台几乎不存在。房产交易主要通过中介、口耳相传、Facebook 群组进行。产权登记系统不完善，线上化难度较大。</p>
+
+<h3>2.4 社交媒体</h3>
+<p>Facebook 绝对主导，WhatsApp 是最主要的即时通讯工具，也是商业沟通的主要渠道。</p>
+
+<h2>三、市场机会评估</h2>
+<h3>3.1 三个方向对比</h3>
+<table>
+<tr><th>维度</th><th>打车/出行</th><th>外卖配送</th><th>租房平台</th></tr>
+<tr><td>市场空白度</td><td>★★★★★</td><td>★★★★</td><td>★★★★★</td></tr>
+<tr><td>用户需求强度</td><td>★★★★★</td><td>★★★</td><td>★★</td></tr>
+<tr><td>执行难度</td><td>★★★</td><td>★★★★</td><td>★★★★★</td></tr>
+<tr><td>竞争压力</td><td>★（几乎无）</td><td>★★</td><td>★（几乎无）</td></tr>
+<tr><td>综合评分</td><td><strong>最优</strong></td><td><strong>次优</strong></td><td><strong>暂不推荐</strong></td></tr>
+</table>
+
+<h3>3.2 政府政策</h3>
+<p>现任总统 Patrice Talon（商人出身）推行亲商政策，推进"贝宁数字化"转型。对外资互联网企业总体开放。<strong>有政府资源背景是核心竞争优势，应充分利用。</strong></p>
+
+<h2>四、参考案例</h2>
+<h3>非洲发展路径参考</h3>
+<ul>
+  <li><strong>肯尼亚：</strong>M-Pesa 奠定移动支付基础，成为整个数字经济底层设施。启示：支付基础设施是关键。</li>
+  <li><strong>多哥 Gozem：</strong>从摩托车打车起家，后扩展到贝宁、喀麦隆。证明了小市场摩托车出行平台的可行性。</li>
+  <li><strong>尼日利亚：</strong>规模效应很重要，贝宁市场太小，需要区域化思维。</li>
+</ul>
+
+<h2>五、结论与建议</h2>
+<h3>5.1 推荐方向</h3>
+<p><strong>首选：摩托车打车平台（Moto-taxi App）</strong></p>
+<ul>
+  <li>市场完全空白，Bolt/Uber 未进入，本地竞争者（Gozem）规模极小</li>
+  <li>Zémidjan 摩托车出行是科托努居民的刚需，需求已被验证</li>
+  <li>有政府资源背景可加速司机注册、安全监管等流程</li>
+  <li>可参考 Gojek 早期模式，从出行切入，逐步扩展到外卖、快递</li>
+</ul>
+<p><strong>次选：外卖/餐饮配送</strong>（与打车平台协同，复用摩托车运力）</p>
+
+<h3>5.2 关键成功因素</h3>
+<ol>
+  <li>地面运营能力（非洲市场高度依赖线下推广）</li>
+  <li>政府关系（核心优势，必须充分利用）</li>
+  <li>移动支付整合（同时接入 MTN MoMo 和 Moov Money）</li>
+  <li>摩托车司机社区运营（与 Zémidjan 行业协会合作）</li>
+  <li><strong>区域化思维（从第一天就规划扩展到多哥、科特迪瓦等邻国）</strong></li>
+</ol>
+
+<h3>5.3 主要风险</h3>
+<table>
+<tr><th>风险</th><th>等级</th><th>说明</th></tr>
+<tr><td>市场规模过小</td><td>高</td><td>科托努有效用户约 30-50 万，天花板明显</td></tr>
+<tr><td>人均消费能力低</td><td>高</td><td>名义人均 GDP $1,790，客单价和佣金空间有限</td></tr>
+<tr><td>互联网增长停滞</td><td>中</td><td>2022-2025 年普及率几乎未增长</td></tr>
+<tr><td>竞争者进入</td><td>中</td><td>Bolt 有能力随时进入，需快速建立网络效应</td></tr>
+<tr><td>汇率风险</td><td>低</td><td>XOF 与欧元挂钩，汇率稳定</td></tr>
+</table>
+
+<footer>
+  <p>Signal · 小金团队研究分析师 · 2026-02-25</p>
+  <p style="margin-top:4px">数据来源：DataReportal 2026、Wikipedia、IMF、World Bank</p>
+</footer>
+</div>
+</body>
+</html>
