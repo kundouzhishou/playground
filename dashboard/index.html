@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>小金指挥中心</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", sans-serif;
+      background: #0d0d0f;
+      color: #e2e2e6;
+      min-height: 100vh;
+      padding: 24px 16px 48px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: #fff;
+    }
+
+    header .subtitle {
+      font-size: 0.8rem;
+      color: #666;
+      margin-top: 4px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: #18181c;
+      border: 1px solid #2a2a30;
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .card-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 16px;
+    }
+
+    /* 状态指示灯 */
+    .dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+    .dot-green  { background: #22c55e; box-shadow: 0 0 6px #22c55e88; }
+    .dot-yellow { background: #eab308; box-shadow: 0 0 6px #eab30888; }
+    .dot-red    { background: #ef4444; box-shadow: 0 0 6px #ef444488; }
+
+    /* 区块1：系统状态 */
+    .sys-row {
+      display: flex;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #222228;
+      font-size: 0.9rem;
+    }
+    .sys-row:last-child { border-bottom: none; }
+    .sys-name { flex: 1; color: #ccc; }
+    .sys-status { font-size: 0.8rem; color: #aaa; }
+    .sys-time { font-size: 0.75rem; color: #555; margin-top: 12px; text-align: right; }
+
+    /* 区块2：Agent 卡片 */
+    .agents-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .agent-card {
+      background: #111115;
+      border: 1px solid #2a2a30;
+      border-radius: 10px;
+      padding: 14px;
+    }
+
+    .agent-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .agent-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      margin-right: 8px;
+    }
+
+    .agent-role {
+      font-size: 0.72rem;
+      color: #888;
+      margin-bottom: 8px;
+    }
+
+    .agent-status {
+      display: flex;
+      align-items: center;
+      font-size: 0.75rem;
+      color: #aaa;
+      margin-bottom: 8px;
+    }
+
+    .agent-desc {
+      font-size: 0.75rem;
+      color: #666;
+      line-height: 1.5;
+    }
+
+    /* 区块3：最近任务 */
+    .task-list { list-style: none; }
+    .task-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 9px 0;
+      border-bottom: 1px solid #1e1e24;
+      font-size: 0.875rem;
+      color: #ccc;
+      line-height: 1.4;
+    }
+    .task-list li:last-child { border-bottom: none; }
+    .task-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+    /* 区块4：JBot */
+    .jbot-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 0;
+      border-bottom: 1px solid #1e1e24;
+      font-size: 0.875rem;
+    }
+    .jbot-row:last-child { border-bottom: none; }
+    .jbot-label { color: #888; font-size: 0.78rem; }
+    .jbot-value { color: #e2e2e6; text-align: right; }
+    .jbot-link { color: #60a5fa; text-decoration: none; font-size: 0.8rem; }
+    .jbot-link:hover { text-decoration: underline; }
+
+    .badge {
+      display: inline-block;
+      background: #1e3a5f;
+      color: #60a5fa;
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+
+    /* 全宽卡片 */
+    .full-width { grid-column: 1 / -1; }
+
+    @media (max-width: 480px) {
+      header h1 { font-size: 1.4rem; }
+      .agents-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>⚡ 小金指挥中心</h1>
+  <div class="subtitle">Command Center · 实时状态</div>
+</header>
+
+<div class="grid">
+
+  <!-- 区块1：系统状态 -->
+  <div class="card">
+    <div class="card-title">系统状态</div>
+    <div class="sys-row">
+      <span class="dot dot-green"></span>
+      <span class="sys-name">Gateway（ms2）</span>
+      <span class="sys-status">运行中</span>
+    </div>
+    <div class="sys-row">
+      <span class="dot dot-green"></span>
+      <span class="sys-name">ms0 (J-MBP)</span>
+      <span class="sys-status">在线</span>
+    </div>
+    <div class="sys-row">
+      <span class="dot dot-yellow"></span>
+      <span class="sys-name">ms1 (Mac Pro)</span>
+      <span class="sys-status">配置中</span>
+    </div>
+    <div class="sys-time">最后更新：2026-02-25 17:50 UTC</div>
+  </div>
+
+  <!-- 区块4：JBot App -->
+  <div class="card">
+    <div class="card-title">JBot App</div>
+    <div class="jbot-row">
+      <span class="jbot-label">当前版本</span>
+      <span class="jbot-value"><span class="badge">v0.5.0 (build 11)</span></span>
+    </div>
+    <div class="jbot-row">
+      <span class="jbot-label">OTA Channel</span>
+      <span class="jbot-value">preview</span>
+    </div>
+    <div class="jbot-row">
+      <span class="jbot-label">最新更新</span>
+      <span class="jbot-value" style="font-size:0.8rem;color:#aaa;">修复静音 bug + 静音音效</span>
+    </div>
+    <div class="jbot-row">
+      <span class="jbot-label">安装链接</span>
+      <span class="jbot-value">
+        <a class="jbot-link" href="https://kundouzhishou.github.io/playground/jbot/" target="_blank">打开安装页 →</a>
+      </span>
+    </div>
+  </div>
+
+  <!-- 区块2：Agent 团队 -->
+  <div class="card full-width">
+    <div class="card-title">Agent 团队</div>
+    <div class="agents-grid">
+
+      <div class="agent-card">
+        <div class="agent-header">
+          <span class="agent-name">Forge</span>
+        </div>
+        <div class="agent-role">全栈工程师</div>
+        <div class="agent-status">
+          <span class="dot dot-yellow"></span>配置中
+        </div>
+        <div class="agent-desc">ms1 环境安装中，负责全栈开发与系统集成</div>
+      </div>
+
+      <div class="agent-card">
+        <div class="agent-header">
+          <span class="agent-name">Lens</span>
+        </div>
+        <div class="agent-role">UI/UX 设计师</div>
+        <div class="agent-status">
+          <span class="dot dot-yellow"></span>配置中
+        </div>
+        <div class="agent-desc">负责产品视觉设计与用户体验优化</div>
+      </div>
+
+      <div class="agent-card">
+        <div class="agent-header">
+          <span class="agent-name">Fault</span>
+        </div>
+        <div class="agent-role">QA 测试工程师</div>
+        <div class="agent-status">
+          <span class="dot dot-yellow"></span>配置中
+        </div>
+        <div class="agent-desc">负责质量保障、测试覆盖与 bug 追踪</div>
+      </div>
+
+      <div class="agent-card">
+        <div class="agent-header">
+          <span class="agent-name">Echo</span>
+        </div>
+        <div class="agent-role">增长/内容运营</div>
+        <div class="agent-status">
+          <span class="dot dot-yellow"></span>配置中
+        </div>
+        <div class="agent-desc">负责内容创作、用户增长与社区运营</div>
+      </div>
+
+      <div class="agent-card">
+        <div class="agent-header">
+          <span class="agent-name">Signal</span>
+        </div>
+        <div class="agent-role">研究分析师</div>
+        <div class="agent-status">
+          <span class="dot dot-yellow"></span>配置中
+        </div>
+        <div class="agent-desc">负责市场研究、数据分析与竞品洞察</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 区块3：最近任务 -->
+  <div class="card full-width">
+    <div class="card-title">今日任务</div>
+    <ul class="task-list">
+      <li><span class="task-icon">✅</span><span>v0.5.0 构建并发布（build 9）</span></li>
+      <li><span class="task-icon">✅</span><span>静音 bug 修复 OTA 推送（build 11）</span></li>
+      <li><span class="task-icon">✅</span><span>Agent 团队 SOUL.md 设计完成（5个角色）</span></li>
+      <li><span class="task-icon">✅</span><span>OpenClaw 安装指南发布</span></li>
+      <li><span class="task-icon">🔄</span><span>ms1 Agent 环境安装中</span></li>
+    </ul>
+  </div>
+
+</div>
+
+</body>
+</html>
