@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZemGo App Prototype</title>
+    <style>
+        /* ZemGo Design Tokens */
+        :root {
+            --primary-green: #00A651;
+            --primary-yellow: #FCD116;
+            --dark-gray: #333333;
+            --medium-gray: #666666;
+            --light-gray: #CCCCCC;
+            --background-gray: #F5F5F5;
+            --white: #FFFFFF;
+            --dark-bg: #1A1A1A;
+
+            --font-h1: 32px;
+            --font-h2: 24px;
+            --font-h3: 20px;
+            --font-body-large: 16px;
+            --font-body-medium: 14px;
+            --font-body-small: 12px;
+            --font-caption: 10px;
+
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+
+            --border-radius-sm: 4px;
+            --border-radius-md: 8px;
+            --border-radius-lg: 12px;
+            --border-radius-full: 999px;
+
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.15);
+            --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: var(--background-gray);
+            overflow: hidden;
+            flex-direction: column; /* 垂直居中 */
+        }
+
+        /* Phone Frame */
+        .iphone-frame {
+            position: relative;
+            width: 375px; /* iPhone X/XS/11 Pro standard width */
+            height: 812px; /* iPhone X/XS/11 Pro standard height */
+            background: var(--dark-gray);
+            border-radius: 50px;
+            box-shadow: var(--shadow-lg);
+            padding: 15px; /* Frame thickness */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden; /* Hide screen overflow */
+            margin: var(--spacing-xl) 0; /* Margin for overall layout */
+        }
+
+        .iphone-frame::before { /* Notch */
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 30px;
+            background: var(--dark-gray);
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+            z-index: 100;
+        }
+
+        .iphone-frame::after { /* Speaker */
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 6px;
+            background: var(--medium-gray);
+            border-radius: var(--border-radius-full);
+            z-index: 101;
+        }
+
+        /* Screen Container */
+        .screen-container {
+            width: 100%;
+            height: 100%;
+            background-color: var(--white);
+            border-radius: 35px;
+            position: relative;
+            overflow: hidden; /* Important for screen transitions */
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--white);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: var(--spacing-md);
+            box-sizing: border-box;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+
+        .screen.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* ZemGo Logo (CSS/SVG Z shape) */
+        .zemgo-logo {
+            width: 80px;
+            height: 80px;
+            position: relative;
+            overflow: hidden;
+            transform: rotate(-15deg); /* Slight rotation for dynamic feel */
+        }
+        .zemgo-logo::before, .zemgo-logo::after {
+            content: '';
+            position: absolute;
+            background-color: var(--primary-green);
+        }
+        .zemgo-logo::before { /* Top bar */
+            width: 80%;
+            height: 15%;
+            top: 0;
+            left: 0;
+            border-radius: var(--border-radius-sm);
+        }
+        .zemgo-logo::after { /* Bottom bar */
+            width: 80%;
+            height: 15%;
+            bottom: 0;
+            right: 0;
+            border-radius: var(--border-radius-sm);
+        }
+        .zemgo-logo .diagonal {
+            position: absolute;
+            width: 15%;
+            height: 100%;
+            background-color: var(--primary-green);
+            left: 50%;
+            transform: translateX(-50%) rotate(75deg); /* Adjust rotation to connect */
+            border-radius: var(--border-radius-sm);
+        }
+
+        /* Splash Screen */
+        #splash-screen {
+            background-color: var(--primary-green);
+            justify-content: center;
+        }
+        #splash-screen .zemgo-logo {
+            width: 120px;
+            height: 120px;
+            transform: rotate(-15deg);
+        }
+        #splash-screen .zemgo-logo::before { width: 90%; height: 18%; }
+        #splash-screen .zemgo-logo::after { width: 90%; height: 18%; }
+        #splash-screen .zemgo-logo .diagonal { width: 18%; }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        #splash-screen .zemgo-logo {
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+
+        /* Home Screen */
+        #home-screen {
+            background-color: var(--primary-green); /* Map background */
+            justify-content: flex-start;
+            padding: 0;
+            position: relative;
+            overflow: hidden;
+        }
+        #home-screen .header {
+            width: 100%;
+            height: 60px;
+            background-color: var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--spacing-md);
+            box-sizing: border-box;
+            box-shadow: var(--shadow-sm);
+            z-index: 10;
+        }
+        #home-screen .header .menu-icon,
+        #home-screen .header .profile-icon {
+            font-size: var(--font-h3);
+            color: var(--dark-gray);
+        }
+        #home-screen .search-input {
+            flex-grow: 1;
+            margin: 0 var(--spacing-sm);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--border-radius-full);
+            border: 1px solid var(--light-gray);
+            font-size: var(--font-body-medium);
+            background-color: var(--background-gray);
+            color: var(--dark-gray);
+        }
+        #home-screen .map-overlay {
+            position: absolute;
+            top: 60px; /* Below header */
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            align-items: center;
+            color: var(--white);
+            font-size: var(--font-h1);
+        }
+        #home-screen .map-overlay span {
+            display: block;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        #home-screen .ride-card {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--white);
+            border-top-left-radius: var(--border-radius-lg);
+            border-top-right-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: var(--spacing-md);
+            padding-bottom: var(--spacing-xl); /* Space for bottom content */
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform: translateY(0);
+            transition: transform 0.3s ease-in-out;
+            z-index: 11;
+        }
+        #home-screen .ride-card .handle {
+            width: 40px;
+            height: 5px;
+            background-color: var(--light-gray);
+            border-radius: var(--border-radius-full);
+            margin-bottom: var(--spacing-md);
+        }
+        #home-screen .ride-options {
+            display: flex;
+            gap: var(--spacing-md);
+            width: 100%;
+            justify-content: center;
+        }
+        #home-screen .ride-option-btn {
+            flex: 1;
+            max-width: 150px;
+            padding: var(--spacing-md);
+            background-color: var(--background-gray);
+            border-radius: var(--border-radius-md);
+            border: 1px solid var(--light-gray);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+        #home-screen .ride-option-btn.selected {
+            background-color: var(--primary-yellow);
+            border-color: var(--primary-yellow);
+        }
+        #home-screen .ride-option-btn span {
+            font-size: var(--font-h3);
+            margin-bottom: var(--spacing-xs);
+        }
+        #home-screen .ride-option-btn small {
+            font-size: var(--font-body-small);
+            color: var(--medium-gray);
+        }
+
+        /* SelectRide Screen */
+        #select-ride-screen {
+            justify-content: space-between;
+            padding-top: var(--spacing-xl);
+            padding-bottom: var(--spacing-xl);
+            background-color: var(--background-gray);
+        }
+        #select-ride-screen h2 {
+            font-size: var(--font-h2);
+            color: var(--dark-gray);
+            margin-bottom: var(--spacing-xl);
+            text-align: center;
+        }
+        #select-ride-screen .ride-choice-container {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+            width: 100%;
+            max-width: 300px;
+            flex-grow: 1;
+            justify-content: center;
+        }
+        #select-ride-screen .ride-choice-card {
+            background-color: var(--white);
+            border-radius: var(--border-radius-md);
+            box-shadow: var(--shadow-sm);
+            padding: var(--spacing-lg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        #select-ride-screen .ride-choice-card.selected {
+            border-color: var(--primary-green);
+            box-shadow: 0 0 0 4px rgba(0, 166, 81, 0.2);
+        }
+        #select-ride-screen .ride-choice-card span {
+            font-size: var(--font-h1);
+            margin-bottom: var(--spacing-sm);
+        }
+        #select-ride-screen .ride-choice-card p {
+            font-size: var(--font-body-large);
+            color: var(--dark-gray);
+            margin: 0;
+            font-weight: var(--font-weights-bold);
+        }
+        #select-ride-screen .ride-choice-card small {
+            font-size: var(--font-body-medium);
+            color: var(--medium-gray);
+        }
+        .btn-confirm {
+            width: calc(100% - 2 * var(--spacing-md)); /* Adjust for padding */
+            max-width: 300px;
+            padding: var(--spacing-md);
+            background-color: var(--primary-green);
+            color: var(--white);
+            border: none;
+            border-radius: var(--border-radius-md);
+            font-size: var(--font-body-large);
+            font-weight: var(--font-weights-semi-bold);
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            margin-top: var(--spacing-xl);
+        }
+        .btn-confirm:hover {
+            background-color: #008f45; /* Darker green */
+        }
+
+        /* Matching Screen */
+        #matching-screen {
+            background-color: var(--background-gray);
+            text-align: center;
+        }
+        #matching-screen .matching-animation {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin-bottom: var(--spacing-xl);
+        }
+        .matching-animation .circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            border: 2px solid var(--primary-green);
+            opacity: 0;
+            transform: translate(-50%, -50%);
+            animation: expand-fade 2s infinite ease-out;
+        }
+        .matching-animation .circle:nth-child(2) { animation-delay: 0.5s; }
+        .matching-animation .circle:nth-child(3) { animation-delay: 1s; }
+
+        @keyframes expand-fade {
+            0% { width: 0; height: 0; opacity: 1; border-width: 4px;}
+            100% { width: 200px; height: 200px; opacity: 0; border-width: 1px;}
+        }
+        #matching-screen p {
+            font-size: var(--font-h3);
+            color: var(--dark-gray);
+            margin: 0;
+            margin-bottom: var(--spacing-sm);
+        }
+        #matching-screen small {
+            font-size: var(--font-body-medium);
+            color: var(--medium-gray);
+        }
+
+        /* DriverFound Screen */
+        #driver-found-screen {
+            justify-content: flex-start;
+            padding-top: var(--spacing-md);
+            background-color: var(--background-gray);
+        }
+        #driver-found-screen .header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-md);
+            padding: 0 var(--spacing-md);
+            box-sizing: border-box;
+        }
+        #driver-found-screen .header button {
+            background: none;
+            border: none;
+            font-size: var(--font-h3);
+            color: var(--dark-gray);
+            cursor: pointer;
+        }
+        #driver-found-screen .header h3 {
+            font-size: var(--font-h3);
+            color: var(--dark-gray);
+            margin: 0;
+        }
+
+        #driver-found-screen .driver-info-card {
+            background-color: var(--white);
+            border-radius: var(--border-radius-md);
+            box-shadow: var(--shadow-sm);
+            padding: var(--spacing-lg);
+            margin: var(--spacing-md);
+            width: calc(100% - 2 * var(--spacing-md));
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        #driver-found-screen .driver-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: var(--border-radius-full);
+            background-color: var(--light-gray);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 40px;
+            color: var(--medium-gray);
+            margin-bottom: var(--spacing-md);
+            border: 2px solid var(--primary-green);
+        }
+        #driver-found-screen .driver-name {
+            font-size: var(--font-h2);
+            color: var(--dark-gray);
+            margin: 0 0 var(--spacing-xs) 0;
+        }
+        #driver-found-screen .driver-rating,
+        #driver-found-screen .car-plate {
+            font-size: var(--font-body-medium);
+            color: var(--medium-gray);
+            margin: 0 0 var(--spacing-xs) 0;
+        }
+        #driver-found-screen .eta {
+            font-size: var(--font-h1);
+            color: var(--primary-green);
+            font-weight: var(--font-weights-bold);
+            margin-top: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        #driver-found-screen .payment-options-container {
+            width: calc(100% - 2 * var(--spacing-md));
+            margin: var(--spacing-md);
+            box-sizing: border-box;
+        }
+        #driver-found-screen .payment-options-container h4 {
+            font-size: var(--font-body-large);
+            color: var(--dark-gray);
+            margin-top: var(--spacing-xl);
+            margin-bottom: var(--spacing-md);
+            text-align: center;
+        }
+        #driver-found-screen .payment-options {
+            display: flex;
+            justify-content: center;
+            gap: var(--spacing-md);
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+        }
+        #driver-found-screen .payment-option-btn {
+            padding: var(--spacing-md);
+            background-color: var(--white);
+            border: 1px solid var(--light-gray);
+            border-radius: var(--border-radius-md);
+            font-size: var(--font-body-medium);
+            color: var(--dark-gray);
+            cursor: pointer;
+            flex-grow: 1;
+            text-align: center;
+            max-width: 100px; /* Limit width */
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+        }
+        #driver-found-screen .payment-option-btn.selected {
+            border-color: var(--primary-yellow);
+            background-color: rgba(252, 209, 22, 0.2);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            .iphone-frame {
+                width: 100%;
+                height: 100vh;
+                border-radius: 0;
+                padding: 0;
+                box-shadow: none;
+                margin: 0;
+            }
+            .iphone-frame::before, .iphone-frame::after {
+                display: none; /* Hide notch/speaker on full screen mobile */
+            }
+            .screen-container {
+                border-radius: 0;
+            }
+            .btn-confirm {
+                width: calc(100% - 2 * var(--spacing-lg));
+            }
+            #driver-found-screen .payment-option-btn {
+                max-width: unset; /* Remove max-width for smaller screens */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="iphone-frame">
+        <div class="screen-container">
+            <!-- Splash Screen -->
+            <div id="splash-screen" class="screen active">
+                <div class="zemgo-logo">
+                    <div class="diagonal"></div>
+                </div>
+            </div>
+
+            <!-- Home Screen -->
+            <div id="home-screen" class="screen">
+                <div class="header">
+                    <span class="menu-icon">☰</span>
+                    <input type="text" class="search-input" placeholder="Rechercher une destination...">
+                    <span class="profile-icon">👤</span>
+                </div>
+                <div class="map-overlay">
+                    <span>🏍️</span>
+                    <span>🏍️</span>
+                    <span>🏍️</span>
+                    <span style="font-size: var(--font-body-large);">Cotonou</span>
+                </div>
+                <div class="ride-card">
+                    <div class="handle"></div>
+                    <div class="ride-options">
+                        <div class="ride-option-btn selected" data-ride="moto">
+                            <span>🏍️ Moto</span>
+                            <small>~ 1500 FCFA</small>
+                        </div>
+                        <div class="ride-option-btn" data-ride="voiture">
+                            <span>🚗 Voiture</span>
+                            <small>~ 3000 FCFA</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SelectRide Screen -->
+            <div id="select-ride-screen" class="screen">
+                <h2>Sélectionnez votre véhicule</h2>
+                <div class="ride-choice-container">
+                    <div class="ride-choice-card selected" data-ride="moto">
+                        <span>🏍️</span>
+                        <p>Moto</p>
+                        <small>~ 1500 FCFA</small>
+                    </div>
+                    <div class="ride-choice-card" data-ride="voiture">
+                        <span>🚗</span>
+                        <p>Voiture</p>
+                        <small>~ 3000 FCFA</small>
+                    </div>
+                </div>
+                <button class="btn-confirm">Confirmer</button>
+            </div>
+
+            <!-- Matching Screen -->
+            <div id="matching-screen" class="screen">
+                <div class="matching-animation">
+                    <div class="circle"></div>
+                    <div class="circle"></div>
+                    <div class="circle"></div>
+                    <div class="zemgo-logo" style="width: 80px; height: 80px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg);">
+                        <div class="diagonal"></div>
+                    </div>
+                </div>
+                <p>Recherche en cours...</p>
+                <small>Votre chauffeur arrive bientôt</small>
+            </div>
+
+            <!-- DriverFound Screen -->
+            <div id="driver-found-screen" class="screen">
+                <div class="header">
+                    <button>←</button>
+                    <h3>Détails de la commande</h3>
+                    <span></span>
+                </div>
+                <div class="driver-info-card">
+                    <div class="driver-avatar">👨</div>
+                    <p class="driver-name">Jean Dupont (4.8⭐)</p>
+                    <p class="car-plate">BJ-123-AB</p>
+                    <p class="eta">Arrivée estimée: 3 min</p>
+                </div>
+
+                <div class="payment-options-container">
+                    <h4>Sélectionnez le mode de paiement</h4>
+                    <div class="payment-options">
+                        <div class="payment-option-btn selected">MTN MoMo</div>
+                        <div class="payment-option-btn">Moov Money</div>
+                        <div class="payment-option-btn">Espèces</div>
+                    </div>
+                </div>
+                <button class="btn-confirm" style="margin-top: auto;">Confirmer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const screens = document.querySelectorAll('.screen');
+        let currentScreenIndex = 0;
+
+        function showScreen(index) {
+            screens.forEach((screen, i) => {
+                if (i === index) {
+                    screen.classList.add('active');
+                } else {
+                    screen.classList.remove('active');
+                }
+            });
+            currentScreenIndex = index;
+        }
+
+        // Initial screen: Splash
+        showScreen(0);
+
+        // Splash to Home after 2 seconds
+        setTimeout(() => {
+            showScreen(1);
+        }, 2000);
+
+        // Home to SelectRide (click any ride option or the card itself)
+        document.querySelectorAll('#home-screen .ride-option-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#home-screen .ride-option-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                // For prototype, any click advances to next screen
+                showScreen(2);
+            });
+        });
+
+        // SelectRide to Matching (click Confirm)
+        document.querySelector('#select-ride-screen .btn-confirm').addEventListener('click', () => {
+            showScreen(3);
+            // Matching screen automatically proceeds to DriverFound after a delay
+            setTimeout(() => {
+                showScreen(4);
+            }, 3000); // Simulate matching time
+        });
+
+        // SelectRide: Toggle selected ride card
+        document.querySelectorAll('#select-ride-screen .ride-choice-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.querySelectorAll('#select-ride-screen .ride-choice-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+            });
+        });
+
+        // DriverFound: Toggle payment option
+        document.querySelectorAll('#driver-found-screen .payment-option-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#driver-found-screen .payment-option-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+            });
+        });
+
+        // DriverFound: Confirm button (for now, just log and stay)
+        document.querySelector('#driver-found-screen .btn-confirm').addEventListener('click', () => {
+            console.log("Order confirmed!");
+            alert("Commande confirmée!"); // Or navigate back to Home if a full flow was intended
+        });
+
+        // Optional: Navigation back from DriverFound to Home for full loop
+        document.querySelector('#driver-found-screen .header button').addEventListener('click', () => {
+            showScreen(1); // Go back to Home
+        });
+
+    </script>
+</body>
+</html>
