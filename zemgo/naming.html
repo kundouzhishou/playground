@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>品牌命名调研 — 贝宁摩托车打车平台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface-hover: #1a1a24;
+    --border: #2a2a3a;
+    --text: #e8e6f0;
+    --text-dim: #8a87a0;
+    --accent: #f5a623;
+    --accent-glow: rgba(245, 166, 35, 0.15);
+    --green: #34d399;
+    --green-dim: rgba(52, 211, 153, 0.12);
+    --yellow: #fbbf24;
+    --yellow-dim: rgba(251, 191, 36, 0.12);
+    --red: #f87171;
+    --red-dim: rgba(248, 113, 113, 0.12);
+    --blue: #60a5fa;
+    --purple: #a78bfa;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Noise overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* Gradient orbs */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.07;
+    pointer-events: none;
+  }
+  .orb-1 { width: 600px; height: 600px; background: var(--accent); top: -200px; right: -100px; }
+  .orb-2 { width: 500px; height: 500px; background: var(--purple); bottom: -150px; left: -100px; }
+  .orb-3 { width: 400px; height: 400px; background: var(--blue); top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Hero */
+  .hero {
+    padding: 80px 0 60px;
+    text-align: center;
+    position: relative;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    background: var(--accent-glow);
+    border: 1px solid rgba(245, 166, 35, 0.25);
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+    animation: fadeDown 0.6s ease;
+  }
+
+  .hero-badge::before {
+    content: '🏍️';
+  }
+
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.8rem, 6vw, 4.5rem);
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 20px;
+    animation: fadeDown 0.8s ease;
+  }
+
+  .hero h1 em {
+    color: var(--accent);
+    font-style: italic;
+  }
+
+  .hero-sub {
+    font-size: 1.15rem;
+    color: var(--text-dim);
+    max-width: 600px;
+    margin: 0 auto;
+    animation: fadeDown 1s ease;
+  }
+
+  /* Section headers */
+  .section-header {
+    margin: 64px 0 32px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+  }
+
+  .section-header p {
+    color: var(--text-dim);
+    margin-top: 8px;
+    font-size: 0.95rem;
+  }
+
+  /* Context cards */
+  .context-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin: 32px 0;
+  }
+
+  .context-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    transition: all 0.3s ease;
+  }
+
+  .context-card:hover {
+    border-color: rgba(245, 166, 35, 0.3);
+    transform: translateY(-2px);
+  }
+
+  .context-card .label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .context-card .value {
+    font-size: 1.1rem;
+    font-weight: 500;
+  }
+
+  /* Name cards */
+  .names-grid {
+    display: grid;
+    gap: 12px;
+  }
+
+  .name-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 28px;
+    display: grid;
+    grid-template-columns: 180px 1fr auto;
+    align-items: center;
+    gap: 24px;
+    transition: all 0.3s ease;
+    cursor: default;
+    animation: fadeUp 0.5s ease backwards;
+  }
+
+  .name-card:nth-child(1) { animation-delay: 0.05s; }
+  .name-card:nth-child(2) { animation-delay: 0.1s; }
+  .name-card:nth-child(3) { animation-delay: 0.15s; }
+  .name-card:nth-child(4) { animation-delay: 0.2s; }
+  .name-card:nth-child(5) { animation-delay: 0.25s; }
+  .name-card:nth-child(6) { animation-delay: 0.3s; }
+  .name-card:nth-child(7) { animation-delay: 0.35s; }
+  .name-card:nth-child(8) { animation-delay: 0.4s; }
+  .name-card:nth-child(9) { animation-delay: 0.45s; }
+  .name-card:nth-child(10) { animation-delay: 0.5s; }
+  .name-card:nth-child(11) { animation-delay: 0.55s; }
+  .name-card:nth-child(12) { animation-delay: 0.6s; }
+  .name-card:nth-child(13) { animation-delay: 0.65s; }
+  .name-card:nth-child(14) { animation-delay: 0.7s; }
+  .name-card:nth-child(15) { animation-delay: 0.75s; }
+  .name-card:nth-child(16) { animation-delay: 0.8s; }
+  .name-card:nth-child(17) { animation-delay: 0.85s; }
+  .name-card:nth-child(18) { animation-delay: 0.9s; }
+
+  .name-card:hover {
+    background: var(--surface-hover);
+    border-color: rgba(245, 166, 35, 0.2);
+    transform: translateX(4px);
+  }
+
+  .name-card.recommended {
+    border-color: rgba(52, 211, 153, 0.3);
+    background: linear-gradient(135deg, var(--surface) 0%, rgba(52, 211, 153, 0.04) 100%);
+  }
+
+  .name-card.recommended:hover {
+    border-color: rgba(52, 211, 153, 0.5);
+  }
+
+  .name-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .name-main .brand-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  .name-main .brand-name .star {
+    color: var(--green);
+    font-size: 0.8em;
+    margin-left: 6px;
+  }
+
+  .name-main .origin {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+  }
+
+  .name-details {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .name-details .desc {
+    font-size: 0.92rem;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  .name-details .conflict {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  .risk-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    min-width: 70px;
+    justify-content: center;
+  }
+
+  .risk-low {
+    background: var(--green-dim);
+    color: var(--green);
+    border: 1px solid rgba(52, 211, 153, 0.2);
+  }
+
+  .risk-medium {
+    background: var(--yellow-dim);
+    color: var(--yellow);
+    border: 1px solid rgba(251, 191, 36, 0.2);
+  }
+
+  .risk-high {
+    background: var(--red-dim);
+    color: var(--red);
+    border: 1px solid rgba(248, 113, 113, 0.2);
+  }
+
+  /* Top picks */
+  .top-picks {
+    margin: 48px 0;
+    padding: 36px;
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.06) 0%, rgba(96, 165, 250, 0.04) 100%);
+    border: 1px solid rgba(52, 211, 153, 0.15);
+    border-radius: 16px;
+  }
+
+  .top-picks h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .top-picks h3::before {
+    content: '🏆';
+  }
+
+  .top-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .top-item {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .top-item .rank {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .top-item .name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.3rem;
+    font-weight: 600;
+  }
+
+  .top-item .reason {
+    font-size: 0.88rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* Competitor landscape */
+  .competitors {
+    margin: 48px 0;
+    padding: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  .competitors h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    margin-bottom: 16px;
+    color: var(--text-dim);
+  }
+
+  .comp-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .comp-tag {
+    padding: 6px 14px;
+    background: rgba(248, 113, 113, 0.08);
+    border: 1px solid rgba(248, 113, 113, 0.15);
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--red);
+  }
+
+  /* Methodology */
+  .methodology {
+    margin: 48px 0 80px;
+    padding: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-dim);
+    font-size: 0.88rem;
+    line-height: 1.8;
+  }
+
+  .methodology h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+
+  .methodology ul {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .methodology li {
+    padding-left: 20px;
+    position: relative;
+    margin-bottom: 4px;
+  }
+
+  .methodology li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+  }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 40px 0;
+    color: var(--text-dim);
+    font-size: 0.82rem;
+    border-top: 1px solid var(--border);
+  }
+
+  footer span {
+    color: var(--accent);
+  }
+
+  /* Animations */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .name-card {
+      grid-template-columns: 1fr;
+      gap: 12px;
+      padding: 20px;
+    }
+
+    .name-main .brand-name {
+      font-size: 1.3rem;
+    }
+
+    .risk-badge {
+      justify-self: start;
+    }
+
+    .hero { padding: 48px 0 36px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="container">
+
+  <!-- Hero -->
+  <header class="hero">
+    <div class="hero-badge">品牌命名调研</div>
+    <h1>贝宁摩托车打车平台<br><em>品牌名筛选</em></h1>
+    <p class="hero-sub">从 Zémidjan 出发，为科托努乃至法语西非打造一个令人难忘的出行品牌。18 个候选名 × 品牌冲突排查。</p>
+  </header>
+
+  <!-- Context -->
+  <div class="context-grid">
+    <div class="context-card">
+      <div class="label">目标市场</div>
+      <div class="value">🇧🇯 贝宁科托努 → 法语西非</div>
+    </div>
+    <div class="context-card">
+      <div class="label">产品形态</div>
+      <div class="value">摩托车打车平台 App</div>
+    </div>
+    <div class="context-card">
+      <div class="label">灵感来源</div>
+      <div class="value">Zémidjan（贝宁摩的）</div>
+    </div>
+    <div class="context-card">
+      <div class="label">弃用名</div>
+      <div class="value" style="color: var(--red);">zemgo ✕ 与 Gozem 太像</div>
+    </div>
+  </div>
+
+  <!-- Competitors -->
+  <div class="competitors">
+    <h3>⚠️ 已知竞争对手 — 选名时必须回避</h3>
+    <div class="comp-list">
+      <span class="comp-tag">Gozem</span>
+      <span class="comp-tag">WA ZEMI</span>
+      <span class="comp-tag">Bolt</span>
+      <span class="comp-tag">Yango</span>
+      <span class="comp-tag">InDriver</span>
+      <span class="comp-tag">Heetch</span>
+      <span class="comp-tag">SafeMotos</span>
+      <span class="comp-tag">MaxIt (formerly MAX)</span>
+    </div>
+  </div>
+
+  <!-- Naming candidates -->
+  <div class="section-header">
+    <h2>候选名单</h2>
+    <p>18 个候选品牌名，按冲突风险排列：低风险优先</p>
+  </div>
+
+  <div class="names-grid">
+
+    <!-- ★ LOW RISK — Recommended -->
+    <div class="name-card recommended">
+      <div class="name-main">
+        <div class="brand-name">Voomba<span class="star">★</span></div>
+        <div class="origin">Voom（速度声）+ ba（非洲韵律）</div>
+      </div>
+      <div class="name-details">
+        <div class="desc">动感十足的拟声词，法语英语都好发音，有摩托引擎轰鸣感。ba 结尾有西非语言的亲切感。</div>
+        <div class="conflict">未发现同名出行/科技品牌。仅有少量无关搜索结果。</div>
+      </div>
+      <span class="risk-badge risk-low">● 低风险</span>
+    </div>
+
+    <div class="name-card recommended">
+      <div class="name-main">
+        <div class="brand-name">Zipta<span class="star">★</span></div>
+        <div class="origin">Zip（快速）+ ta（走吧/出发）</div>
+      </div>
+      <div class="name-details">
+        <div class="desc">简洁有力，暗示快速出发。法语和英语中都无歧义，5个字母好记好打。</div>
+        <div class="conflict">未发现同名知名品牌或 App。搜索结果空白，域名可能可注册。</div>
+      </div>
+      <span class="risk-badge risk-low">● 低风险</span>
+    </div>
+
+    <div class="name-card recommended">
+      <div class="name-main">
+        <div class="brand-name">Djanko<span class="star">★</span></div>
+        <div class="origin">Djan（Fon语「骑」）+ ko</div>
+      </div>
+      <div class="name-details">
+        <div class="desc">深度融合贝宁 Fon 语文化。Djan 源自 Zémidjan 中的"骑坐"之意，ko 让发音更有力。</div>
+        <div class="conflict">与 Python 框架 Django 发音近似，但拼写不同，且在出行领域无直接冲突。在非洲市场无同名品牌。</div>
+      </div>
+      <span class="risk-badge risk-low">● 低风险</span>
+    </div>
+
+    <div class="name-card recommended">
+      <div class="name-main">
+        <div class="brand-name">Tazémi<span class="star">★</span></div>
+        <div class="origin">Ta（法语「你的」）+ Zémi（摩的缩写）</div>
+      </div>
+      <div class="name-details">
+        <div class="desc">「你的摩的」— 直接传达私人出行服务感。保留 Zémidjan 的文化根基，加了归属感。</div>
+        <div class="conflict">未发现同名品牌或公司。原创组合词。</div>
+      </div>
+      <span class="risk-badge risk-low">● 低风险</span>
+    </div>
+
+    <div class="name-card">
+      <div class="name-main">
+        <div class="brand-name">Rapimoto</div>
+        <div class="origin">Rapide（法语「快」）+ Moto</div>
+      </div>
+      <div class="name-details">
+        <div class="desc">一听就懂 — "快速摩托"。法语母语者零学习成本，直白有力。</div>
+        <div class="conflict">未找到完全同名品牌。但"Rappi"是拉美知名配送平台，有一定联想风险。</div>
+      </div>
+      <span class="risk-badge risk-low">● 低风险</span>
+    </div>
+
+    <div class="name-card">
+      <div class="name-main">
+        <div class="brand-name">Filaway</div>
+        <div class="origin">Fila（Fon语「跑」）+ way（路）</div>
+      </div>
+      <div class="name-details">
+        <div class="desc">融合本地语言和英语，暗示"跑起来的路"。简洁国际化。</div>
+        <div class="conflict">Fila 是知名运动品牌，但 Filaway 作为整体词未见同名使用。</div>
+      </div>
+      <span class="risk-badge risk-low">● 低风险</span>
+    </div>
+
+    <div class="name-card">
+      <div class="name-main">
+        <div class="brand-name">Allôzem</div>
+        <div class="origin">Allô（法语「喂」）+ Zem（摩的）</div>
+      </div>
+      <div class="name-details">
+        <div class="desc">场景感极强 — 就像在路边喊"喂，摩的！"。日常、亲切、地道。</div>
+        <div class="conflict">未见同名品牌。但包含"zem"可能让人联想到竞品 Gozem / WA ZEMI。</div>
+      </div>
+      <span class="risk-badge risk-low">● 低风险</span>
+    </div>
+
+    <div class="name-card">
+      <div class="name-main">
+        <div class="brand-name">Motofly</div>
+        <div class="origin">Moto + Fly（飞）</div>
+      </div>
+      <div class="name-details">
+        <div class="desc">摩托飞起来 — 速度感和自由感并存。法语英语通用，易于视觉设计。</div>
+        <div class="conflict">有一些无人机/摩托配件的零散使用，但无知名出行品牌。</div>
+      </div>
+      <span class="risk-badge risk-low">● 低风险</span>
+    </div>
+
+    <div class="name-card">
+      <div class="name-main">
+        <div class="brand-name">Vroomba</div>
+        <div class="origin">Vroom（引擎声）+ ba</div>
+      </div>
+      <div class="name-details">
+        <div class="desc">与 Voomba 类似但更强调引擎声。非常直觉化的品牌联想。</div>
+        <div class="conflict">与 Roomba（iRobot 扫地机）有音近风险。但在出行和非洲市场无冲突。</div>
+      </div>
+      <span class="risk-badge risk-low">● 低风险</span>
+    </div>
+
+    <div class="name-card">
+      <div class="name-main">
+        <div class="brand-name">Zelta</div>
+        <div class="origin">Zém + Delta（变化/三角洲）</div>
+      </div>
+      <div name="name-details" class="name-details">
+        <div class="desc">保留 Zém 根基，delta 暗示科托努的河口三角洲地理。简洁有科技感。</div>
+        <div class="conflict">Zelta 在拉脱维亚语意为"金色"。有少量欧洲小企业使用，但非洲市场空白。</div>
+      </div>
+      <span class="risk-badge risk-low">● 低风险</span>
+    </div>
+
+    <!-- MEDIUM RISK -->
+    <div class="name-card">
+      <div class="name-main">
+        <div class="brand-name">Bolide</div>
+        <div class="origin">法语「飞速行驶的车辆」</div>
+      </div>
+      <div class="name-details">
+        <div class="desc">法语经典词汇，天然携带速度感和力量感。发音优雅 /bɔ.lid/。</div>
+        <div class="conflict">Bolide Finance — 加密货币交易 App，已有品牌存在。虽非出行行业，但 App Store 可能撞名。</div>
+      </div>
+      <span class="risk-badge risk-medium">● 中风险</span>
+    </div>
+
+    <div class="name-card">
+      <div class="name-main">
+        <div class="brand-name">Motogo</div>
+        <div class="origin">Moto + Go</div>
+      </div>
+      <div class="name-details">
+        <div class="desc">简单直接，全球通用。Moto（摩托）+ Go（出发）的完美组合。</div>
+        <div class="conflict">巴西有 MotoGo 外卖/配送服务。"MotoGo"在多地有零散注册。名字太通用可能难以注册商标。</div>
+      </div>
+      <span class="risk-badge risk-medium">● 中风险</span>
+    </div>
+
+    <div class="name-card">
+      <div class="name-main">
+        <div class="brand-name">Rollo</div>
+        <div class="origin">Roll（滚动/前进）+ o</div>
+      </div>
+      <div class="name-details">
+        <div class="desc">有趣、好记、有动感。双音节容易喊出来。</div>
+        <div class="conflict">Rollo 是美国打印标签品牌（rollo.com）。在科技行业有一定知名度。</div>
+      </div>
+      <span class="risk-badge risk-medium">● 中风险</span>
+    </div>
+
+    <div class="name-card">
+      <div class="name-main">
+        <div class="brand-name">Pikala</div>
+        <div class="origin">源自摩洛哥方言「自行车」</div>
+      </div>
+      <div class="name-details">
+        <div class="desc">有非洲自行车文化渊源，节奏感强，好发音。暗示两轮出行。</div>
+        <div class="conflict">Pikala Bikes — 摩洛哥马拉喀什自行车旅游品牌，在非洲已有知名度。</div>
+      </div>
+      <span class="risk-badge risk-medium">● 中风险</span>
+    </div>
+
+    <div class="name-card">
+      <div class="name-main">
+        <div class="brand-name">Kéké</div>
+        <div class="origin">西非对三轮车/摩托的口语称呼</div>
+      </div>
+      <div class="name-details">
+        <div class="desc">极度本土化，一听就知道是西非出行。尼日利亚人也熟悉这个词。</div>
+        <div class="conflict">"Keke"在尼日利亚特指三轮车 Napep。在多个西非国家有广泛使用，难以独占。</div>
+      </div>
+      <span class="risk-badge risk-medium">● 中风险</span>
+    </div>
+
+    <div class="name-card">
+      <div class="name-main">
+        <div class="brand-name">Woro</div>
+        <div class="origin">源自 Woro-woro（科特迪瓦共享出租车）</div>
+      </div>
+      <div class="name-details">
+        <div class="desc">西非出行文化标志性词汇。简短有力，容易记忆。</div>
+        <div class="conflict">Woro-woro 是科特迪瓦通用名词，文化关联可能导致品牌归属模糊。难以注册独占。</div>
+      </div>
+      <span class="risk-badge risk-medium">● 中风险</span>
+    </div>
+
+    <!-- HIGH RISK -->
+    <div class="name-card">
+      <div class="name-main">
+        <div class="brand-name">Zémi</div>
+        <div class="origin">直接截取自 Zémidjan</div>
+      </div>
+      <div class="name-details">
+        <div class="desc">最直接的文化传承，贝宁人一听就懂。极简两音节。</div>
+        <div class="conflict"><strong>WA ZEMI</strong> — 已存在的打车 App（Google Play 在架）。<strong>Zemi Africa</strong>（zemiafrica.com）— 非洲支付平台。直接冲突。</div>
+      </div>
+      <span class="risk-badge risk-high">● 高风险</span>
+    </div>
+
+    <div class="name-card">
+      <div class="name-main">
+        <div class="brand-name">Django</div>
+        <div class="origin">Djan（Fon语「骑」）+ go</div>
+      </div>
+      <div class="name-details">
+        <div class="desc">源自贝宁文化，有品牌力。但拼写完全撞名。</div>
+        <div class="conflict"><strong>Django</strong> — 全球最知名的 Python Web 框架之一。搜索引擎会被完全淹没。App Store 搜索也极难突围。</div>
+      </div>
+      <span class="risk-badge risk-high">● 高风险</span>
+    </div>
+
+  </div>
+
+  <!-- Top Picks -->
+  <div class="top-picks">
+    <h3>推荐前三</h3>
+    <div class="top-list">
+      <div class="top-item">
+        <div class="rank">#1</div>
+        <div class="name">Voomba</div>
+        <div class="reason">零品牌冲突、引擎轰鸣的拟声联想、法语英语通吃、非洲韵律感。5 个字母，App Store 友好。可以想象用户说"叫个 Voomba"。</div>
+      </div>
+      <div class="top-item">
+        <div class="rank">#2</div>
+        <div class="name">Djanko</div>
+        <div class="reason">贝宁 Fon 语文化根基深厚（Zémidjan 的"骑"）。与 Django 框架有距离，拼写独特。本土化和国际化兼顾。</div>
+      </div>
+      <div class="top-item">
+        <div class="rank">#3</div>
+        <div class="name">Zipta</div>
+        <div class="reason">极简锐利，暗示速度和即刻出发。搜索空白 = 品牌蓝海。域名大概率可注册。发音在任何语言中无歧义。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Methodology -->
+  <div class="methodology">
+    <h3>调研方法说明</h3>
+    <ul>
+      <li>候选名从贝宁 Fon 语（Zémidjan）、法语、英语、拟声词四个维度生成</li>
+      <li>品牌冲突排查覆盖：Google Play / App Store 同名 App、搜索引擎首页结果、已知非洲出行品牌数据库</li>
+      <li>风险等级定义 — 高：同行业同名品牌已存在；中：有同名但不同行业，或通用词难注册；低：无发现同名知名品牌</li>
+      <li>建议在最终确认前进行 OAPI（非洲知识产权组织）商标检索，以及目标国域名注册查询</li>
+      <li>搜索数据截止日期：2026年2月26日</li>
+    </ul>
+  </div>
+
+  <footer>
+    <p>品牌命名调研 · 贝宁摩托车打车平台 · <span>2026.02</span></p>
+  </footer>
+
+</div>
+
+</body>
+</html>
