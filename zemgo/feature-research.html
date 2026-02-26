@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gozem & inDrive 功能调研报告 — Zemgo MVP 参考</title>
+  <style>
+    :root {
+      --green: #16a34a;
+      --green-bg: #dcfce7;
+      --green-border: #86efac;
+      --gray: #6b7280;
+      --gray-bg: #f3f4f6;
+      --gray-border: #d1d5db;
+      --red: #dc2626;
+      --red-bg: #fee2e2;
+      --red-border: #fca5a5;
+      --accent: #f97316;
+      --surface: #ffffff;
+      --bg: #f8fafc;
+      --text: #1e293b;
+      --muted: #64748b;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 0 0 60px;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      color: #fff;
+      padding: 40px 20px 32px;
+      text-align: center;
+    }
+    header .badge {
+      display: inline-block;
+      background: var(--accent);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 12px;
+    }
+    header h1 { font-size: clamp(22px, 5vw, 36px); font-weight: 800; margin-bottom: 8px; }
+    header p { color: #94a3b8; font-size: 14px; }
+
+    /* ── Legend ── */
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      padding: 20px 16px 0;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-green { background: var(--green); }
+    .dot-gray  { background: var(--gray); }
+    .dot-red   { background: var(--red); }
+
+    /* ── Section ── */
+    .section {
+      max-width: 900px;
+      margin: 32px auto 0;
+      padding: 0 16px;
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title .icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .icon-passenger { background: #dbeafe; }
+    .icon-driver    { background: #fef9c3; }
+    .icon-compare   { background: #ede9fe; }
+    .icon-mvp       { background: #fce7f3; }
+
+    /* ── Cards grid ── */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 12px;
+    }
+    .card {
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      border: 1px solid;
+      position: relative;
+    }
+    .card.core   { background: var(--green-bg); border-color: var(--green-border); }
+    .card.minor  { background: var(--gray-bg);  border-color: var(--gray-border); }
+    .card.cut    { background: var(--red-bg);   border-color: var(--red-border); }
+
+    .card-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .card.core  .card-label { color: var(--green); }
+    .card.minor .card-label { color: var(--gray); }
+    .card.cut   .card-label { color: var(--red); }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .card-desc {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* ── Comparison table ── */
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      background: var(--surface);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+    th {
+      background: #1e293b;
+      color: #fff;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+    }
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) td { background: #f8fafc; }
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .tag-core  { background: var(--green-bg); color: var(--green); }
+    .tag-minor { background: var(--gray-bg);  color: var(--gray); }
+    .tag-cut   { background: var(--red-bg);   color: var(--red); }
+
+    /* ── MVP summary box ── */
+    .mvp-box {
+      background: linear-gradient(135deg, #0f172a, #1e3a5f);
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 24px 20px;
+    }
+    .mvp-box h3 { font-size: 16px; margin-bottom: 12px; color: #fbbf24; }
+    .mvp-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .mvp-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 13px;
+      color: #cbd5e1;
+    }
+    .mvp-list li::before {
+      content: "✓";
+      color: #4ade80;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* ── Source note ── */
+    .source-note {
+      max-width: 900px;
+      margin: 24px auto 0;
+      padding: 0 16px;
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    @media (max-width: 480px) {
+      .cards { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="badge">竞品调研 · 2026</div>
+  <h1>Gozem & inDrive 功能调研报告</h1>
+  <p>贝宁 / 多哥摩托车打车平台 · Zemgo MVP 功能参考</p>
+</header>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item"><span class="dot dot-green"></span> 核心功能（MVP 必须有）</div>
+  <div class="legend-item"><span class="dot dot-gray"></span> 次要功能（可后期迭代）</div>
+  <div class="legend-item"><span class="dot dot-red"></span> 建议砍掉（MVP 阶段过重）</div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SECTION 1: Gozem 乘客端
+════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">
+    <span class="icon icon-passenger">🧑</span>
+    Gozem 乘客端功能
+  </div>
+  <div class="cards">
+
+    <div class="card core">
+      <div class="card-label">核心</div>
+      <div class="card-title">摩托车（Zem）叫车</div>
+      <div class="card-desc">核心服务，快速经济，适合高峰期穿行小巷。贝宁最常用出行方式。</div>
+    </div>
+
+    <div class="card core">
+      <div class="card-label">核心</div>
+      <div class="card-title">实时地图 & 司机追踪</div>
+      <div class="card-desc">乘客可在地图上看到司机位置、预计到达时间。</div>
+    </div>
+
+    <div class="card core">
+      <div class="card-label">核心</div>
+      <div class="card-title">起终点输入 & 价格估算</div>
+      <div class="card-desc">输入目的地后显示预估费用，透明定价。</div>
+    </div>
+
+    <div class="card core">
+      <div class="card-label">核心</div>
+      <div class="card-title">移动支付（Mobile Money）</div>
+      <div class="card-desc">支持 MTN / Moov 等本地移动支付，贝宁现金使用率高，也支持现金。</div>
+    </div>
+
+    <div class="card core">
+      <div class="card-label">核心</div>
+      <div class="card-title">行程状态通知</div>
+      <div class="card-desc">司机接单、到达、行程开始/结束的推送通知。</div>
+    </div>
+
+    <div class="card core">
+      <div class="card-label">核心</div>
+      <div class="card-title">司机评分 & 评价</div>
+      <div class="card-desc">行程结束后对司机打分，维护平台服务质量。</div>
+    </div>
+
+    <div class="card core">
+      <div class="card-label">核心</div>
+      <div class="card-title">行程历史记录</div>
+      <div class="card-desc">查看过去的行程记录、费用明细。</div>
+    </div>
+
+    <div class="card core">
+      <div class="card-label">核心</div>
+      <div class="card-title">紧急联系 / SOS 按钮</div>
+      <div class="card-desc">行程中一键发送位置给紧急联系人，基础安全保障。</div>
+    </div>
+
+    <div class="card minor">
+      <div class="card-label">次要</div>
+      <div class="card-title">三轮车（Tricycle）叫车</div>
+      <div class="card-desc">有遮阳顶棚，适合雨季。可在 MVP 后期加入。</div>
+    </div>
+
+    <div class="card minor">
+      <div class="card-label">次要</div>
+      <div class="card-title">出租车（Taxi）叫车</div>
+      <div class="card-desc">轿车服务，价格较高，用户群体不同。</div>
+    </div>
+
+    <div class="card minor">
+      <div class="card-label">次要</div>
+      <div class="card-title">常用地址收藏</div>
+      <div class="card-desc">保存家/公司等常用地点，提升下单速度。</div>
+    </div>
+
+    <div class="card minor">
+      <div class="card-label">次要</div>
+      <div class="card-title">预约行程</div>
+      <div class="card-desc">提前预约特定时间的行程，适合机场接送等场景。</div>
+    </div>
+
+    <div class="card minor">
+      <div class="card-label">次要</div>
+      <div class="card-title">GoWin 积分奖励</div>
+      <div class="card-desc">每次行程积累积分，兑换优惠。用户留存工具，MVP 后期考虑。</div>
+    </div>
+
+    <div class="card cut">
+      <div class="card-label">建议砍掉</div>
+      <div class="card-title">外卖点餐（Food Delivery）</div>
+      <div class="card-desc">需要餐厅合作体系，MVP 阶段复杂度过高，与核心打车无关。</div>
+    </div>
+
+    <div class="card cut">
+      <div class="card-label">建议砍掉</div>
+      <div class="card-title">超市购物（Shopping）</div>
+      <div class="card-desc">电商功能，供应链复杂，MVP 阶段不适合。</div>
+    </div>
+
+    <div class="card cut">
+      <div class="card-label">建议砍掉</div>
+      <div class="card-title">煤气罐配送（Gas Delivery）</div>
+      <div class="card-desc">垂直品类，需要专门仓储和配送体系。</div>
+    </div>
+
+    <div class="card cut">
+      <div class="card-label">建议砍掉</div>
+      <div class="card-title">话费充值（Crédit）</div>
+      <div class="card-desc">数字增值服务，与打车核心无关，MVP 阶段分散精力。</div>
+    </div>
+
+    <div class="card cut">
+      <div class="card-label">建议砍掉</div>
+      <div class="card-title">票务（Ticket Office）</div>
+      <div class="card-desc">活动票务，与出行主业无关。</div>
+    </div>
+
+    <div class="card cut">
+      <div class="card-label">建议砍掉</div>
+      <div class="card-title">Gozem Money 钱包</div>
+      <div class="card-desc">自建金融服务需要牌照和合规，MVP 阶段直接对接 Mobile Money 即可。</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SECTION 2: Gozem 司机端
+════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">
+    <span class="icon icon-driver">🏍️</span>
+    Gozem 司机端功能
+  </div>
+  <div class="cards">
+
+    <div class="card core">
+      <div class="card-label">核心</div>
+      <div class="card-title">接单 / 拒单</div>
+      <div class="card-desc">实时接收订单请求，查看乘客位置和目的地后决定是否接单。</div>
+    </div>
+
+    <div class="card core">
+      <div class="card-label">核心</div>
+      <div class="card-title">导航 & 地图</div>
+      <div class="card-desc">内置导航引导司机前往乘客位置及目的地。</div>
+    </div>
+
+    <div class="card core">
+      <div class="card-label">核心</div>
+      <div class="card-title">在线 / 离线切换</div>
+      <div class="card-desc">司机可随时切换接单状态，灵活控制工作时间。</div>
+    </div>
+
+    <div class="card core">
+      <div class="card-label">核心</div>
+      <div class="card-title">收入统计 & 流水</div>
+      <div class="card-desc">查看每日/每周收入、行程数量、平均单价。</div>
+    </div>
+
+    <div class="card core">
+      <div class="card-label">核心</div>
+      <div class="card-title">司机注册 & 认证</div>
+      <div class="card-desc">上传驾照、摩托车证件，平台审核后上线。保障平台安全。</div>
+    </div>
+
+    <div class="card core">
+      <div class="card-label">核心</div>
+      <div class="card-title">乘客评分查看</div>
+      <div class="card-desc">查看自己的综合评分，了解服务质量反馈。</div>
+    </div>
+
+    <div class="card minor">
+      <div class="card-label">次要</div>
+      <div class="card-title">个性化教练辅导</div>
+      <div class="card-desc">Gozem 提供专属教练帮助司机提升收入，MVP 阶段可简化为 FAQ。</div>
+    </div>
+
+    <div class="card minor">
+      <div class="card-label">次要</div>
+      <div class="card-title">职业发展（Gold Champion）</div>
+      <div class="card-desc">达到一定等级可成为车主，激励体系，MVP 后期加入。</div>
+    </div>
+
+    <div class="card minor">
+      <div class="card-label">次要</div>
+      <div class="card-title">提现 & 钱包管理</div>
+      <div class="card-desc">将平台余额提现到 Mobile Money，基础功能，可简化实现。</div>
+    </div>
+
+    <div class="card cut">
+      <div class="card-label">建议砍掉</div>
+      <div class="card-title">车辆融资（Vehicle Financing）</div>
+      <div class="card-desc">金融产品，需要合规资质，MVP 阶段不适合。</div>
+    </div>
+
+    <div class="card cut">
+      <div class="card-label">建议砍掉</div>
+      <div class="card-title">手机融资（Phone Financing）</div>
+      <div class="card-desc">同上，金融服务，MVP 阶段过重。</div>
+    </div>
+
+    <div class="card cut">
+      <div class="card-label">建议砍掉</div>
+      <div class="card-title">车辆 GPS 追踪（防盗）</div>
+      <div class="card-desc">需要硬件设备，MVP 阶段成本过高。</div>
+    </div>
+
+    <div class="card cut">
+      <div class="card-label">建议砍掉</div>
+      <div class="card-title">事故保险理赔</div>
+      <div class="card-desc">保险产品，需要与保险公司合作，MVP 阶段不适合。</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SECTION 3: inDrive 对比参考
+════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">
+    <span class="icon icon-compare">⚡</span>
+    inDrive 差异化功能参考
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>功能</th>
+          <th>inDrive 做法</th>
+          <th>Gozem 做法</th>
+          <th>Zemgo 建议</th>
+          <th>优先级</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>定价模式</strong></td>
+          <td>乘客出价，司机接受/反价（议价制）</td>
+          <td>平台固定算法定价</td>
+          <td>固定定价更适合贝宁初期，用户教育成本低</td>
+          <td><span class="tag tag-core">核心</span></td>
+        </tr>
+        <tr>
+          <td><strong>司机筛选</strong></td>
+          <td>乘客可查看司机资料后选择</td>
+          <td>系统自动分配最近司机</td>
+          <td>自动分配更高效，MVP 优先</td>
+          <td><span class="tag tag-core">核心</span></td>
+        </tr>
+        <tr>
+          <td><strong>城际出行</strong></td>
+          <td>City to City 长途拼车</td>
+          <td>暂无</td>
+          <td>MVP 阶段不需要，贝宁城市内需求优先</td>
+          <td><span class="tag tag-cut">砍掉</span></td>
+        </tr>
+        <tr>
+          <td><strong>快递配送</strong></td>
+          <td>Courier & Freight 配送</td>
+          <td>Courier 快递</td>
+          <td>可作为第二阶段功能，复用摩托车网络</td>
+          <td><span class="tag tag-minor">次要</span></td>
+        </tr>
+        <tr>
+          <td><strong>金融服务</strong></td>
+          <td>inDrive.Money 贷款</td>
+          <td>Gozem Money 支付/转账</td>
+          <td>MVP 阶段只对接 Mobile Money，不自建</td>
+          <td><span class="tag tag-cut">砍掉</span></td>
+        </tr>
+        <tr>
+          <td><strong>安全功能</strong></td>
+          <td>安全协议、紧急联系、行程分享</td>
+          <td>事故保障、车辆追踪</td>
+          <td>SOS 按钮 + 行程分享，轻量实现</td>
+          <td><span class="tag tag-core">核心</span></td>
+        </tr>
+        <tr>
+          <td><strong>企业服务</strong></td>
+          <td>企业配送</td>
+          <td>企业出行、车队管理</td>
+          <td>MVP 阶段不需要，B 端后期再做</td>
+          <td><span class="tag tag-cut">砍掉</span></td>
+        </tr>
+        <tr>
+          <td><strong>多语言支持</strong></td>
+          <td>多语言</td>
+          <td>法语/英语</td>
+          <td>法语优先（贝宁官方语言），Fon 语可后期加</td>
+          <td><span class="tag tag-core">核心</span></td>
+        </tr>
+        <tr>
+          <td><strong>低网络适配</strong></td>
+          <td>一般</td>
+          <td>针对非洲网络优化</td>
+          <td>必须优化，贝宁 3G/4G 覆盖不稳定</td>
+          <td><span class="tag tag-core">核心</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SECTION 4: Zemgo MVP 功能清单
+════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">
+    <span class="icon icon-mvp">🚀</span>
+    Zemgo MVP 最小功能集建议
+  </div>
+  <div class="mvp-box">
+    <h3>乘客端 MVP（必须上线）</h3>
+    <ul class="mvp-list">
+      <li>手机号注册 / 登录（OTP 验证）</li>
+      <li>输入起终点 + 价格估算</li>
+      <li>呼叫摩托车（Zem）</li>
+      <li>实时地图追踪司机位置</li>
+      <li>Mobile Money 支付 + 现金支付</li>
+      <li>行程状态推送通知</li>
+      <li>行程结束后评分司机</li>
+      <li>行程历史记录</li>
+      <li>SOS 紧急联系按钮</li>
+      <li>法语界面（主语言）</li>
+    </ul>
+    <br/>
+    <h3>司机端 MVP（必须上线）</h3>
+    <ul class="mvp-list">
+      <li>注册 + 证件上传审核</li>
+      <li>在线 / 离线切换</li>
+      <li>接单 / 拒单（含乘客位置预览）</li>
+      <li>内置导航（Google Maps / OpenStreetMap）</li>
+      <li>收入统计（日/周）</li>
+      <li>提现到 Mobile Money</li>
+      <li>查看自己的评分</li>
+    </ul>
+    <br/>
+    <h3>技术要求</h3>
+    <ul class="mvp-list">
+      <li>低带宽优化（2G/3G 可用）</li>
+      <li>Android 优先（贝宁 Android 占有率 &gt;90%）</li>
+      <li>离线地图缓存（可选）</li>
+      <li>SMS 降级通知（推送失败时）</li>
+    </ul>
+  </div>
+</div>
+
+<div class="source-note">
+  数据来源：gozem.co 官网、gozem.co/bj（贝宁站）、indrive.com 官网 · 调研时间：2026年2月
+</div>
+
+</body>
+</html>
