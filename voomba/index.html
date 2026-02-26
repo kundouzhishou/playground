@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZemGo App Prototype</title>
+    <title>Voomba App Prototype</title>
     <style>
-        /* ZemGo Design Tokens */
+        /* Voomba Design Tokens */
         :root {
             --primary-green: #00A651;
             --primary-yellow: #FCD116;
@@ -128,34 +128,34 @@
             visibility: visible;
         }
 
-        /* ZemGo Logo (CSS/SVG Z shape) */
-        .zemgo-logo {
+        /* Voomba Logo (CSS/SVG Z shape) */
+        .voomba-logo {
             width: 80px;
             height: 80px;
             position: relative;
             overflow: hidden;
             transform: rotate(-15deg); /* Slight rotation for dynamic feel */
         }
-        .zemgo-logo::before, .zemgo-logo::after {
+        .voomba-logo::before, .voomba-logo::after {
             content: '';
             position: absolute;
             background-color: var(--primary-green);
         }
-        .zemgo-logo::before { /* Top bar */
+        .voomba-logo::before { /* Top bar */
             width: 80%;
             height: 15%;
             top: 0;
             left: 0;
             border-radius: var(--border-radius-sm);
         }
-        .zemgo-logo::after { /* Bottom bar */
+        .voomba-logo::after { /* Bottom bar */
             width: 80%;
             height: 15%;
             bottom: 0;
             right: 0;
             border-radius: var(--border-radius-sm);
         }
-        .zemgo-logo .diagonal {
+        .voomba-logo .diagonal {
             position: absolute;
             width: 15%;
             height: 100%;
@@ -170,21 +170,21 @@
             background-color: var(--primary-green);
             justify-content: center;
         }
-        #splash-screen .zemgo-logo {
+        #splash-screen .voomba-logo {
             width: 120px;
             height: 120px;
             transform: rotate(-15deg);
         }
-        #splash-screen .zemgo-logo::before { width: 90%; height: 18%; }
-        #splash-screen .zemgo-logo::after { width: 90%; height: 18%; }
-        #splash-screen .zemgo-logo .diagonal { width: 18%; }
+        #splash-screen .voomba-logo::before { width: 90%; height: 18%; }
+        #splash-screen .voomba-logo::after { width: 90%; height: 18%; }
+        #splash-screen .voomba-logo .diagonal { width: 18%; }
 
         @keyframes pulse {
             0% { transform: scale(1); opacity: 1; }
             50% { transform: scale(1.1); opacity: 0.7; }
             100% { transform: scale(1); opacity: 1; }
         }
-        #splash-screen .zemgo-logo {
+        #splash-screen .voomba-logo {
             animation: pulse 1.5s infinite ease-in-out;
         }
 
@@ -550,7 +550,7 @@
         <div class="screen-container">
             <!-- Splash Screen -->
             <div id="splash-screen" class="screen active">
-                <div class="zemgo-logo">
+                <div class="voomba-logo">
                     <div class="diagonal"></div>
                 </div>
             </div>
@@ -607,7 +607,7 @@
                     <div class="circle"></div>
                     <div class="circle"></div>
                     <div class="circle"></div>
-                    <div class="zemgo-logo" style="width: 80px; height: 80px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg);">
+                    <div class="voomba-logo" style="width: 80px; height: 80px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg);">
                         <div class="diagonal"></div>
                     </div>
                 </div>
