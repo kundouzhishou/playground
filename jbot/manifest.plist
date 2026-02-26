@@ -11,7 +11,7 @@
                     <key>kind</key>
                     <string>software-package</string>
                     <key>url</key>
-                    <string>https://kundouzhishou.github.io/playground/jbot/jbot-v0.5.0-b12.ipa</string>
+                    <string>https://kundouzhishou.github.io/playground/jbot/jbot-v0.6.0.ipa</string>
                 </dict>
             </array>
             <key>metadata</key>
@@ -19,7 +19,7 @@
                 <key>bundle-identifier</key>
                 <string>com.yilian.xiaojin</string>
                 <key>bundle-version</key>
-                <string>0.5.0</string>
+                <string>0.6.0</string>
                 <key>kind</key>
                 <string>software</string>
                 <key>title</key>
