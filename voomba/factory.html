@@ -476,3 +476,220 @@ init();
 </script>
 </body>
 </html>
+<script>
+const ROADMAP_URL = 'https://raw.githubusercontent.com/kundouzhishou/voomba/main/roadmap.md';
+const POLL_INTERVAL = 30000;
+
+// ── 状态 ──
+let prevSnapshot = null;
+let changeLog = [];
+let isFirstLoad = true;
+
+// ── 解析 roadmap.md ──
+const MODULE_ICONS = {
+  'auth':'🔐','认证':'🔐','行程':'🛵','ride':'🛵',
+  '后端':'⚡','api':'⚡','联调':'🔗','司机':'🏍',
+  'sms':'📱','通知':'📱','历史':'📋','资料':'👤','阶段':'🔧',
+};
+function getIcon(name) {
+  const l = name.toLowerCase();
+  for (const [k,v] of Object.entries(MODULE_ICONS)) if (l.includes(k)) return v;
+  return '📦';
+}
+function parseDim(s) {
+  if (!s) return null;
+  if (s.includes('✅')) return true;
+  if (s.includes('❌')) return false;
+  return null;
+}
+function parseRoadmap(md) {
+  const modules = []; let cur = null;
+  for (const line of md.split('\n')) {
+    const h2 = line.match(/^##\s+(.+)/);
+    if (h2) {
+      if (cur && cur.tasks.length) modules.push(cur);
+      cur = { name: h2[1].trim(), icon: getIcon(h2[1]), tasks: [] };
+      continue;
+    }
+    if (cur && line.match(/^-\s*\[[ xX]\]/)) {
+      const rest = line.replace(/^-\s*\[[ xX]\]\s*/, '');
+      const dev  = rest.match(/\[dev:\s*([^\]]+)\]/);
+      const ui   = rest.match(/\[ui:\s*([^\]]+)\]/);
+      const test = rest.match(/\[test:\s*([^\]]+)\]/);
+      const name = rest.replace(/\[(?:dev|ui|test):[^\]]*\]/g,'').trim();
+      if (name) cur.tasks.push({ name, dev: parseDim(dev?.[1]), ui: parseDim(ui?.[1]), test: parseDim(test?.[1]) });
+    }
+  }
+  if (cur && cur.tasks.length) modules.push(cur);
+  return modules;
+}
+
+// ── 快照 & diff ──
+function buildSnapshot(modules) {
+  const s = {};
+  for (const m of modules)
+    for (const t of m.tasks)
+      s[m.name+'::'+t.name] = { dev: t.dev, ui: t.ui, test: t.test };
+  return s;
+}
+function diffSnapshot(modules, prev) {
+  const changes = [];
+  for (const m of modules)
+    for (const t of m.tasks) {
+      const key = m.name+'::'+t.name;
+      const old = prev[key];
+      if (!old) continue;
+      for (const dim of ['dev','ui','test']) {
+        if (old[dim] !== t[dim] && t[dim] !== null)
+          changes.push({ module: m.name, task: t.name, dim, from: old[dim], to: t[dim], time: new Date() });
+      }
+    }
+  return changes;
+}
+
+// ── 渲染 ──
+function isDone(t) {
+  const d = [t.dev,t.ui,t.test].filter(v=>v!==null);
+  return d.length>0 && d.every(v=>v===true);
+}
+function renderLight(label, val) {
+  const cls = val===true?'on-green':val===false?'on-red':'na';
+  return `<span class="light"><span class="light-dot ${cls}"></span>${label}</span>`;
+}
+function renderCard(task, idx, changed) {
+  const done = isDone(task);
+  const cls = changed ? 'just-changed' : done ? 'done' : '';
+  return `<div class="task-card ${cls}" style="animation-delay:${idx*0.04}s">
+    <div class="task-name">${task.name}</div>
+    <div class="task-lights">
+      ${renderLight('DEV',task.dev)}${renderLight('UI',task.ui)}${renderLight('TEST',task.test)}
+    </div>
+  </div>`;
+}
+function renderModule(mod, idx, changedKeys) {
+  const done = mod.tasks.filter(isDone).length;
+  const pct  = Math.round(done/mod.tasks.length*100);
+  const cards = mod.tasks.map((t,i)=>renderCard(t,i,changedKeys.has(mod.name+'::'+t.name))).join('');
+  return `<div class="module-section" id="mod-${idx}">
+    <div class="module-header" onclick="toggleModule(${idx})">
+      <div class="module-title">
+        <span class="module-icon">${mod.icon}</span>
+        <span class="module-name">${mod.name}</span>
+      </div>
+      <div class="module-progress">
+        <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+        <span class="progress-pct">${done}/${mod.tasks.length}</span>
+        <span class="collapse-icon">▼</span>
+      </div>
+    </div>
+    <div class="conveyor-track"><div class="tasks-grid">${cards}</div></div>
+    <div class="belt-decoration"></div>
+  </div>`;
+}
+function toggleModule(idx) { document.getElementById('mod-'+idx).classList.toggle('collapsed'); }
+
+function renderAll(modules, changes) {
+  const changedKeys = new Set(changes.map(c=>c.module+'::'+c.task));
+  const collapsed = new Set([...document.querySelectorAll('.module-section.collapsed')].map(e=>e.id));
+  document.getElementById('main-content').innerHTML = modules.map((m,i)=>renderModule(m,i,changedKeys)).join('');
+  collapsed.forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.add('collapsed'); });
+
+  let done=0,wip=0,todo=0;
+  modules.forEach(m=>m.tasks.forEach(t=>{
+    if(isDone(t)){done++;return;}
+    const any=[t.dev,t.ui,t.test].filter(v=>v!==null).some(v=>v===true);
+    any?wip++:todo++;
+  }));
+  document.getElementById('stat-done').textContent=done;
+  document.getElementById('stat-wip').textContent=wip;
+  document.getElementById('stat-todo').textContent=todo;
+  const total=done+wip+todo;
+  document.getElementById('ticker-text').textContent=
+    `⚙ 总任务 ${total} 项 · 已完成 ${done} 项 · 进行中 ${wip} 项 · 待开发 ${todo} 项 · 整体进度 ${Math.round(done/total*100)}% · VOOMBA FACTORY ONLINE ·`;
+
+  // 4秒后移除高亮
+  if (changes.length) setTimeout(()=>document.querySelectorAll('.just-changed').forEach(el=>el.classList.remove('just-changed')), 4000);
+}
+
+// ── 变更日志 ──
+function timeAgo(d) {
+  const s=Math.floor((Date.now()-d)/1000);
+  if(s<60) return '刚刚';
+  if(s<3600) return Math.floor(s/60)+'分钟前';
+  return Math.floor(s/3600)+'小时前';
+}
+function renderChangeLog() {
+  const el = document.getElementById('change-log');
+  if (!changeLog.length) { el.innerHTML='<div class="log-empty">等待变更...</div>'; return; }
+  el.innerHTML = changeLog.map(c=>`
+    <div class="log-entry">
+      <div class="log-entry-top">
+        <span class="log-icon">${c.to===true?'✅':'❌'}</span>
+        <span class="log-task">${c.task}</span>
+      </div>
+      <div class="log-meta">
+        <span class="log-dim">${c.dim.toUpperCase()}</span>
+        <span class="log-time">${timeAgo(c.time)}</span>
+      </div>
+    </div>`).join('');
+}
+
+// ── 状态指示 ──
+function setStatus(ok, msg) {
+  const dot = document.getElementById('status-dot');
+  dot.style.background = ok ? 'var(--green)' : 'var(--red)';
+  dot.style.boxShadow  = ok ? '0 0 6px var(--green)' : '0 0 6px var(--red)';
+  document.getElementById('sync-status').textContent = msg;
+}
+
+// ── 拉取 & 更新 ──
+let lastContent = '';
+async function fetchRoadmap() {
+  try {
+    const res = await fetch(ROADMAP_URL + '?t=' + Date.now());
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    if (text === lastContent) { setStatus(true, '已同步，无变化'); return; }
+    lastContent = text;
+    const modules = parseRoadmap(text);
+    if (!modules.length) return;
+
+    if (isFirstLoad) {
+      renderAll(modules, []);
+      prevSnapshot = buildSnapshot(modules);
+      isFirstLoad = false;
+      setStatus(true, '数据已加载');
+      document.getElementById('last-updated').textContent = '上次更新 ' + new Date().toISOString().slice(0,19).replace('T',' ') + ' UTC';
+    } else {
+      const changes = diffSnapshot(modules, prevSnapshot);
+      prevSnapshot = buildSnapshot(modules);
+      renderAll(modules, changes);
+      if (changes.length) {
+        changeLog = [...changes, ...changeLog].slice(0, 30);
+        renderChangeLog();
+        setStatus(true, `检测到 ${changes.length} 项变更`);
+      } else {
+        setStatus(true, '已同步，无变化');
+      }
+      document.getElementById('last-updated').textContent = '上次更新 ' + new Date().toISOString().slice(0,19).replace('T',' ') + ' UTC';
+    }
+  } catch(e) {
+    setStatus(false, '同步失败: ' + e.message);
+  }
+}
+
+// ── 时钟 ──
+function tick() {
+  document.getElementById('footer-time').textContent =
+    new Date().toISOString().slice(0,19).replace('T',' ') + ' UTC';
+  renderChangeLog(); // 更新"X分钟前"
+}
+
+// ── 启动 ──
+tick();
+setInterval(tick, 1000);
+fetchRoadmap();
+setInterval(fetchRoadmap, POLL_INTERVAL);
+</script>
+</body>
+</html>
