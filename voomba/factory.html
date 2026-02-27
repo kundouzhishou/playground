@@ -497,91 +497,97 @@
   <div class="ticker">
     <span class="ticker-inner" id="ticker-text">正在加载生产数据...</span>
   </div>
-  <div id="footer-time" style="font-family:var(--mono);font-size:0.65rem;color:var(--muted)"></div>
+  <div style="display:flex;gap:1.5rem;align-items:center">
+    <span id="last-updated" style="color:var(--muted)"></span>
+    <span id="footer-time"></span>
+  </div>
 </footer>
 
 <script>
-// ── 数据源（从 roadmap.md 解析而来）──
-const ROADMAP = [
-  {
-    name: "AUTH 认证", icon: "🔐",
-    tasks: [
-      { name: "发送 OTP 短信",           dev: true,  ui: true,  test: true  },
-      { name: "验证 OTP 登录",           dev: true,  ui: true,  test: true  },
-      { name: "OTP 重发实际调用 API",    dev: false, ui: true,  test: false },
-      { name: "Token 持久化 AsyncStorage", dev: false, ui: null, test: false },
-      { name: "清理冗余导航文件",        dev: false, ui: null,  test: null  },
-    ]
-  },
-  {
-    name: "行程主流程", icon: "🛵",
-    tasks: [
-      { name: "欢迎首页",               dev: true,  ui: true,  test: null  },
-      { name: "目的地选择（静态数据）", dev: true,  ui: true,  test: null  },
-      { name: "价格确认页",             dev: true,  ui: true,  test: null  },
-      { name: "等待司机页",             dev: true,  ui: true,  test: null  },
-      { name: "行程中页面",             dev: true,  ui: true,  test: null  },
-      { name: "完成评分页",             dev: true,  ui: true,  test: null  },
-      { name: "GPS 真实定位",           dev: false, ui: false, test: false },
-      { name: "取消叫车通知后端",       dev: false, ui: true,  test: false },
-      { name: "SOS 拨号功能",           dev: false, ui: true,  test: false },
-      { name: "完成提交失败提示",       dev: false, ui: false, test: false },
-    ]
-  },
-  {
-    name: "后端 API", icon: "⚡",
-    tasks: [
-      { name: "Auth send-code",          dev: true,  ui: null,  test: true  },
-      { name: "Auth verify",             dev: true,  ui: null,  test: false },
-      { name: "Rides create",            dev: true,  ui: null,  test: null  },
-      { name: "Rides cancel",            dev: true,  ui: null,  test: null  },
-      { name: "Rides list",              dev: true,  ui: null,  test: null  },
-      { name: "价格估算接口 /estimate",  dev: false, ui: null,  test: false },
-      { name: "JWT Secret 环境变量",     dev: false, ui: null,  test: null  },
-      { name: "修复 auth.test c.env",    dev: false, ui: null,  test: false },
-    ]
-  },
-  {
-    name: "前后端联调", icon: "🔗",
-    tasks: [
-      { name: "api.js 替换真实 HTTP",    dev: false, ui: null,  test: false },
-      { name: "接口字段对齐（坐标）",    dev: false, ui: null,  test: false },
-      { name: "JWT 认证 header 接入",    dev: false, ui: null,  test: false },
-    ]
-  },
-  {
-    name: "司机端", icon: "🏍",
-    tasks: [
-      { name: "司机注册 / 登录",         dev: false, ui: false, test: false },
-      { name: "司机接单界面",            dev: false, ui: false, test: false },
-      { name: "实时位置上报",            dev: false, ui: false, test: false },
-      { name: "司机匹配逻辑",            dev: false, ui: null,  test: false },
-    ]
-  },
-  {
-    name: "SMS / 通知", icon: "📱",
-    tasks: [
-      { name: "SMS 发送 stub",           dev: true,  ui: null,  test: null  },
-      { name: "接入真实 SMS 供应商",     dev: false, ui: null,  test: false },
-      { name: "行程状态推送通知",        dev: false, ui: false, test: false },
-    ]
-  },
-  {
-    name: "历史记录", icon: "📋",
-    tasks: [
-      { name: "历史记录页面",            dev: true,  ui: true,  test: null  },
-      { name: "接入真实历史 API",        dev: false, ui: true,  test: false },
-    ]
-  },
-  {
-    name: "个人资料", icon: "👤",
-    tasks: [
-      { name: "个人资料页面",            dev: true,  ui: true,  test: null  },
-      { name: "编辑资料功能",            dev: false, ui: false, test: false },
-      { name: "退出登录",                dev: false, ui: false, test: false },
-    ]
-  },
-];
+// ── 数据源：从 GitHub raw 拉取 roadmap.md 实时解析 ──
+const ROADMAP_URL = 'https://raw.githubusercontent.com/kundouzhishou/voomba/main/roadmap.md';
+const POLL_INTERVAL = 30000; // 30 秒轮询一次
+
+// 模块图标映射
+const MODULE_ICONS = {
+  'auth': '🔐', '认证': '🔐',
+  '行程': '🛵', 'ride': '🛵',
+  '后端': '⚡', 'api': '⚡',
+  '联调': '🔗',
+  '司机': '🏍',
+  'sms': '📱', '通知': '📱',
+  '历史': '📋',
+  '资料': '👤', 'profile': '👤',
+  '阶段': '🔧',
+};
+
+function getIcon(name) {
+  const lower = name.toLowerCase();
+  for (const [key, icon] of Object.entries(MODULE_ICONS)) {
+    if (lower.includes(key)) return icon;
+  }
+  return '📦';
+}
+
+// 解析 [dev: ✅/❌/—] 格式
+function parseDim(str) {
+  if (!str) return null;
+  if (str.includes('✅')) return true;
+  if (str.includes('❌')) return false;
+  if (str.includes('—') || str.includes('-')) return null;
+  return null;
+}
+
+// 解析单行任务
+function parseTask(line) {
+  // 匹配：- [ ] 或 - [x] 开头的行
+  const taskMatch = line.match(/^-\s*\[[ xX]\]\s*(.+)/);
+  if (!taskMatch) return null;
+
+  const rest = taskMatch[1];
+  const devMatch  = rest.match(/\[dev:\s*([^\]]+)\]/);
+  const uiMatch   = rest.match(/\[ui:\s*([^\]]+)\]/);
+  const testMatch = rest.match(/\[test:\s*([^\]]+)\]/);
+
+  // 任务名：去掉所有 [...] 标签
+  const name = rest.replace(/\[(?:dev|ui|test):[^\]]*\]/g, '').trim();
+
+  return {
+    name,
+    dev:  devMatch  ? parseDim(devMatch[1])  : null,
+    ui:   uiMatch   ? parseDim(uiMatch[1])   : null,
+    test: testMatch ? parseDim(testMatch[1]) : null,
+  };
+}
+
+// 解析整个 roadmap.md 文本
+function parseRoadmap(md) {
+  const lines = md.split('\n');
+  const modules = [];
+  let current = null;
+
+  for (const line of lines) {
+    // 二级标题 = 模块
+    const h2 = line.match(/^##\s+(.+)/);
+    if (h2) {
+      if (current) modules.push(current);
+      const name = h2[1].trim();
+      current = { name, icon: getIcon(name), tasks: [] };
+      continue;
+    }
+    // 任务行
+    if (current) {
+      const task = parseTask(line);
+      if (task && task.name) current.tasks.push(task);
+    }
+  }
+  if (current && current.tasks.length > 0) modules.push(current);
+
+  // 过滤掉空模块
+  return modules.filter(m => m.tasks.length > 0);
+}
+
+let ROADMAP = [];
 
 // ── 判断任务是否完成 ──
 function isDone(task) {
@@ -663,10 +669,19 @@ function calcStats() {
   return { done, wip, todo };
 }
 
-// ── 初始化 ──
-function init() {
+// ── 渲染看板 ──
+function render() {
   const main = document.getElementById('main-content');
+  // 保留已折叠状态
+  const collapsed = new Set(
+    [...document.querySelectorAll('.module-section.collapsed')]
+      .map(el => el.id)
+  );
   main.innerHTML = ROADMAP.map((mod, i) => renderModule(mod, i)).join('');
+  collapsed.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('collapsed');
+  });
 
   const { done, wip, todo } = calcStats();
   document.getElementById('stat-done').textContent = done;
@@ -676,7 +691,50 @@ function init() {
   const total = done + wip + todo;
   document.getElementById('ticker-text').textContent =
     `⚙ 总任务 ${total} 项 · 已完成 ${done} 项 · 进行中 ${wip} 项 · 待开发 ${todo} 项 · 整体进度 ${Math.round(done/total*100)}% · VOOMBA FACTORY ONLINE ·`;
+}
 
+// ── 拉取 roadmap.md 并更新 ──
+let lastEtag = '';
+async function fetchRoadmap() {
+  try {
+    // 加时间戳绕过 CDN 缓存
+    const url = ROADMAP_URL + '?t=' + Date.now();
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    const etag = text.slice(0, 200); // 用内容前缀做简单变更检测
+    if (etag !== lastEtag) {
+      lastEtag = etag;
+      ROADMAP = parseRoadmap(text);
+      render();
+      setLastUpdated();
+    }
+    setStatus('online');
+  } catch (e) {
+    setStatus('error');
+    console.warn('roadmap fetch failed:', e);
+  }
+}
+
+function setLastUpdated() {
+  const now = new Date();
+  document.getElementById('last-updated').textContent =
+    '上次更新 ' + now.toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+}
+
+function setStatus(state) {
+  const dot = document.querySelector('.status-dot');
+  if (state === 'online') {
+    dot.style.background = 'var(--green)';
+    dot.style.boxShadow = '0 0 6px var(--green)';
+  } else {
+    dot.style.background = 'var(--red)';
+    dot.style.boxShadow = '0 0 6px var(--red)';
+  }
+}
+
+// ── 初始化 ──
+async function init() {
   // 时钟
   function tick() {
     const now = new Date();
@@ -685,6 +743,14 @@ function init() {
   }
   tick();
   setInterval(tick, 1000);
+
+  // 首次加载
+  document.getElementById('main-content').innerHTML =
+    '<div style="text-align:center;padding:4rem;font-family:var(--mono);color:var(--muted);letter-spacing:2px">⚙ 正在拉取生产数据...</div>';
+  await fetchRoadmap();
+
+  // 轮询
+  setInterval(fetchRoadmap, POLL_INTERVAL);
 }
 
 init();
