@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voomba — 安装</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0F0F0F;
+            --surface: #1A1A1A;
+            --border: #2E2E2E;
+            --primary: #F97316;
+            --accent: #84CC16;
+            --text: #F5F0E8;
+            --muted: #A09080;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Space Mono', monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            overflow-x: hidden;
+        }
+
+        /* background grid */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(249,115,22,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(249,115,22,0.04) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px 36px;
+            max-width: 420px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -1px; left: 40px; right: 40px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            border-radius: 2px;
+        }
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .app-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 16px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Syne', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .app-info h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--text);
+            letter-spacing: -0.5px;
+        }
+
+        .app-info .tagline {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .badge {
+            display: inline-block;
+            background: rgba(249,115,22,0.12);
+            color: var(--primary);
+            border: 1px solid rgba(249,115,22,0.3);
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-top: 8px;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 24px 0;
+        }
+
+        .section-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--muted);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 16px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            border-color: var(--primary);
+            background: rgba(249,115,22,0.06);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            background: #fb923c;
+            border-color: #fb923c;
+            transform: translateY(-1px);
+        }
+
+        .btn-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-icon {
+            font-size: 20px;
+            width: 32px;
+            text-align: center;
+        }
+
+        .btn-text strong {
+            display: block;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .btn-text span {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 2px;
+            display: block;
+        }
+
+        .btn-primary .btn-text span {
+            color: rgba(0,0,0,0.5);
+        }
+
+        .btn-arrow {
+            font-size: 16px;
+            opacity: 0.5;
+        }
+
+        .notice {
+            background: rgba(132,204,22,0.08);
+            border: 1px solid rgba(132,204,22,0.2);
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 11px;
+            color: var(--accent);
+            line-height: 1.6;
+            margin-top: 20px;
+        }
+
+        .notice strong { font-weight: 700; }
+
+        .footer {
+            margin-top: 24px;
+            text-align: center;
+            font-size: 11px;
+            color: var(--muted);
+            line-height: 1.8;
+        }
+
+        .footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="app-header">
+            <div class="app-icon">V</div>
+            <div class="app-info">
+                <h1>Voomba</h1>
+                <div class="tagline">打车出行 · 西非城市</div>
+                <div class="badge">Demo v1.0</div>
+            </div>
+        </div>
+
+        <div class="section-label">选择平台安装</div>
+
+        <a class="btn btn-primary" href="itms-services://?action=download-manifest&url=https://kundouzhishou.github.io/playground/voomba/install/manifest.plist">
+            <div class="btn-left">
+                <div class="btn-icon">🍎</div>
+                <div class="btn-text">
+                    <strong>iOS 安装</strong>
+                    <span>iPhone / iPad · Ad Hoc</span>
+                </div>
+            </div>
+            <div class="btn-arrow">→</div>
+        </a>
+
+        <a class="btn" href="https://github.com/kundouzhishou/playground/releases/download/voomba-demo-v1.0/Voomba.apk">
+            <div class="btn-left">
+                <div class="btn-icon">🤖</div>
+                <div class="btn-text">
+                    <strong>Android 下载</strong>
+                    <span>APK · 67 MB</span>
+                </div>
+            </div>
+            <div class="btn-arrow">↓</div>
+        </a>
+
+        <div class="divider"></div>
+
+        <div class="notice">
+            <strong>iOS 安装须知：</strong>设置 → 通用 → VPN与设备管理 → 信任企业级应用，然后才能打开。<br><br>
+            <strong>Android 安装须知：</strong>需要开启"允许安装未知来源应用"。
+        </div>
+
+        <div class="footer">
+            Voomba Demo · 仅供内部测试<br>
+            <a href="https://kundouzhishou.github.io/playground/voomba/">← 返回项目页</a>
+        </div>
+    </div>
+</body>
+</html>
