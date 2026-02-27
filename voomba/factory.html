@@ -22,442 +22,166 @@
     --display: 'Bebas Neue', sans-serif;
     --body: 'DM Sans', sans-serif;
   }
-
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: var(--body); min-height: 100vh; overflow-x: hidden; }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--body);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* ── 顶部工厂标题栏 ── */
+  /* ── 顶部标题栏 ── */
   .factory-header {
-    background: var(--surface);
-    border-bottom: 2px solid var(--border);
-    padding: 0 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 64px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    background: var(--surface); border-bottom: 2px solid var(--border);
+    padding: 0 2rem; display: flex; align-items: center; justify-content: space-between;
+    height: 64px; position: sticky; top: 0; z-index: 100;
   }
-
-  .factory-logo {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .factory-logo .gear {
-    font-size: 1.6rem;
-    animation: spin 4s linear infinite;
-    display: inline-block;
-  }
-
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-
-  .factory-logo h1 {
-    font-family: var(--display);
-    font-size: 1.8rem;
-    letter-spacing: 3px;
-    color: var(--accent);
-  }
-
-  .factory-logo span {
-    font-family: var(--mono);
-    font-size: 0.7rem;
-    color: var(--muted);
-    letter-spacing: 2px;
-  }
-
-  .header-stats {
-    display: flex;
-    gap: 2rem;
-    font-family: var(--mono);
-    font-size: 0.75rem;
-  }
-
-  .stat {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-  }
-
-  .stat-value {
-    font-size: 1.4rem;
-    font-family: var(--display);
-    letter-spacing: 2px;
-  }
-
-  .stat-label {
-    color: var(--muted);
-    letter-spacing: 1px;
-    font-size: 0.65rem;
-  }
-
+  .factory-logo { display: flex; align-items: center; gap: 12px; }
+  .factory-logo .gear { font-size: 1.6rem; animation: spin 4s linear infinite; display: inline-block; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .factory-logo h1 { font-family: var(--display); font-size: 1.8rem; letter-spacing: 3px; color: var(--accent); }
+  .factory-logo span { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); letter-spacing: 2px; }
+  .header-stats { display: flex; gap: 2rem; font-family: var(--mono); font-size: 0.75rem; }
+  .stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .stat-value { font-size: 1.4rem; font-family: var(--display); letter-spacing: 2px; }
+  .stat-label { color: var(--muted); letter-spacing: 1px; font-size: 0.65rem; }
   .stat-value.green { color: var(--green); }
   .stat-value.orange { color: var(--accent); }
   .stat-value.red { color: var(--red); }
 
-  /* ── 传送带背景 ── */
-  .conveyor-bg {
-    background: repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 40px,
-      rgba(255,255,255,0.015) 40px,
-      rgba(255,255,255,0.015) 41px
-    );
-    padding: 2rem;
+  /* ── 布局：主内容 + 右侧日志 ── */
+  .layout { display: flex; gap: 0; align-items: flex-start; }
+  main { flex: 1; padding: 1.5rem 2rem 5rem; min-width: 0; }
+  .changelog-panel {
+    width: 280px; flex-shrink: 0; position: sticky; top: 80px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 4px; margin: 1.5rem 1.5rem 0 0; overflow: hidden;
+    max-height: calc(100vh - 120px);
   }
-
-  /* ── 流水线阶段标签 ── */
-  .pipeline-stages {
-    display: flex;
-    gap: 0;
-    margin-bottom: 1.5rem;
-    font-family: var(--mono);
-    font-size: 0.65rem;
-    letter-spacing: 2px;
-    color: var(--muted);
-    padding: 0 1rem;
+  .changelog-header {
+    padding: 10px 14px; background: var(--surface2); border-bottom: 1px solid var(--border);
+    font-family: var(--mono); font-size: 0.65rem; letter-spacing: 2px; color: var(--accent);
+    display: flex; align-items: center; gap: 8px;
   }
-
-  .stage-label {
-    flex: 1;
-    text-align: center;
-    padding: 6px;
-    border-top: 1px solid var(--border);
-    position: relative;
+  .changelog-body { overflow-y: auto; max-height: calc(100vh - 200px); }
+  .log-entry {
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+    animation: logSlide 0.4s ease both;
   }
-
-  .stage-label::after {
-    content: '▶';
-    position: absolute;
-    right: -6px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 0.5rem;
-    color: var(--border);
-    z-index: 1;
+  @keyframes logSlide { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+  .log-entry:last-child { border-bottom: none; }
+  .log-task { font-size: 0.75rem; color: var(--text); display: block; margin-bottom: 4px; line-height: 1.4; }
+  .log-meta { display: flex; gap: 6px; align-items: center; }
+  .log-dim {
+    font-family: var(--mono); font-size: 0.6rem; padding: 1px 5px;
+    border-radius: 2px; background: var(--surface2); color: var(--muted);
   }
-
-  .stage-label:last-child::after { display: none; }
+  .log-status-ok { color: var(--green); font-size: 0.7rem; }
+  .log-status-fail { color: var(--red); font-size: 0.7rem; }
+  .log-time { font-family: var(--mono); font-size: 0.6rem; color: var(--muted); margin-left: auto; }
+  .log-empty { padding: 20px 14px; font-family: var(--mono); font-size: 0.65rem; color: var(--muted); text-align: center; }
 
   /* ── 模块工位 ── */
   .module-section {
-    margin-bottom: 2.5rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    overflow: hidden;
-    position: relative;
+    margin-bottom: 2.5rem; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 4px; overflow: hidden; position: relative;
   }
-
   .module-section::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: var(--accent2);
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent2);
   }
-
   .module-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 20px 12px 24px;
-    background: var(--surface2);
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    user-select: none;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 20px 12px 24px; background: var(--surface2);
+    border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;
   }
-
-  .module-header:hover {
-    background: #22222a;
-  }
-
-  .module-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .module-icon {
-    font-size: 1rem;
-  }
-
-  .module-name {
-    font-family: var(--display);
-    font-size: 1.1rem;
-    letter-spacing: 2px;
-    color: var(--text);
-  }
-
-  .module-progress {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .progress-bar-wrap {
-    width: 120px;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-
-  .progress-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--accent2), var(--accent));
-    border-radius: 2px;
-    transition: width 1s ease;
-  }
-
-  .progress-pct {
-    font-family: var(--mono);
-    font-size: 0.75rem;
-    color: var(--accent);
-    min-width: 36px;
-    text-align: right;
-  }
-
-  .collapse-icon {
-    color: var(--muted);
-    font-size: 0.7rem;
-    transition: transform 0.2s;
-  }
-
-  .module-section.collapsed .collapse-icon {
-    transform: rotate(-90deg);
-  }
+  .module-header:hover { background: #22222a; }
+  .module-title { display: flex; align-items: center; gap: 10px; }
+  .module-icon { font-size: 1rem; }
+  .module-name { font-family: var(--display); font-size: 1.1rem; letter-spacing: 2px; color: var(--text); }
+  .module-progress { display: flex; align-items: center; gap: 12px; }
+  .progress-bar-wrap { width: 120px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); border-radius: 2px; transition: width 1s ease; }
+  .progress-pct { font-family: var(--mono); font-size: 0.75rem; color: var(--accent); min-width: 36px; text-align: right; }
+  .collapse-icon { color: var(--muted); font-size: 0.7rem; transition: transform 0.2s; }
+  .module-section.collapsed .collapse-icon { transform: rotate(-90deg); }
 
   /* ── 传送带 ── */
-  .conveyor-track {
-    padding: 16px 20px 20px 24px;
-    position: relative;
-    overflow: hidden;
-  }
-
+  .conveyor-track { padding: 16px 20px 20px 24px; position: relative; overflow: hidden; }
   .conveyor-track::before {
-    content: '';
-    position: absolute;
-    bottom: 28px;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: repeating-linear-gradient(
-      90deg,
-      var(--border) 0px,
-      var(--border) 12px,
-      transparent 12px,
-      transparent 20px
-    );
+    content: ''; position: absolute; bottom: 28px; left: 0; right: 0; height: 2px;
+    background: repeating-linear-gradient(90deg, var(--border) 0px, var(--border) 12px, transparent 12px, transparent 20px);
     animation: belt 1s linear infinite;
   }
-
-  @keyframes belt {
-    from { background-position: 0 0; }
-    to { background-position: 32px 0; }
-  }
-
-  .tasks-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
+  @keyframes belt { from { background-position: 0 0; } to { background-position: 32px 0; } }
+  .tasks-grid { display: flex; flex-wrap: wrap; gap: 10px; }
 
   /* ── 零件卡片 ── */
   .task-card {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 3px;
-    padding: 10px 12px;
-    min-width: 200px;
-    max-width: 260px;
-    flex: 1;
-    position: relative;
-    transition: transform 0.2s, border-color 0.2s;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 3px;
+    padding: 10px 12px; min-width: 200px; max-width: 260px; flex: 1; position: relative;
+    transition: transform 0.2s, border-color 0.3s, background 0.3s, box-shadow 0.3s;
     animation: slideIn 0.4s ease both;
   }
-
-  .task-card:hover {
-    transform: translateY(-2px);
-    border-color: var(--accent2);
-  }
-
-  .task-card.done {
-    border-color: rgba(34, 197, 94, 0.3);
-    background: rgba(34, 197, 94, 0.03);
-  }
-
+  .task-card:hover { transform: translateY(-2px); border-color: var(--accent2); }
+  .task-card.done { border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.03); }
   .task-card.done::after {
-    content: '✓';
-    position: absolute;
-    top: 6px;
-    right: 8px;
-    color: var(--green);
-    font-size: 0.75rem;
-    font-family: var(--mono);
+    content: '✓'; position: absolute; top: 6px; right: 8px;
+    color: var(--green); font-size: 0.75rem; font-family: var(--mono);
   }
-
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateX(-10px); }
-    to { opacity: 1; transform: translateX(0); }
+  /* 变更高亮动画 */
+  .task-card.just-changed {
+    border-color: var(--green) !important;
+    background: rgba(34,197,94,0.08) !important;
+    box-shadow: 0 0 16px rgba(34,197,94,0.3);
+    animation: slideIn 0.4s ease both, flashGreen 1.5s ease 3;
   }
-
-  .task-name {
-    font-size: 0.8rem;
-    color: var(--text);
-    margin-bottom: 8px;
-    line-height: 1.4;
-    padding-right: 16px;
+  @keyframes flashGreen {
+    0%, 100% { box-shadow: 0 0 8px rgba(34,197,94,0.2); }
+    50% { box-shadow: 0 0 24px rgba(34,197,94,0.7); border-color: var(--green); }
   }
-
-  .task-card.done .task-name {
-    color: var(--muted);
-  }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+  .task-name { font-size: 0.8rem; color: var(--text); margin-bottom: 8px; line-height: 1.4; padding-right: 16px; }
+  .task-card.done .task-name { color: var(--muted); }
 
   /* ── 三灯指示器 ── */
-  .task-lights {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-  }
+  .task-lights { display: flex; gap: 6px; align-items: center; }
+  .light { display: flex; align-items: center; gap: 3px; font-family: var(--mono); font-size: 0.6rem; color: var(--muted); }
+  .light-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border); }
+  .light-dot.on-green { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse-green 2s ease-in-out infinite; }
+  .light-dot.on-red { background: var(--red); box-shadow: 0 0 4px var(--red); }
+  .light-dot.na { background: var(--border); opacity: 0.4; }
+  @keyframes pulse-green { 0%,100% { box-shadow: 0 0 4px var(--green); } 50% { box-shadow: 0 0 10px var(--green); } }
 
-  .light {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    font-family: var(--mono);
-    font-size: 0.6rem;
-    color: var(--muted);
-  }
-
-  .light-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--border);
-    position: relative;
-  }
-
-  .light-dot.on-green {
-    background: var(--green);
-    box-shadow: 0 0 6px var(--green);
-    animation: pulse-green 2s ease-in-out infinite;
-  }
-
-  .light-dot.on-red {
-    background: var(--red);
-    box-shadow: 0 0 4px var(--red);
-  }
-
-  .light-dot.na {
-    background: var(--border);
-    opacity: 0.4;
-  }
-
-  @keyframes pulse-green {
-    0%, 100% { box-shadow: 0 0 4px var(--green); }
-    50% { box-shadow: 0 0 10px var(--green); }
-  }
-
-  /* ── 底部传送带装饰 ── */
+  /* ── 传送带装饰 ── */
   .belt-decoration {
     height: 12px;
-    background: repeating-linear-gradient(
-      90deg,
-      var(--surface2) 0px,
-      var(--surface2) 20px,
-      var(--border) 20px,
-      var(--border) 22px
-    );
-    animation: belt 0.5s linear infinite;
-    border-top: 1px solid var(--border);
+    background: repeating-linear-gradient(90deg, var(--surface2) 0px, var(--surface2) 20px, var(--border) 20px, var(--border) 22px);
+    animation: belt 0.5s linear infinite; border-top: 1px solid var(--border);
   }
-
-  /* ── 折叠 ── */
   .module-section.collapsed .conveyor-track,
-  .module-section.collapsed .belt-decoration {
-    display: none;
-  }
+  .module-section.collapsed .belt-decoration { display: none; }
 
   /* ── 底部状态栏 ── */
   .factory-footer {
-    background: var(--surface);
-    border-top: 2px solid var(--border);
-    padding: 10px 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-family: var(--mono);
-    font-size: 0.65rem;
-    color: var(--muted);
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    background: var(--surface); border-top: 2px solid var(--border);
+    padding: 10px 2rem; display: flex; align-items: center; justify-content: space-between;
+    font-family: var(--mono); font-size: 0.65rem; color: var(--muted);
+    position: fixed; bottom: 0; left: 0; right: 0;
   }
-
   .status-dot {
-    display: inline-block;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--green);
-    box-shadow: 0 0 6px var(--green);
-    margin-right: 6px;
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green); box-shadow: 0 0 6px var(--green); margin-right: 6px;
     animation: pulse-green 2s ease-in-out infinite;
   }
-
-  .ticker {
-    overflow: hidden;
-    white-space: nowrap;
-  }
-
-  .ticker-inner {
-    display: inline-block;
-    animation: ticker 20s linear infinite;
-  }
-
-  @keyframes ticker {
-    from { transform: translateX(100%); }
-    to { transform: translateX(-100%); }
-  }
-
-  /* ── 主内容区 ── */
-  main {
-    padding: 1.5rem 2rem 5rem;
-    max-width: 1400px;
-    margin: 0 auto;
-  }
+  .ticker { overflow: hidden; white-space: nowrap; }
+  .ticker-inner { display: inline-block; animation: ticker 20s linear infinite; }
+  @keyframes ticker { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
 
   /* ── 噪点纹理 ── */
   body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
+    content: ''; position: fixed; inset: 0;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 999;
-    opacity: 0.4;
+    pointer-events: none; z-index: 999; opacity: 0.4;
   }
 
   /* ── 响应式 ── */
-  @media (max-width: 600px) {
+  @media (max-width: 900px) {
+    .changelog-panel { display: none; }
     .header-stats { gap: 1rem; }
     .task-card { min-width: 160px; }
     main { padding: 1rem 1rem 5rem; }
@@ -465,7 +189,6 @@
 </style>
 </head>
 <body>
-
 <header class="factory-header">
   <div class="factory-logo">
     <span class="gear">⚙</span>
@@ -475,284 +198,280 @@
     </div>
   </div>
   <div class="header-stats" id="header-stats">
-    <div class="stat">
-      <span class="stat-value green" id="stat-done">0</span>
-      <span class="stat-label">完成</span>
-    </div>
-    <div class="stat">
-      <span class="stat-value orange" id="stat-wip">0</span>
-      <span class="stat-label">进行中</span>
-    </div>
-    <div class="stat">
-      <span class="stat-value red" id="stat-todo">0</span>
-      <span class="stat-label">待开发</span>
-    </div>
+    <div class="stat"><span class="stat-value green" id="stat-done">0</span><span class="stat-label">完成</span></div>
+    <div class="stat"><span class="stat-value orange" id="stat-wip">0</span><span class="stat-label">进行中</span></div>
+    <div class="stat"><span class="stat-value red" id="stat-todo">0</span><span class="stat-label">待开发</span></div>
   </div>
 </header>
 
-<main id="main-content"></main>
+<div class="layout">
+  <main id="main-content">
+    <div style="text-align:center;padding:4rem;font-family:var(--mono);color:var(--muted);letter-spacing:2px">⚙ 正在拉取生产数据...</div>
+  </main>
+  <aside class="changelog-panel">
+    <div class="changelog-header">📡 变更日志</div>
+    <div class="changelog-body" id="change-log">
+      <div class="log-empty">等待变更...</div>
+    </div>
+  </aside>
+</div>
 
 <footer class="factory-footer">
-  <div><span class="status-dot"></span>FACTORY ONLINE · VOOMBA v0.1</div>
-  <div class="ticker">
-    <span class="ticker-inner" id="ticker-text">正在加载生产数据...</span>
-  </div>
+  <div><span class="status-dot"></span><span id="sync-status">正在连接...</span></div>
+  <div class="ticker"><span class="ticker-inner" id="ticker-text">⚙ VOOMBA FACTORY ONLINE</span></div>
   <div style="display:flex;gap:1.5rem;align-items:center">
     <span id="last-updated" style="color:var(--muted)"></span>
-    <span id="footer-time"></span>
+    <span id="footer-time" style="font-family:var(--mono);font-size:0.65rem;color:var(--muted)"></span>
   </div>
 </footer>
-
 <script>
-// ── 数据源：从 GitHub raw 拉取 roadmap.md 实时解析 ──
 const ROADMAP_URL = 'https://raw.githubusercontent.com/kundouzhishou/voomba/main/roadmap.md';
-const POLL_INTERVAL = 30000; // 30 秒轮询一次
+const POLL_INTERVAL = 30000;
 
-// 模块图标映射
+// ── 状态 ──
+let prevSnapshot = null;
+let changeLog = [];
+let isFirstLoad = true;
+
+// ── 模块图标 ──
 const MODULE_ICONS = {
-  'auth': '🔐', '认证': '🔐',
-  '行程': '🛵', 'ride': '🛵',
-  '后端': '⚡', 'api': '⚡',
-  '联调': '🔗',
-  '司机': '🏍',
-  'sms': '📱', '通知': '📱',
-  '历史': '📋',
-  '资料': '👤', 'profile': '👤',
-  '阶段': '🔧',
+  'auth': '🔐', '认证': '🔐', '行程': '🛵', '后端': '⚡',
+  'api': '⚡', '联调': '🔗', '司机': '🏍', 'sms': '📱',
+  '通知': '📱', '历史': '📋', '资料': '👤', '阶段': '🔧',
 };
-
 function getIcon(name) {
   const lower = name.toLowerCase();
-  for (const [key, icon] of Object.entries(MODULE_ICONS)) {
-    if (lower.includes(key)) return icon;
+  for (const [k, v] of Object.entries(MODULE_ICONS)) {
+    if (lower.includes(k)) return v;
   }
   return '📦';
 }
 
-// 解析 [dev: ✅/❌/—] 格式
+// ── 解析维度值 ──
 function parseDim(str) {
   if (!str) return null;
   if (str.includes('✅')) return true;
   if (str.includes('❌')) return false;
-  if (str.includes('—') || str.includes('-')) return null;
   return null;
 }
 
-// 解析单行任务
+// ── 解析任务行 ──
 function parseTask(line) {
-  // 匹配：- [ ] 或 - [x] 开头的行
-  const taskMatch = line.match(/^-\s*\[[ xX]\]\s*(.+)/);
-  if (!taskMatch) return null;
-
-  const rest = taskMatch[1];
-  const devMatch  = rest.match(/\[dev:\s*([^\]]+)\]/);
-  const uiMatch   = rest.match(/\[ui:\s*([^\]]+)\]/);
-  const testMatch = rest.match(/\[test:\s*([^\]]+)\]/);
-
-  // 任务名：去掉所有 [...] 标签
-  const name = rest.replace(/\[(?:dev|ui|test):[^\]]*\]/g, '').trim();
-
-  return {
-    name,
-    dev:  devMatch  ? parseDim(devMatch[1])  : null,
-    ui:   uiMatch   ? parseDim(uiMatch[1])   : null,
-    test: testMatch ? parseDim(testMatch[1]) : null,
-  };
+  const m = line.match(/^-\s*\[[ xX]\]\s*(.+)/);
+  if (!m) return null;
+  const rest = m[1];
+  const devM  = rest.match(/\[dev:\s*([^\]]+)\]/);
+  const uiM   = rest.match(/\[ui:\s*([^\]]+)\]/);
+  const testM = rest.match(/\[test:\s*([^\]]+)\]/);
+  const name  = rest.replace(/\[(?:dev|ui|test):[^\]]*\]/g, '').trim();
+  if (!name) return null;
+  return { name, dev: parseDim(devM?.[1]), ui: parseDim(uiM?.[1]), test: parseDim(testM?.[1]) };
 }
 
-// 解析整个 roadmap.md 文本
+// ── 解析 roadmap.md ──
 function parseRoadmap(md) {
   const lines = md.split('\n');
   const modules = [];
-  let current = null;
-
+  let cur = null;
   for (const line of lines) {
-    // 二级标题 = 模块
     const h2 = line.match(/^##\s+(.+)/);
     if (h2) {
-      if (current) modules.push(current);
-      const name = h2[1].trim();
-      current = { name, icon: getIcon(name), tasks: [] };
+      if (cur && cur.tasks.length) modules.push(cur);
+      cur = { name: h2[1].trim(), icon: getIcon(h2[1]), tasks: [] };
       continue;
     }
-    // 任务行
-    if (current) {
-      const task = parseTask(line);
-      if (task && task.name) current.tasks.push(task);
+    if (cur) {
+      const t = parseTask(line);
+      if (t) cur.tasks.push(t);
     }
   }
-  if (current && current.tasks.length > 0) modules.push(current);
-
-  // 过滤掉空模块
-  return modules.filter(m => m.tasks.length > 0);
+  if (cur && cur.tasks.length) modules.push(cur);
+  return modules;
 }
 
-let ROADMAP = [];
+// ── 快照 ──
+function buildSnapshot(modules) {
+  const snap = {};
+  for (const mod of modules)
+    for (const task of mod.tasks)
+      snap[mod.name + '::' + task.name] = { dev: task.dev, ui: task.ui, test: task.test };
+  return snap;
+}
 
-// ── 判断任务是否完成 ──
-function isDone(task) {
-  const dims = [task.dev, task.ui, task.test].filter(v => v !== null);
+// ── 对比变更 ──
+function diffSnapshot(modules, old) {
+  const changes = [];
+  for (const mod of modules) {
+    for (const task of mod.tasks) {
+      const key = mod.name + '::' + task.name;
+      const prev = old[key];
+      if (!prev) continue;
+      for (const dim of ['dev', 'ui', 'test']) {
+        if (prev[dim] !== task[dim] && task[dim] !== null) {
+          changes.push({ module: mod.name, task: task.name, dim, to: task[dim], time: new Date() });
+        }
+      }
+    }
+  }
+  return changes;
+}
+
+// ── 渲染 ──
+function isDone(t) {
+  const dims = [t.dev, t.ui, t.test].filter(v => v !== null);
   return dims.length > 0 && dims.every(v => v === true);
 }
 
-// ── 计算模块进度 ──
-function moduleProgress(tasks) {
-  const done = tasks.filter(isDone).length;
-  return { done, total: tasks.length, pct: Math.round(done / tasks.length * 100) };
-}
-
-// ── 渲染指示灯 ──
 function renderLight(label, val) {
-  let cls = 'na';
-  if (val === true) cls = 'on-green';
-  else if (val === false) cls = 'on-red';
+  const cls = val === true ? 'on-green' : val === false ? 'on-red' : 'na';
   return `<span class="light"><span class="light-dot ${cls}"></span>${label}</span>`;
 }
 
-// ── 渲染任务卡片 ──
-function renderCard(task, idx) {
+function renderCard(task, idx, changedKeys) {
   const done = isDone(task);
-  return `
-    <div class="task-card ${done ? 'done' : ''}" style="animation-delay:${idx * 0.05}s">
-      <div class="task-name">${task.name}</div>
-      <div class="task-lights">
-        ${renderLight('DEV', task.dev)}
-        ${renderLight('UI', task.ui)}
-        ${renderLight('TEST', task.test)}
-      </div>
-    </div>`;
+  const changed = changedKeys.has(task._key);
+  return `<div class="task-card ${done ? 'done' : ''} ${changed ? 'just-changed' : ''}" style="animation-delay:${idx*0.05}s">
+    <div class="task-name">${task.name}</div>
+    <div class="task-lights">${renderLight('DEV',task.dev)}${renderLight('UI',task.ui)}${renderLight('TEST',task.test)}</div>
+  </div>`;
 }
 
-// ── 渲染模块 ──
-function renderModule(mod, idx) {
-  const { done, total, pct } = moduleProgress(mod.tasks);
-  const cards = mod.tasks.map((t, i) => renderCard(t, i)).join('');
-  return `
-    <div class="module-section" id="mod-${idx}">
-      <div class="module-header" onclick="toggleModule(${idx})">
-        <div class="module-title">
-          <span class="module-icon">${mod.icon}</span>
-          <span class="module-name">${mod.name}</span>
-        </div>
-        <div class="module-progress">
-          <div class="progress-bar-wrap">
-            <div class="progress-bar-fill" style="width:${pct}%"></div>
-          </div>
-          <span class="progress-pct">${done}/${total}</span>
-          <span class="collapse-icon">▼</span>
-        </div>
+function renderModule(mod, idx, changedKeys) {
+  const done = mod.tasks.filter(isDone).length;
+  const total = mod.tasks.length;
+  const pct = Math.round(done / total * 100);
+  const cards = mod.tasks.map((t, i) => {
+    t._key = mod.name + '::' + t.name;
+    return renderCard(t, i, changedKeys);
+  }).join('');
+  return `<div class="module-section" id="mod-${idx}">
+    <div class="module-header" onclick="toggleModule(${idx})">
+      <div class="module-title"><span class="module-icon">${mod.icon}</span><span class="module-name">${mod.name}</span></div>
+      <div class="module-progress">
+        <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+        <span class="progress-pct">${done}/${total}</span>
+        <span class="collapse-icon">▼</span>
       </div>
-      <div class="conveyor-track">
-        <div class="tasks-grid">${cards}</div>
-      </div>
-      <div class="belt-decoration"></div>
-    </div>`;
+    </div>
+    <div class="conveyor-track"><div class="tasks-grid">${cards}</div></div>
+    <div class="belt-decoration"></div>
+  </div>`;
 }
 
-// ── 折叠/展开 ──
 function toggleModule(idx) {
-  document.getElementById(`mod-${idx}`).classList.toggle('collapsed');
+  document.getElementById('mod-' + idx).classList.toggle('collapsed');
 }
 
-// ── 统计 ──
-function calcStats() {
-  let done = 0, wip = 0, todo = 0;
-  ROADMAP.forEach(mod => {
-    mod.tasks.forEach(task => {
-      if (isDone(task)) { done++; return; }
-      const dims = [task.dev, task.ui, task.test].filter(v => v !== null);
-      const anyDone = dims.some(v => v === true);
-      if (anyDone) wip++;
-      else todo++;
-    });
-  });
-  return { done, wip, todo };
-}
-
-// ── 渲染看板 ──
-function render() {
+function renderAll(modules, changedKeys) {
   const main = document.getElementById('main-content');
-  // 保留已折叠状态
-  const collapsed = new Set(
-    [...document.querySelectorAll('.module-section.collapsed')]
-      .map(el => el.id)
-  );
-  main.innerHTML = ROADMAP.map((mod, i) => renderModule(mod, i)).join('');
-  collapsed.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.add('collapsed');
-  });
+  const collapsed = new Set([...document.querySelectorAll('.module-section.collapsed')].map(e => e.id));
+  main.innerHTML = modules.map((m, i) => renderModule(m, i, changedKeys)).join('');
+  collapsed.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('collapsed'); });
 
-  const { done, wip, todo } = calcStats();
+  let done = 0, wip = 0, todo = 0;
+  modules.forEach(mod => mod.tasks.forEach(t => {
+    if (isDone(t)) { done++; return; }
+    const anyDone = [t.dev, t.ui, t.test].filter(v => v !== null).some(v => v === true);
+    if (anyDone) wip++; else todo++;
+  }));
   document.getElementById('stat-done').textContent = done;
   document.getElementById('stat-wip').textContent = wip;
   document.getElementById('stat-todo').textContent = todo;
-
   const total = done + wip + todo;
   document.getElementById('ticker-text').textContent =
     `⚙ 总任务 ${total} 项 · 已完成 ${done} 项 · 进行中 ${wip} 项 · 待开发 ${todo} 项 · 整体进度 ${Math.round(done/total*100)}% · VOOMBA FACTORY ONLINE ·`;
+
+  // 4秒后移除高亮
+  if (changedKeys.size > 0) {
+    setTimeout(() => document.querySelectorAll('.just-changed').forEach(el => el.classList.remove('just-changed')), 4000);
+  }
 }
 
-// ── 拉取 roadmap.md 并更新 ──
-let lastEtag = '';
+// ── 变更日志 ──
+function timeAgo(d) {
+  const s = Math.floor((Date.now() - d) / 1000);
+  if (s < 60) return '刚刚';
+  if (s < 3600) return Math.floor(s/60) + '分钟前';
+  return Math.floor(s/3600) + '小时前';
+}
+
+function renderChangeLog() {
+  const el = document.getElementById('change-log');
+  if (!el) return;
+  if (!changeLog.length) {
+    el.innerHTML = '<div class="log-empty">等待变更...</div>';
+    return;
+  }
+  el.innerHTML = changeLog.map(c => {
+    const icon = c.to ? '✅' : '❌';
+    const dimLabel = { dev: 'DEV', ui: 'UI', test: 'TEST' }[c.dim];
+    return `<div class="log-entry">
+      <span class="log-task">${icon} ${c.task}</span>
+      <div class="log-meta">
+        <span class="log-dim">${dimLabel}</span>
+        <span class="${c.to ? 'log-status-ok' : 'log-status-fail'}">${c.to ? '完成' : '回退'}</span>
+        <span class="log-time">${timeAgo(c.time)}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── 拉取 & 更新 ──
+let lastContent = '';
 async function fetchRoadmap() {
   try {
-    // 加时间戳绕过 CDN 缓存
-    const url = ROADMAP_URL + '?t=' + Date.now();
-    const res = await fetch(url);
+    const res = await fetch(ROADMAP_URL + '?t=' + Date.now());
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const text = await res.text();
-    const etag = text.slice(0, 200); // 用内容前缀做简单变更检测
-    if (etag !== lastEtag) {
-      lastEtag = etag;
-      ROADMAP = parseRoadmap(text);
-      render();
-      setLastUpdated();
+    if (text === lastContent) { setStatus(true, '已同步，无变化'); return; }
+    lastContent = text;
+    const modules = parseRoadmap(text);
+    if (!modules.length) return;
+
+    if (isFirstLoad) {
+      prevSnapshot = buildSnapshot(modules);
+      renderAll(modules, new Set());
+      isFirstLoad = false;
+      setStatus(true, '已连接');
+    } else {
+      const changes = diffSnapshot(modules, prevSnapshot);
+      prevSnapshot = buildSnapshot(modules);
+      const changedKeys = new Set(changes.map(c => c.module + '::' + c.task));
+      renderAll(modules, changedKeys);
+      if (changes.length) {
+        changeLog = [...changes, ...changeLog].slice(0, 30);
+        renderChangeLog();
+        setStatus(true, `检测到 ${changes.length} 项变更`);
+      } else {
+        setStatus(true, '已同步');
+      }
     }
-    setStatus('online');
+    document.getElementById('last-updated').textContent =
+      '更新于 ' + new Date().toISOString().replace('T',' ').slice(0,19) + ' UTC';
   } catch (e) {
-    setStatus('error');
-    console.warn('roadmap fetch failed:', e);
+    setStatus(false, '同步失败: ' + e.message);
   }
 }
 
-function setLastUpdated() {
-  const now = new Date();
-  document.getElementById('last-updated').textContent =
-    '上次更新 ' + now.toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
-}
-
-function setStatus(state) {
+function setStatus(ok, msg) {
   const dot = document.querySelector('.status-dot');
-  if (state === 'online') {
-    dot.style.background = 'var(--green)';
-    dot.style.boxShadow = '0 0 6px var(--green)';
-  } else {
-    dot.style.background = 'var(--red)';
-    dot.style.boxShadow = '0 0 6px var(--red)';
-  }
+  dot.style.background = ok ? 'var(--green)' : 'var(--red)';
+  dot.style.boxShadow = ok ? '0 0 6px var(--green)' : '0 0 6px var(--red)';
+  document.getElementById('sync-status').textContent = msg;
 }
 
-// ── 初始化 ──
-async function init() {
-  // 时钟
+// ── 启动 ──
+function init() {
   function tick() {
-    const now = new Date();
     document.getElementById('footer-time').textContent =
-      now.toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+      new Date().toISOString().replace('T',' ').slice(0,19) + ' UTC';
+    renderChangeLog(); // 更新时间显示
   }
   tick();
   setInterval(tick, 1000);
-
-  // 首次加载
-  document.getElementById('main-content').innerHTML =
-    '<div style="text-align:center;padding:4rem;font-family:var(--mono);color:var(--muted);letter-spacing:2px">⚙ 正在拉取生产数据...</div>';
-  await fetchRoadmap();
-
-  // 轮询
+  fetchRoadmap();
   setInterval(fetchRoadmap, POLL_INTERVAL);
 }
-
 init();
 </script>
 </body>
