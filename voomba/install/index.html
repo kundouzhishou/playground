@@ -224,6 +224,27 @@
             color: var(--primary);
             text-decoration: none;
         }
+
+        .build-info {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+        }
+
+        .build-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .build-row:last-child { border-bottom: none; }
+
+        .build-row span:first-child { color: var(--muted); }
+        .build-row span:last-child { color: var(--text); font-weight: 700; }
     </style>
 </head>
 <body>
@@ -233,7 +254,7 @@
             <div class="app-info">
                 <h1>Voomba</h1>
                 <div class="tagline">打车出行 · 西非城市</div>
-                <div class="badge">Demo v1.0</div>
+                <div class="badge">v1.0.0 (build 1)</div>
             </div>
         </div>
 
@@ -244,7 +265,7 @@
                 <div class="btn-icon">🍎</div>
                 <div class="btn-text">
                     <strong>iOS 安装</strong>
-                    <span>iPhone / iPad · Ad Hoc</span>
+                    <span>v1.0.0 · 8.8 MB · Ad Hoc</span>
                 </div>
             </div>
             <div class="btn-arrow">→</div>
@@ -255,13 +276,20 @@
                 <div class="btn-icon">🤖</div>
                 <div class="btn-text">
                     <strong>Android 下载</strong>
-                    <span>APK · 67 MB</span>
+                    <span>v1.0.0 · 76 MB · APK</span>
                 </div>
             </div>
             <div class="btn-arrow">↓</div>
         </a>
 
         <div class="divider"></div>
+
+        <div class="section-label">构建信息</div>
+        <div class="build-info">
+            <div class="build-row"><span>版本</span><span>1.0.0 (build 1)</span></div>
+            <div class="build-row"><span>构建时间</span><span>2026-02-27</span></div>
+            <div class="build-row"><span>Bundle ID</span><span>com.yilian.voomba</span></div>
+        </div>
 
         <div class="notice">
             <strong>iOS 安装须知：</strong>设置 → 通用 → VPN与设备管理 → 信任企业级应用，然后才能打开。<br><br>
