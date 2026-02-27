@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<body style="background:#111;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- 背景渐变：深紫到暗紫 -->
+    <radialGradient id="bgGrad" cx="40%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#2E1065"/>
+    </radialGradient>
+
+    <!-- 橙色光晕 -->
+    <radialGradient id="glowGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#F97316" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#F97316" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- 摩托车橙色渐变 -->
+    <linearGradient id="motoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDBA74"/>
+      <stop offset="100%" stop-color="#EA580C"/>
+    </linearGradient>
+
+    <!-- 轮子渐变 -->
+    <linearGradient id="wheelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FB923C"/>
+      <stop offset="100%" stop-color="#C2410C"/>
+    </linearGradient>
+
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <clipPath id="roundRect">
+      <rect width="512" height="512" rx="112"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#roundRect)">
+    <!-- 背景 -->
+    <rect width="512" height="512" fill="url(#bgGrad)"/>
+
+    <!-- 背景光晕 -->
+    <ellipse cx="256" cy="280" rx="220" ry="160" fill="url(#glowGrad)"/>
+
+    <!-- 地面线 -->
+    <line x1="60" y1="360" x2="452" y2="360" stroke="#F97316" stroke-width="2" stroke-opacity="0.2" stroke-dasharray="8 6"/>
+
+    <!-- 速度线 -->
+    <line x1="48" y1="268" x2="118" y2="268" stroke="#F97316" stroke-width="3" stroke-linecap="round" stroke-opacity="0.7"/>
+    <line x1="36" y1="288" x2="96" y2="288" stroke="#F97316" stroke-width="2" stroke-linecap="round" stroke-opacity="0.45"/>
+    <line x1="52" y1="308" x2="104" y2="308" stroke="#F97316" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.25"/>
+
+    <!-- ===== 摩托车主体 ===== -->
+
+    <!-- 后轮 -->
+    <circle cx="168" cy="330" r="72" fill="none" stroke="url(#wheelGrad)" stroke-width="18" filter="url(#softGlow)"/>
+    <!-- 轮毂辐条 -->
+    <line x1="168" y1="270" x2="168" y2="390" stroke="#F97316" stroke-width="3" stroke-opacity="0.5"/>
+    <line x1="108" y1="330" x2="228" y2="330" stroke="#F97316" stroke-width="3" stroke-opacity="0.5"/>
+    <line x1="126" y1="288" x2="210" y2="372" stroke="#F97316" stroke-width="2" stroke-opacity="0.35"/>
+    <line x1="210" y1="288" x2="126" y2="372" stroke="#F97316" stroke-width="2" stroke-opacity="0.35"/>
+    <!-- 轮毂中心 -->
+    <circle cx="168" cy="330" r="14" fill="#EA580C"/>
+    <circle cx="168" cy="330" r="6" fill="#FED7AA"/>
+
+    <!-- 前轮 -->
+    <circle cx="368" cy="330" r="72" fill="none" stroke="url(#wheelGrad)" stroke-width="18" filter="url(#softGlow)"/>
+    <line x1="368" y1="270" x2="368" y2="390" stroke="#F97316" stroke-width="3" stroke-opacity="0.5"/>
+    <line x1="308" y1="330" x2="428" y2="330" stroke="#F97316" stroke-width="3" stroke-opacity="0.5"/>
+    <line x1="326" y1="288" x2="410" y2="372" stroke="#F97316" stroke-width="2" stroke-opacity="0.35"/>
+    <line x1="410" y1="288" x2="326" y2="372" stroke="#F97316" stroke-width="2" stroke-opacity="0.35"/>
+    <circle cx="368" cy="330" r="14" fill="#EA580C"/>
+    <circle cx="368" cy="330" r="6" fill="#FED7AA"/>
+
+    <!-- 车架主体 -->
+    <!-- 下管：后轴 → 发动机 → 前轴 -->
+    <path d="M168 330 L220 240 L310 240 L368 330" fill="none" stroke="url(#motoGrad)" stroke-width="14" stroke-linejoin="round" stroke-linecap="round" filter="url(#softGlow)"/>
+
+    <!-- 上管：座位到前叉 -->
+    <path d="M210 230 L310 220 L368 258" fill="none" stroke="url(#motoGrad)" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
+
+    <!-- 发动机块 -->
+    <rect x="228" y="258" width="68" height="52" rx="10" fill="#EA580C" opacity="0.9"/>
+    <rect x="236" y="266" width="52" height="36" rx="7" fill="#F97316"/>
+
+    <!-- 车座 -->
+    <path d="M196 222 Q256 208 316 218 L310 238 Q256 228 202 242 Z" fill="#C2410C"/>
+    <path d="M196 222 Q256 210 316 218 L314 226 Q256 216 198 230 Z" fill="#FB923C"/>
+
+    <!-- 前叉 -->
+    <line x1="350" y1="240" x2="368" y2="330" stroke="#FB923C" stroke-width="10" stroke-linecap="round"/>
+    <line x1="362" y1="240" x2="378" y2="318" stroke="#FDBA74" stroke-width="5" stroke-linecap="round" stroke-opacity="0.6"/>
+
+    <!-- 车把 -->
+    <path d="M340 228 Q356 218 376 212 M340 228 Q356 236 372 244" stroke="#FB923C" stroke-width="8" stroke-linecap="round" fill="none"/>
+
+    <!-- 排气管 -->
+    <path d="M240 300 Q200 310 180 340" fill="none" stroke="#7C3AED" stroke-width="8" stroke-linecap="round" opacity="0.8"/>
+    <path d="M240 300 Q200 310 180 340" fill="none" stroke="#A855F7" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+
+    <!-- ===== 骑手 ===== -->
+
+    <!-- 身体 -->
+    <path d="M230 230 Q240 180 268 165 Q290 158 300 175 Q310 195 296 225 Q270 238 230 230 Z" fill="#EA580C"/>
+
+    <!-- 头盔 -->
+    <ellipse cx="272" cy="152" rx="36" ry="32" fill="#C2410C"/>
+    <!-- 头盔高光 -->
+    <ellipse cx="262" cy="140" rx="18" ry="12" fill="#FB923C" opacity="0.5"/>
+    <!-- 头盔遮阳板 -->
+    <path d="M240 162 Q272 172 304 162 L300 170 Q272 180 244 170 Z" fill="#1E1B4B" opacity="0.85"/>
+    <!-- 遮阳板反光 -->
+    <path d="M248 163 Q265 170 282 165" fill="none" stroke="white" stroke-width="2" stroke-opacity="0.3" stroke-linecap="round"/>
+
+    <!-- 手臂 -->
+    <path d="M296 200 Q330 210 356 222" fill="none" stroke="#EA580C" stroke-width="12" stroke-linecap="round"/>
+    <path d="M296 200 Q330 210 356 222" fill="none" stroke="#FB923C" stroke-width="6" stroke-linecap="round" opacity="0.5"/>
+
+    <!-- 腿 -->
+    <path d="M240 228 Q230 260 220 280" fill="none" stroke="#C2410C" stroke-width="14" stroke-linecap="round"/>
+
+  </g>
+
+  <!-- 圆角边框描边 -->
+  <rect width="512" height="512" rx="112" fill="none" stroke="#F97316" stroke-width="3" stroke-opacity="0.15"/>
+</svg>
+</body></html>
