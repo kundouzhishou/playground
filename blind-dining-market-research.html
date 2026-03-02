@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>盲盒社交 + 吃饭匹配 — 市场调研报告</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Noto+Serif+SC:wght@400;600;700;900&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #12121a;
+  --bg-card: #1a1a26;
+  --bg-card-hover: #22222f;
+  --accent-gold: #d4a853;
+  --accent-gold-dim: rgba(212,168,83,0.15);
+  --accent-coral: #e8735a;
+  --accent-teal: #5ab8a8;
+  --accent-blue: #6889c4;
+  --text-primary: #e8e4dd;
+  --text-secondary: #9a9590;
+  --text-dim: #5a5650;
+  --border: rgba(212,168,83,0.12);
+  --border-strong: rgba(212,168,83,0.3);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'DM Sans', 'Noto Serif SC', sans-serif;
+  line-height: 1.8;
+  overflow-x: hidden;
+}
+
+/* Noise texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+::selection {
+  background: var(--accent-gold);
+  color: var(--bg-primary);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--accent-gold-dim); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-gold); }
+
+/* ============ HERO ============ */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 4rem 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(ellipse at 30% 50%, rgba(212,168,83,0.06) 0%, transparent 50%),
+              radial-gradient(ellipse at 70% 50%, rgba(90,184,168,0.04) 0%, transparent 50%);
+  animation: heroGlow 12s ease-in-out infinite alternate;
+}
+
+@keyframes heroGlow {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(-3%, 2%) scale(1.05); }
+}
+
+.hero-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  margin-bottom: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-title {
+  font-family: 'Playfair Display', 'Noto Serif SC', serif;
+  font-size: clamp(2.8rem, 7vw, 6rem);
+  font-weight: 900;
+  line-height: 1.1;
+  max-width: 900px;
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-gold) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-subtitle {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1.15rem;
+  color: var(--text-secondary);
+  margin-top: 1.5rem;
+  max-width: 560px;
+  position: relative;
+  z-index: 1;
+  font-weight: 300;
+}
+
+.hero-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  margin-top: 3rem;
+  letter-spacing: 0.1em;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-scroll {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.hero-scroll::after {
+  content: '';
+  width: 1px;
+  height: 40px;
+  background: linear-gradient(to bottom, var(--accent-gold), transparent);
+  animation: scrollPulse 2s ease-in-out infinite;
+}
+
+@keyframes scrollPulse {
+  0%, 100% { opacity: 0.3; height: 40px; }
+  50% { opacity: 1; height: 60px; }
+}
+
+/* ============ LAYOUT ============ */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.section {
+  padding: 6rem 0;
+  position: relative;
+}
+
+.section-divider {
+  width: 60px;
+  height: 1px;
+  background: var(--accent-gold);
+  margin: 0 auto 4rem;
+}
+
+.section-number {
+  font-family: 'Playfair Display', serif;
+  font-size: 6rem;
+  font-weight: 900;
+  color: var(--accent-gold-dim);
+  line-height: 1;
+  margin-bottom: -1rem;
+}
+
+.section-title {
+  font-family: 'Playfair Display', 'Noto Serif SC', serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.section-desc {
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  max-width: 640px;
+  margin-bottom: 3rem;
+  font-weight: 300;
+}
+
+/* ============ TOC ============ */
+.toc {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 3rem;
+  margin: -4rem auto 0;
+  max-width: 700px;
+  position: relative;
+  z-index: 2;
+}
+
+.toc-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  margin-bottom: 1.5rem;
+}
+
+.toc-list {
+  list-style: none;
+  counter-reset: toc-counter;
+}
+
+.toc-list li {
+  counter-increment: toc-counter;
+  border-bottom: 1px solid var(--border);
+}
+
+.toc-list li:last-child { border-bottom: none; }
+
+.toc-list a {
+  display: flex;
+  align-items: center;
+  padding: 0.9rem 0;
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  gap: 1rem;
+}
+
+.toc-list a::before {
+  content: counter(toc-counter, decimal-leading-zero);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--accent-gold);
+  min-width: 2rem;
+}
+
+.toc-list a:hover {
+  color: var(--accent-gold);
+  padding-left: 0.5rem;
+}
+
+/* ============ CARDS ============ */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  transition: all 0.4s ease;
+}
+
+.card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.card-name {
+  font-family: 'Playfair Display', 'Noto Serif SC', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.card-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.8rem;
+  border-radius: 100px;
+  font-weight: 500;
+}
+
+.badge-active { background: rgba(90,184,168,0.15); color: var(--accent-teal); }
+.badge-semi { background: rgba(212,168,83,0.15); color: var(--accent-gold); }
+.badge-dead { background: rgba(232,115,90,0.15); color: var(--accent-coral); }
+
+/* ============ DATA TABLE ============ */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.9rem;
+}
+
+.data-table th {
+  text-align: left;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--border-strong);
+  font-weight: 500;
+}
+
+.data-table td {
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.data-table td:first-child {
+  color: var(--text-secondary);
+  white-space: nowrap;
+  width: 30%;
+  font-weight: 500;
+}
+
+.data-table tr:last-child td { border-bottom: none; }
+
+/* ============ STAT HIGHLIGHT ============ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.stat-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  transition: all 0.4s ease;
+}
+
+.stat-item:hover {
+  border-color: var(--accent-gold);
+  transform: translateY(-2px);
+}
+
+.stat-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: var(--accent-gold);
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 0.3rem;
+  font-weight: 400;
+}
+
+/* ============ CONTENT ELEMENTS ============ */
+.highlight-box {
+  background: linear-gradient(135deg, rgba(212,168,83,0.08), rgba(212,168,83,0.02));
+  border-left: 3px solid var(--accent-gold);
+  border-radius: 0 12px 12px 0;
+  padding: 1.5rem 2rem;
+  margin: 2rem 0;
+  font-style: italic;
+  color: var(--text-primary);
+}
+
+.content-list {
+  list-style: none;
+  padding: 0;
+}
+
+.content-list li {
+  padding: 0.5rem 0 0.5rem 1.5rem;
+  position: relative;
+  color: var(--text-primary);
+}
+
+.content-list li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--accent-gold);
+  font-weight: 700;
+}
+
+.subsection-title {
+  font-family: 'Playfair Display', 'Noto Serif SC', serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 2rem 0 1rem;
+  color: var(--text-primary);
+}
+
+.tag {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  background: var(--accent-gold-dim);
+  color: var(--accent-gold);
+  margin-right: 0.5rem;
+  text-transform: uppercase;
+}
+
+p { margin-bottom: 1rem; }
+
+strong { color: var(--accent-gold); font-weight: 600; }
+
+/* ============ COMPARISON TABLE ============ */
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2rem 0;
+  font-size: 0.85rem;
+}
+
+.compare-table th {
+  background: var(--bg-card);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  padding: 1rem;
+  border: 1px solid var(--border);
+  text-align: left;
+  font-weight: 500;
+}
+
+.compare-table td {
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.compare-table tr:nth-child(even) { background: rgba(255,255,255,0.01); }
+
+/* ============ INSIGHT BOX ============ */
+.insight-box {
+  background: var(--bg-card);
+  border: 1px solid var(--accent-teal);
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 2rem 0;
+  position: relative;
+}
+
+.insight-box::before {
+  content: '💡';
+  position: absolute;
+  top: -0.8rem;
+  left: 1.5rem;
+  font-size: 1.2rem;
+  background: var(--bg-primary);
+  padding: 0 0.5rem;
+}
+
+.insight-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-teal);
+  margin-bottom: 0.8rem;
+}
+
+/* ============ WARNING BOX ============ */
+.warning-box {
+  background: rgba(232,115,90,0.05);
+  border: 1px solid rgba(232,115,90,0.2);
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 2rem 0;
+}
+
+.warning-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-coral);
+  margin-bottom: 0.8rem;
+}
+
+/* ============ NUMBERED LIST ============ */
+.numbered-list {
+  list-style: none;
+  counter-reset: item-counter;
+  padding: 0;
+}
+
+.numbered-list > li {
+  counter-increment: item-counter;
+  padding: 1.5rem 0 1.5rem 3.5rem;
+  position: relative;
+  border-bottom: 1px solid var(--border);
+}
+
+.numbered-list > li:last-child { border-bottom: none; }
+
+.numbered-list > li::before {
+  content: counter(item-counter, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  top: 1.5rem;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: var(--accent-gold-dim);
+}
+
+.numbered-list > li > strong:first-child {
+  display: block;
+  font-size: 1.05rem;
+  margin-bottom: 0.5rem;
+}
+
+/* ============ FOOTER ============ */
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 4rem 0;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+
+.footer-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  margin-bottom: 2rem;
+}
+
+.sources-list {
+  list-style: none;
+  padding: 0;
+  columns: 2;
+  column-gap: 3rem;
+}
+
+.sources-list li {
+  padding: 0.4rem 0;
+  break-inside: avoid;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.disclaimer {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+  font-style: italic;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  line-height: 1.8;
+}
+
+/* ============ ANIMATIONS ============ */
+.fade-in {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.fade-in-left {
+  opacity: 0;
+  transform: translateX(-30px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.fade-in-left.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 768px) {
+  .container { padding: 0 1.25rem; }
+  .section { padding: 4rem 0; }
+  .toc { padding: 2rem; margin: -2rem 1rem 0; }
+  .card { padding: 1.5rem; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+  .stat-value { font-size: 1.6rem; }
+  .section-number { font-size: 4rem; }
+  .sources-list { columns: 1; }
+  .hero { padding: 3rem 1.5rem; }
+  .compare-table { font-size: 0.75rem; }
+  .compare-table th, .compare-table td { padding: 0.6rem; }
+  .numbered-list > li { padding-left: 2.5rem; }
+  .numbered-list > li::before { font-size: 1.4rem; }
+}
+
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .card-header { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="hero-label fade-in">Market Research Report · 2026.03</div>
+  <h1 class="hero-title fade-in">盲盒社交 + 吃饭匹配</h1>
+  <p class="hero-subtitle fade-in">评估"盲盒社交+吃饭匹配"方向的市场机会、竞品格局、风险与产品设计建议</p>
+  <div class="hero-meta fade-in">调研时间：2026年3月</div>
+  <div class="hero-scroll">Scroll<br></div>
+</header>
+
+<!-- ============ TOC ============ -->
+<nav class="toc fade-in">
+  <div class="toc-title">目录 · Contents</div>
+  <ol class="toc-list">
+    <li><a href="#sec1">海外竞品分析</a></li>
+    <li><a href="#sec2">国内产品分析</a></li>
+    <li><a href="#sec3">相邻赛道参考</a></li>
+    <li><a href="#sec4">市场趋势分析</a></li>
+    <li><a href="#sec5">总结与建议</a></li>
+  </ol>
+</nav>
+
+
+<!-- ============================================================ -->
+<!-- SECTION 1: 海外竞品分析                                       -->
+<!-- ============================================================ -->
+<section class="section" id="sec1">
+  <div class="container">
+    <div class="section-number fade-in">01</div>
+    <h2 class="section-title fade-in">海外竞品分析</h2>
+    <p class="section-desc fade-in">全球范围内"陌生人约饭"赛道的主要玩家与模式分析</p>
+
+    <!-- Timeleft -->
+    <div class="card fade-in">
+      <div class="card-header">
+        <div>
+          <div class="card-name">Timeleft</div>
+          <span class="tag">⭐ 最核心竞品</span>
+        </div>
+        <span class="card-badge badge-active">🟢 活跃且高速增长</span>
+      </div>
+
+      <table class="data-table">
+        <tbody>
+          <tr><td>国家</td><td>法国（巴黎总部）</td></tr>
+          <tr><td>上线时间</td><td>2020年</td></tr>
+          <tr><td>团队规模</td><td>80+ 人，员工增长率 193%（2025年）</td></tr>
+        </tbody>
+      </table>
+
+      <h4 class="subsection-title">核心玩法</h4>
+      <ul class="content-list">
+        <li>每周三在全球 200+ 城市举办社交晚餐活动</li>
+        <li>用户注册后填写个人资料和偏好，系统基于年龄范围、性格、语言偏好进行匹配</li>
+        <li>活动前揭晓餐厅地点和同桌成员，6人一桌</li>
+        <li>无需提前认识，直接到餐厅赴约</li>
+        <li>2025年已扩展到三种活动形式：<strong>晚餐（Dinners）、小酌（Drinks）、跑步（Runs）</strong></li>
+      </ul>
+
+      <div class="stats-grid">
+        <div class="stat-item fade-in">
+          <div class="stat-value">3M+</div>
+          <div class="stat-label">注册用户</div>
+        </div>
+        <div class="stat-item fade-in">
+          <div class="stat-value">60.7万</div>
+          <div class="stat-label">月均网站访问量</div>
+        </div>
+        <div class="stat-item fade-in">
+          <div class="stat-value">80,000+</div>
+          <div class="stat-label">已举办晚餐活动</div>
+        </div>
+        <div class="stat-item fade-in">
+          <div class="stat-value">720</div>
+          <div class="stat-label">日均预订量</div>
+        </div>
+        <div class="stat-item fade-in">
+          <div class="stat-value">52国</div>
+          <div class="stat-label">覆盖国家</div>
+        </div>
+        <div class="stat-item fade-in">
+          <div class="stat-value">~$16.8M</div>
+          <div class="stat-label">预估年收入（约1.2亿人民币）</div>
+        </div>
+        <div class="stat-item fade-in">
+          <div class="stat-value">$205K</div>
+          <div class="stat-label">人均收入/员工</div>
+        </div>
+        <div class="stat-item fade-in">
+          <div class="stat-value">$7M</div>
+          <div class="stat-label">Series A 融资（2024.07）</div>
+        </div>
+      </div>
+
+      <p style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 0.5rem;">数据来源：Timeleft官网、CompWorth、CBInsights、TechList.ai</p>
+
+      <h4 class="subsection-title">融资情况</h4>
+      <ul class="content-list">
+        <li>2024年7月完成 <strong>$7M Series A 融资</strong></li>
+        <li>投资方：Redstone VC（德国）、Kima Ventures（法国）、FJ Labs（纽约）、Play Ventures（新加坡）</li>
+        <li>PitchBook数据显示累计融资约 $2.02M（可能为早期轮次）；CBInsights显示总融资 $7M</li>
+      </ul>
+
+      <h4 class="subsection-title">商业模式</h4>
+      <ul class="content-list">
+        <li>用户支付活动参与费（每次约 $15-25，因城市而异），餐费自付</li>
+        <li>预约制，一次性付费或订阅</li>
+        <li>与餐厅合作获取场地，餐厅获得客流</li>
+        <li>轻资产模式：不经营餐厅，只做匹配和运营</li>
+      </ul>
+
+      <h4 class="subsection-title">与我们方向的差异</h4>
+      <ul class="content-list">
+        <li>Timeleft 是全球化路线，强调"消灭大城市孤独感"</li>
+        <li>目前仅支持每周三固定时间，灵活性有限</li>
+        <li>6人桌的定桌模式，不支持 2 人或更小规模</li>
+        <li>无中国大陆业务（有中国香港和台湾）</li>
+        <li>偏向"友谊社交"而非"约饭搭子"的轻度日常场景</li>
+      </ul>
+
+      <div class="insight-box">
+        <div class="insight-label">核心启示</div>
+        <p>Timeleft 证明了"陌生人+吃饭+算法匹配"这个模型在全球范围内是跑得通的，且可以做到千万美元级收入。但其频次固定（每周三）、桌型固定（6人桌），给差异化留出了空间。</p>
+      </div>
+    </div>
+
+    <!-- EatWith -->
+    <div class="card fade-in">
+      <div class="card-header">
+        <div class="card-name">EatWith</div>
+        <span class="card-badge badge-semi">🟡 偏旅行体验方向</span>
+      </div>
+
+      <table class="data-table">
+        <tbody>
+          <tr><td>国家</td><td>以色列/美国</td></tr>
+          <tr><td>上线时间</td><td>2012年</td></tr>
+          <tr><td>融资</td><td>累计约 $8M+（包括 TripAdvisor Ventures 等投资）</td></tr>
+        </tbody>
+      </table>
+
+      <h4 class="subsection-title">核心玩法</h4>
+      <ul class="content-list">
+        <li>"美食体验的 Airbnb"——当地主人开放自家或特色场地，提供烹饪课、晚餐派对、美食之旅</li>
+        <li>主打"旅行者与本地人的美食连接"</li>
+        <li>全球多城市覆盖，平台抽成模式（类似 Airbnb）</li>
+      </ul>
+
+      <h4 class="subsection-title">与我们方向的差异</h4>
+      <ul class="content-list">
+        <li>EatWith 本质是<strong>旅行体验平台</strong>，不是社交匹配</li>
+        <li>强调"主人"角色，不是纯粹的陌生人随机匹配</li>
+        <li>用户画像偏旅行者，非本地日常社交需求</li>
+        <li>不涉及算法匹配或盲盒机制</li>
+      </ul>
+    </div>
+
+    <!-- Bumble BFF -->
+    <div class="card fade-in">
+      <div class="card-header">
+        <div class="card-name">Bumble BFF</div>
+        <span class="card-badge badge-active">🟢 活跃</span>
+      </div>
+
+      <table class="data-table">
+        <tbody>
+          <tr><td>国家</td><td>美国</td></tr>
+          <tr><td>上线时间</td><td>2016年3月（Bumble 内置功能）</td></tr>
+          <tr><td>关键数据</td><td>Bumble 总体付费用户 280 万；61%男性、37%女性（2024年8月数据，来源：Wikipedia）</td></tr>
+        </tbody>
+      </table>
+
+      <h4 class="subsection-title">核心玩法</h4>
+      <ul class="content-list">
+        <li>Bumble 约会 App 的"交友模式"，同性用户可互相滑动匹配交友</li>
+        <li>女性优先发起对话</li>
+        <li>纯线上匹配 → 线下见面由用户自行安排</li>
+      </ul>
+
+      <h4 class="subsection-title">与我们方向的差异</h4>
+      <ul class="content-list">
+        <li>BFF 是<strong>依附于约会 App 的附属功能</strong>，不是独立产品</li>
+        <li>纯线上滑动匹配，没有结构化的线下活动安排</li>
+        <li>没有"吃饭"这个具体场景的设计</li>
+        <li>一对一匹配，不是群体社交</li>
+      </ul>
+    </div>
+
+    <!-- Other overseas products -->
+    <div class="card fade-in">
+      <div class="card-header">
+        <div class="card-name">其他海外产品</div>
+        <span class="card-badge badge-dead">🔴 多数已消亡</span>
+      </div>
+
+      <h4 class="subsection-title">Table for Six（澳大利亚）</h4>
+      <ul class="content-list">
+        <li>域名已无法访问（tableforsix.com.au DNS 解析失败）</li>
+        <li>概念类似 Timeleft 的 6 人晚餐匹配，但未能规模化</li>
+        <li><strong>当前状态：🔴 疑似已死</strong></li>
+      </ul>
+
+      <h4 class="subsection-title">MeetOver</h4>
+      <ul class="content-list">
+        <li>概念：将商务午餐与社交结合</li>
+        <li><strong>当前状态：🔴 已消失</strong></li>
+        <li>死因：商务社交场景过窄，LinkedIn 等平台已满足需求</li>
+      </ul>
+
+      <h4 class="subsection-title">Mystery Dinner 类活动</h4>
+      <ul class="content-list">
+        <li>各城市存在线下活动品牌（如 Murder Mystery Dinner 等）</li>
+        <li>偏向<strong>娱乐/剧本杀</strong>方向，非纯社交匹配</li>
+        <li>通常是一次性活动，不是平台化产品</li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 2: 国内产品分析                                       -->
+<!-- ============================================================ -->
+<section class="section" id="sec2">
+  <div class="container">
+    <div class="section-divider"></div>
+    <div class="section-number fade-in">02</div>
+    <h2 class="section-title fade-in">国内产品分析</h2>
+    <p class="section-desc fade-in">中国市场的竞品与相关产品生态</p>
+
+    <!-- 整点薯条 -->
+    <div class="card fade-in">
+      <div class="card-header">
+        <div>
+          <div class="card-name">整点薯条</div>
+          <span class="tag">国内最接近的对标</span>
+        </div>
+        <span class="card-badge badge-active">🟢 活跃，正在扩张</span>
+      </div>
+
+      <table class="data-table">
+        <tbody>
+          <tr><td>国家</td><td>中国（北京起步）</td></tr>
+          <tr><td>上线时间</td><td>2024年10月</td></tr>
+          <tr><td>当前状态</td><td>活跃，2025年7月扩展到上海</td></tr>
+        </tbody>
+      </table>
+
+      <h4 class="subsection-title">核心玩法</h4>
+      <p style="color:var(--text-secondary); font-size:0.8rem; margin-bottom:1rem;">来源：央视新闻网、上观新闻、北京青年报、腾讯新闻，2025年8月多篇报道</p>
+      <ul class="content-list">
+        <li>"盲盒饭局"：参与者事先不知道同桌是谁、吃什么</li>
+        <li>填写 <strong>27道题</strong>的详尽问卷（基本信息、性格特征、近期关注话题、期望同伴关键词、是否希望全女生局等）</li>
+        <li>支付 <strong>59元报名费</strong>后，平台通过算法匹配"气场相投"的饭搭子</li>
+        <li>5-6人一桌，选择轻松有音乐氛围的西餐厅</li>
+        <li>饭局前发放邀请函，标注同桌者化名和个人特质</li>
+        <li>无主持人、不预设主题，纯靠自然交流</li>
+        <li>提供 <strong>99元月卡</strong>（无限次参与），月卡最高纪录有人一个月参加 8-10 次</li>
+      </ul>
+
+      <div class="stats-grid">
+        <div class="stat-item fade-in">
+          <div class="stat-value">1万+</div>
+          <div class="stat-label">累计服务北京用户</div>
+        </div>
+        <div class="stat-item fade-in">
+          <div class="stat-value">92%</div>
+          <div class="stat-label">满分评价率</div>
+        </div>
+        <div class="stat-item fade-in">
+          <div class="stat-value">22-35岁</div>
+          <div class="stat-label">核心用户群</div>
+        </div>
+        <div class="stat-item fade-in">
+          <div class="stat-value">59元</div>
+          <div class="stat-label">单次报名费</div>
+        </div>
+      </div>
+
+      <h4 class="subsection-title">商业模式</h4>
+      <ul class="content-list">
+        <li>单次报名费 59元 + 99元月卡</li>
+        <li>与合作餐厅谈判场地（不收租金，餐厅获客流）</li>
+        <li>餐费 AA 制，各付各的</li>
+        <li>准备上线独立小程序，引入实名认证和付款前置</li>
+      </ul>
+
+      <h4 class="subsection-title">北京 vs 上海差异（有趣洞察）</h4>
+      <ul class="content-list">
+        <li>上海人对"守时"极度敏感（有人写明不能接受迟到 10 分钟）</li>
+        <li>上海参与者职业分布更多元，使用英文名比例高达 <strong>80%</strong></li>
+        <li>上海用户恋爱诉求更强</li>
+        <li>北京接近男女各半，上海女性居多</li>
+        <li>上海有超过一半参与者带有找对象期望（高于北京）</li>
+      </ul>
+
+      <div class="insight-box">
+        <div class="insight-label">核心启示</div>
+        <p>整点薯条是"中国版 Timeleft"的最早实践者之一。但目前仍处于<strong>早期人工运营阶段</strong>，尚未产品化（小程序即将上线）。其核心洞察——27题问卷+算法匹配+轻松餐厅+无主持人——已被市场验证有效。</p>
+      </div>
+
+      <h4 class="subsection-title">与我们方向的差异</h4>
+      <ul class="content-list">
+        <li>仍然是人工组织为主，尚未完全产品化/平台化</li>
+        <li>仅在北京和上海运营</li>
+        <li>单一"盲盒饭局"场景，未拓展其他社交形式</li>
+      </ul>
+    </div>
+
+    <!-- 盲盒交友小程序 -->
+    <div class="card fade-in">
+      <div class="card-header">
+        <div>
+          <div class="card-name">盲盒交友小程序生态</div>
+          <span class="tag">2021-2022年热潮</span>
+        </div>
+        <span class="card-badge badge-dead">🔴 绝大多数已死</span>
+      </div>
+
+      <p>基于搜索结果（人人都是产品经理等产品分析平台），2021-2022年曾出现过一波"盲盒交友"热潮。大量微信小程序涌现，主要玩法：</p>
+      <ul class="content-list">
+        <li>写下个人信息放入"盲盒"</li>
+        <li>他人花钱"拆盲盒"获取联系方式</li>
+        <li>类似漂流瓶的升级版</li>
+      </ul>
+
+      <div class="warning-box">
+        <div class="warning-label">⚠️ 死因分析</div>
+        <ol class="numbered-list">
+          <li><strong>隐私安全问题</strong>联系方式直接暴露，被曝出大量骚扰、诈骗案例</li>
+          <li><strong>虚假信息泛滥</strong>无实名认证，大量虚假资料</li>
+          <li><strong>监管收紧</strong>多地网信办约谈、下架相关小程序</li>
+          <li><strong>低留存</strong>纯线上"拆盒"刺激感衰减极快，缺少线下闭环</li>
+          <li><strong>无场景锚定</strong>仅是"获取联系方式"，没有"一起做什么"的场景</li>
+        </ol>
+      </div>
+
+      <div class="highlight-box">
+        <strong>教训：</strong>纯线上的盲盒交友没有线下场景支撑是不可持续的。"吃饭"这个具体场景是关键差异点——它提供了一个安全的、有结构的线下见面理由。
+      </div>
+    </div>
+
+    <!-- 饭搭子生态 -->
+    <div class="card fade-in">
+      <div class="card-header">
+        <div class="card-name">饭搭子 / 约饭相关小程序</div>
+        <span class="card-badge badge-semi">🟡 需求旺盛但碎片化</span>
+      </div>
+
+      <p>微信生态和小红书上存在大量"找搭子"类内容和小工具：</p>
+      <ul class="content-list">
+        <li><strong>小红书"搭子"生态：</strong>搜索"饭搭子"、"约饭"有海量帖子，但以信息发布为主，无算法匹配</li>
+        <li><strong>微信群/社群约饭：</strong>大量基于城市或兴趣的微信群自发组织饭局，如"XX城市搭子群"</li>
+        <li><strong>各类搭子小程序：</strong>功能简单，通常是发帖+浏览+联系，无深度匹配</li>
+      </ul>
+
+      <div class="highlight-box">
+        <strong>整体现状：</strong>需求旺盛但供给碎片化。缺乏一个主导性的产品/平台。大量是社区/社群驱动，不是产品驱动。信任和安全问题未被有效解决。
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 3: 相邻赛道参考                                       -->
+<!-- ============================================================ -->
+<section class="section" id="sec3">
+  <div class="container">
+    <div class="section-divider"></div>
+    <div class="section-number fade-in">03</div>
+    <h2 class="section-title fade-in">相邻赛道参考</h2>
+    <p class="section-desc fade-in">从匿名社交、搭子经济到"友谊即服务"趋势的全景扫描</p>
+
+    <!-- Soul App -->
+    <div class="card fade-in">
+      <div class="card-header">
+        <div>
+          <div class="card-name">Soul App</div>
+          <span class="tag">匿名/兴趣社交标杆</span>
+        </div>
+        <span class="card-badge badge-active">🟢 活跃，准备港股IPO</span>
+      </div>
+
+      <table class="data-table">
+        <tbody>
+          <tr><td>国家</td><td>中国（上海）</td></tr>
+          <tr><td>创始人</td><td>张璐</td></tr>
+          <tr><td>上线时间</td><td>2016年</td></tr>
+          <tr><td>最大股东</td><td>腾讯（49.9%）</td></tr>
+        </tbody>
+      </table>
+
+      <div class="stats-grid">
+        <div class="stat-item fade-in">
+          <div class="stat-value">1亿+</div>
+          <div class="stat-label">注册用户</div>
+        </div>
+        <div class="stat-item fade-in">
+          <div class="stat-value">1100万</div>
+          <div class="stat-label">日活用户（2025）</div>
+        </div>
+        <div class="stat-item fade-in">
+          <div class="stat-value">22.1亿</div>
+          <div class="stat-label">2024年收入（RMB）</div>
+        </div>
+        <div class="stat-item fade-in">
+          <div class="stat-value">80%+</div>
+          <div class="stat-label">毛利率</div>
+        </div>
+        <div class="stat-item fade-in">
+          <div class="stat-value">3.37亿</div>
+          <div class="stat-label">2024调整后净利润（RMB）</div>
+        </div>
+        <div class="stat-item fade-in">
+          <div class="stat-value">18.5亿</div>
+          <div class="stat-label">2023年收入（RMB）</div>
+        </div>
+      </div>
+      <p style="color:var(--text-secondary); font-size:0.8rem;">数据来源：Wikipedia、招股书信息</p>
+
+      <h4 class="subsection-title">核心玩法</h4>
+      <ul class="content-list">
+        <li>"灵魂测试"分配到不同"星球"（30个星球）</li>
+        <li>AI 驱动的关系推荐引擎（灵犀系统）</li>
+        <li>虚拟形象、语音房、兴趣小组等</li>
+        <li>Soul Bell 线下近距离匹配功能</li>
+        <li>商业模式：虚拟礼物 + 订阅制</li>
+      </ul>
+
+      <h4 class="subsection-title">与我们方向的关系</h4>
+      <ul class="content-list">
+        <li>Soul 证明了"基于兴趣/性格匹配的社交"在中国有巨大市场</li>
+        <li>但 Soul 是<strong>纯线上社交</strong>，缺乏线下闭环</li>
+        <li>Soul 的"灵犀"推荐引擎、"灵魂测试"等方法论值得借鉴</li>
+        <li>Soul 向线下的延伸（Soul Bell 功能）效果有限</li>
+      </ul>
+
+      <div class="insight-box">
+        <div class="insight-label">启示</div>
+        <p>线上社交天花板高但竞争激烈。"盲盒吃饭"的核心差异是<strong>必须线下见面</strong>，这既是壁垒也是限制。</p>
+      </div>
+    </div>
+
+    <!-- 搭子经济 -->
+    <div class="card fade-in">
+      <div class="card-header">
+        <div class="card-name">搭子经济相关产品</div>
+        <span class="card-badge badge-active">🟢 需求旺盛</span>
+      </div>
+
+      <p>"搭子"已成为中国年轻人的核心社交范式。主要品类：</p>
+
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>搭子类型</th>
+            <th>代表平台/方式</th>
+            <th>活跃度</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>饭搭子</td><td>小红书帖子、微信群、整点薯条</td><td>🟢 高</td></tr>
+          <tr><td>运动搭子</td><td>Keep社区、小红书、SweatPals（海外）</td><td>🟢 高</td></tr>
+          <tr><td>旅行搭子</td><td>小红书、马蜂窝、携程社区</td><td>🟢 高</td></tr>
+          <tr><td>逛展搭子</td><td>小红书帖子</td><td>🟡 中</td></tr>
+          <tr><td>学习搭子</td><td>微信群、番茄ToDo</td><td>🟡 中</td></tr>
+          <tr><td>遛狗搭子</td><td>小红书帖子</td><td>🟡 中</td></tr>
+        </tbody>
+      </table>
+
+      <div class="highlight-box">
+        <strong>关键观察：</strong>"搭子经济"目前主要由小红书承载，但小红书本质是内容平台不是社交匹配工具。没有一个主导性的"搭子匹配平台"出现。大量需求靠帖子+评论+私信的原始方式解决，效率极低。信任问题是最大障碍（尤其是女性安全）。
+      </div>
+    </div>
+
+    <!-- Friendship-as-a-Service -->
+    <div class="card fade-in">
+      <div class="card-header">
+        <div>
+          <div class="card-name">Friendship-as-a-Service 趋势</div>
+          <span class="tag">海外趋势</span>
+        </div>
+      </div>
+
+      <p>根据 Neighborhood Studios 2026年2月的研究报告（来源：Medium），<strong>"友谊即服务"（Friendship-as-a-Service）</strong>正在成为一个新赛道。</p>
+
+      <h4 class="subsection-title">核心洞察</h4>
+      <ul class="content-list">
+        <li>现代成年人的友谊不再自然发生（远程工作、城市流动性、延迟婚姻等）</li>
+        <li>友谊正在从"自发的"变成"需要被设计和组织的"</li>
+        <li>像健身从随意跑步进化到付费课程/会员一样，友谊也在走向<strong>结构化、付费化</strong></li>
+      </ul>
+
+      <h4 class="subsection-title">市场发展阶段</h4>
+      <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+        <div class="stat-item fade-in" style="text-align:left; padding:1.5rem;">
+          <div class="stat-value" style="font-size:1.2rem; margin-bottom:0.5rem;">Phase 1</div>
+          <div class="stat-label" style="font-size:0.8rem;">1900s-1990s · 机构+生活阶段驱动（校友会、教会、妈妈群）</div>
+        </div>
+        <div class="stat-item fade-in" style="text-align:left; padding:1.5rem;">
+          <div class="stat-value" style="font-size:1.2rem; margin-bottom:0.5rem;">Phase 2</div>
+          <div class="stat-label" style="font-size:0.8rem;">2000s · Meetup 等平台实现线上发现+线下聚会</div>
+        </div>
+        <div class="stat-item fade-in" style="text-align:left; padding:1.5rem;">
+          <div class="stat-value" style="font-size:1.2rem; margin-bottom:0.5rem;">Phase 3</div>
+          <div class="stat-label" style="font-size:0.8rem;">2014-2020 · 滑动匹配交友（Bumble BFF等），线上转线下效率低</div>
+        </div>
+        <div class="stat-item fade-in" style="text-align:left; padding:1.5rem; border-color:var(--accent-gold);">
+          <div class="stat-value" style="font-size:1.2rem; margin-bottom:0.5rem; color:var(--accent-gold);">Phase 4 ←我们在这里</div>
+          <div class="stat-label" style="font-size:0.8rem;">2020+ · 结构化的、付费的、cohort-based 的线下社交</div>
+        </div>
+      </div>
+
+      <div class="insight-box">
+        <div class="insight-label">启示</div>
+        <p>我们所在的赛道不是小众需求，而是一个全球性的社会趋势转型——"友谊的产品化"。关键是提供<strong>结构化的线下体验</strong>，而不仅仅是线上匹配。</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 4: 市场趋势分析                                       -->
+<!-- ============================================================ -->
+<section class="section" id="sec4">
+  <div class="container">
+    <div class="section-divider"></div>
+    <div class="section-number fade-in">04</div>
+    <h2 class="section-title fade-in">市场趋势分析</h2>
+    <p class="section-desc fade-in">搭子经济规模、Z世代需求与餐饮社交化浪潮</p>
+
+    <!-- 搭子经济规模 -->
+    <div class="card fade-in">
+      <div class="card-header">
+        <div class="card-name">搭子经济的规模与趋势</div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-item fade-in">
+          <div class="stat-value">200亿+</div>
+          <div class="stat-label">2023年中国盲盒市场规模（元）</div>
+        </div>
+        <div class="stat-item fade-in">
+          <div class="stat-value">37%</div>
+          <div class="stat-label">社交裂变带来的用户增长占比</div>
+        </div>
+        <div class="stat-item fade-in">
+          <div class="stat-value">73%</div>
+          <div class="stat-label">学生因网红活动主动拓展社交</div>
+        </div>
+      </div>
+
+      <ul class="content-list">
+        <li>这里的"盲盒"更多指潮玩盲盒，但"盲盒"概念已经泛化到社交、餐饮等场景</li>
+        <li>2025年中国年轻消费者调查显示，73%的学生曾因某款网红活动主动拓展社交关系</li>
+        <li>"搭子经济"相关词汇在小红书上的搜索量持续增长，是2024-2025年度趋势词</li>
+      </ul>
+      <p style="color:var(--text-secondary); font-size:0.8rem;">来源：搜狐/行业报告</p>
+    </div>
+
+    <!-- Z世代 -->
+    <div class="card fade-in">
+      <div class="card-header">
+        <div class="card-name">Z世代线下社交需求</div>
+      </div>
+
+      <h4 class="subsection-title">央视新闻（2025年8月）报道的关键信号</h4>
+      <ul class="content-list">
+        <li>"盲盒饭局"已登上<strong>央视新闻、中国青年报、上观新闻</strong>等主流媒体——说明这不是小圈子现象</li>
+        <li>22-35岁是核心群体，学历普遍较高</li>
+        <li>参与动机多元：打破信息茧房、缓解工作压力、寻找不同行业的新视角、轻度脱单需求</li>
+        <li><strong>92%满意度</strong>说明产品体验已被验证</li>
+      </ul>
+
+      <h4 class="subsection-title">国际数据对照</h4>
+      <ul class="content-list">
+        <li>Timeleft 在全球52国扩张，日均720单预订，说明"陌生人约饭"不是中国独有需求</li>
+        <li>Bumble 有280万付费用户，BFF 功能使用量持续增长</li>
+        <li>孤独感被 WHO 列为<strong>全球公共卫生问题</strong></li>
+      </ul>
+    </div>
+
+    <!-- 一人食 vs 社交餐饮 -->
+    <div class="card fade-in">
+      <div class="card-header">
+        <div class="card-name">一人食 vs 社交餐饮</div>
+      </div>
+
+      <p>中国餐饮市场的两个看似矛盾但实际并行的趋势：</p>
+
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap:1.5rem; margin:1.5rem 0;">
+        <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:1.5rem;">
+          <h4 style="color:var(--accent-blue); font-family:'Playfair Display',serif; margin-bottom:1rem;">一人食趋势</h4>
+          <ul class="content-list">
+            <li>一人食餐厅、小份菜、自热火锅等持续增长</li>
+            <li>反映的是"不想将就"的独立意识</li>
+          </ul>
+        </div>
+        <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:1.5rem;">
+          <h4 style="color:var(--accent-teal); font-family:'Playfair Display',serif; margin-bottom:1rem;">社交餐饮趋势</h4>
+          <ul class="content-list">
+            <li>围炉煮茶、盲盒饭局、主题晚宴等新形式兴起</li>
+            <li>反映的是"想社交但不想低质量社交"的需求</li>
+            <li>年轻人不是不想社交，而是不想在尴尬的局里社交</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="insight-box">
+        <div class="insight-label">核心洞察</div>
+        <p>两者不矛盾。年轻人既能接受独自吃饭，也渴望高质量的社交餐饮——关键是<strong>选择权</strong>和<strong>体验质量</strong>。"盲盒饭局"提供的就是一种"高质量的轻社交餐饮体验"。</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 5: 总结与建议                                         -->
+<!-- ============================================================ -->
+<section class="section" id="sec5">
+  <div class="container">
+    <div class="section-divider"></div>
+    <div class="section-number fade-in">05</div>
+    <h2 class="section-title fade-in">总结与建议</h2>
+    <p class="section-desc fade-in">机会、风险与产品设计建议的全面复盘</p>
+
+    <!-- 5.1 机会 -->
+    <div class="card fade-in">
+      <div class="card-header">
+        <div class="card-name">这个方向的机会在哪</div>
+        <span class="tag">5.1</span>
+      </div>
+
+      <ol class="numbered-list">
+        <li>
+          <strong>赛道已被验证，但中国市场无主导者</strong>
+          Timeleft 全球跑通了模型（$16.8M收入、3M+用户）。整点薯条在北京/上海验证了中国需求（1万+用户、92%满意度）。但目前中国没有一个产品化的、平台化的、可规模扩张的盲盒约饭产品。
+        </li>
+        <li>
+          <strong>需求真实且正在增长</strong>
+          央视、青年报等主流媒体的密集报道（2025年8月集中爆发）说明已进入大众视野。搭子经济、反内耗社交是Z世代的结构性需求。一二线城市的社交空洞（远离家乡、熟人圈窄、高压工作）提供了持续动力。
+        </li>
+        <li>
+          <strong>Timeleft 的模式在中国有本地化空间</strong>
+          Timeleft 固定每周三、6人桌、偏西方文化——中国用户可能需要更灵活的时间、更多样的桌型（2-4人更适合中国社交习惯）。中国的微信生态、小程序分发能力是天然优势。中国餐饮生态更丰富（火锅、串串、小龙虾等场景更利于社交破冰）。
+        </li>
+        <li>
+          <strong>"友谊产品化"是全球趋势</strong>
+          Neighborhood Studios 等投资机构明确看好"Friendship-as-a-Service"赛道。从 Meetup → Bumble BFF → Timeleft 的进化路径清晰。下一代产品的核心不是"帮你找到人"，而是<strong>"帮你完成一次高质量的线下社交"</strong>。
+        </li>
+      </ol>
+    </div>
+
+    <!-- 5.2 风险 -->
+    <div class="card fade-in">
+      <div class="card-header">
+        <div class="card-name">最大的风险/挑战</div>
+        <span class="tag">5.2</span>
+      </div>
+
+      <ol class="numbered-list">
+        <li>
+          <strong>冷启动与双边供需平衡</strong>
+          需要同时在某个城市积累足够多的用户才能持续匹配——这是最大的鸡生蛋问题。Timeleft 用了4年、$7M融资才扩展到200+城市。整点薯条靠人工运营起步，但人工模式不可规模化。
+        </li>
+        <li>
+          <strong>留存与频次问题</strong>
+          北青报报道中的关键信号：大多数人在饭局后<strong>很难保持联系</strong>。"弱联系"是功能也是bug——新鲜感衰减后，如何让用户持续回来？整点薯条99元月卡是一种尝试，但最高8-10次/月的重度用户比例未知。
+        </li>
+        <li>
+          <strong>安全与信任</strong>
+          女性安全是重中之重（上海数据显示女性参与者居多）。逃单、骚扰、信息泄露等风险。此前大量"盲盒交友"小程序因安全问题被下架，是前车之鉴。实名认证+餐厅场景+多人同席是天然的安全保障，但仍需系统性设计。
+        </li>
+        <li>
+          <strong>商业模式天花板</strong>
+          59元报名费 × 一桌5人 = 295元/桌，扣除运营成本后利润薄。Timeleft $16.8M收入对应80+人团队，单位经济尚可但不算暴利。规模化后的核心变量：能否通过订阅制提升LTV、能否向餐厅收费、能否延伸到其他场景。
+        </li>
+        <li>
+          <strong>监管风险</strong>
+          陌生人社交在中国面临网信办监管。涉及个人信息收集、匹配算法透明度等合规要求。如涉及"相亲"属性，可能触及更严格的婚介服务监管。
+        </li>
+        <li>
+          <strong>线下运营的重</strong>
+          需要与每个城市的餐厅建立合作关系。活动质量依赖于餐厅选择和现场体验。扩张速度受限于线下运营能力。
+        </li>
+      </ol>
+    </div>
+
+    <!-- 5.3 产品设计建议 -->
+    <div class="card fade-in">
+      <div class="card-header">
+        <div class="card-name">对产品设计的建议</div>
+        <span class="tag">5.3</span>
+      </div>
+
+      <h4 class="subsection-title">核心定位</h4>
+      <div class="highlight-box">
+        建议定位为<strong>"高质量陌生人约饭平台"</strong>，而非泛社交或约会。关键差异化：不是约会App（降低心理门槛）；不是Meetup式的大活动（保持亲密感）；核心体验是"出门吃顿好饭+认识有趣的人"。
+      </div>
+
+      <h4 class="subsection-title">产品机制设计</h4>
+
+      <ol class="numbered-list">
+        <li>
+          <strong>匹配算法是核心壁垒</strong>
+          整点薯条的27题问卷是好的起点，但可以做得更智能。参考Soul的灵犀引擎——基于兴趣图谱、性格模型、社交偏好进行匹配。反馈闭环：每次饭局后收集评价，持续优化匹配模型。考虑引入MBTI、生活方式标签等中国年轻人熟悉的社交语言。
+        </li>
+        <li>
+          <strong>灵活的桌型设计</strong>
+          不要固定6人桌。中国社交习惯更偏向：
+          <ul class="content-list" style="margin-top:0.5rem;">
+            <li><strong>2人局</strong> — 最安全、最灵活，适合工作日午餐</li>
+            <li><strong>4人局</strong> — 黄金数字，话题深度和广度平衡</li>
+            <li><strong>6人局</strong> — 周末晚餐，派对氛围</li>
+          </ul>
+        </li>
+        <li>
+          <strong>时间灵活性</strong>
+          不要学Timeleft固定周三。中国用户需要：工作日午餐局（利用午休时间的"快速社交"）、周五/周六晚餐局（放松式深度社交）、周末brunch局。
+        </li>
+        <li>
+          <strong>安全体系</strong>
+          <ul class="content-list" style="margin-top:0.5rem;">
+            <li>实名认证 + 人脸验证（底线）</li>
+            <li>仅限合作餐厅场景（有监控、有公共环境）</li>
+            <li>多人同席（不做1v1匹配，至少2v2）</li>
+            <li>活动后双向评价 + 黑名单机制</li>
+            <li>紧急联系人机制</li>
+          </ul>
+        </li>
+      </ol>
+    </div>
+
+    <!-- 冷启动 + 付费 + 差异化 -->
+    <div class="card fade-in">
+      <div class="card-header">
+        <div class="card-name">策略建议</div>
+        <span class="tag">运营与商业化</span>
+      </div>
+
+      <h4 class="subsection-title">冷启动策略</h4>
+      <ul class="content-list">
+        <li>选择一个城市深耕（建议上海或北京）</li>
+        <li>前期人工运营 + 小程序，不要急于开发App</li>
+        <li>与3-5家品质西餐厅/轻食餐厅深度合作</li>
+        <li>通过小红书KOC种草 + 用户口碑传播</li>
+        <li>设置邀请机制：老用户邀请新用户可获得免费场次</li>
+      </ul>
+
+      <h4 class="subsection-title">付费模式建议</h4>
+      <ul class="content-list">
+        <li><strong>单次参与费：39-69元</strong>（低于一杯星巴克+一份甜品的价格，心理定价锚点）</li>
+        <li><strong>月卡/季卡订阅：</strong>提升留存和LTV</li>
+        <li><strong>餐厅端：</strong>前期免费合作（给客流），后期可收取推广费</li>
+        <li><strong>品牌合作：</strong>品牌赞助特定主题饭局（如"白葡萄酒之夜"）</li>
+      </ul>
+
+      <h4 class="subsection-title">差异化方向</h4>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(230px,1fr)); gap:1rem; margin:1.5rem 0;">
+        <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:1.5rem; transition: all 0.3s ease;" onmouseover="this.style.borderColor='var(--accent-gold)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="font-size:1.8rem; margin-bottom:0.5rem;">🎭</div>
+          <h4 style="color:var(--accent-gold); font-size:0.95rem; margin-bottom:0.5rem;">主题饭局</h4>
+          <p style="color:var(--text-secondary); font-size:0.85rem;">不止"随机匹配"，设计"读书人饭局"、"创业者饭局"、"猫奴饭局"等</p>
+        </div>
+        <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:1.5rem; transition: all 0.3s ease;" onmouseover="this.style.borderColor='var(--accent-teal)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="font-size:1.8rem; margin-bottom:0.5rem;">🗺️</div>
+          <h4 style="color:var(--accent-teal); font-size:0.95rem; margin-bottom:0.5rem;">城市探索</h4>
+          <p style="color:var(--text-secondary); font-size:0.85rem;">每次选不同餐厅，让用户"盲盒"到新的餐厅体验</p>
+        </div>
+        <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:1.5rem; transition: all 0.3s ease;" onmouseover="this.style.borderColor='var(--accent-coral)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="font-size:1.8rem; margin-bottom:0.5rem;">🍂</div>
+          <h4 style="color:var(--accent-coral); font-size:0.95rem; margin-bottom:0.5rem;">季节限定</h4>
+          <p style="color:var(--text-secondary); font-size:0.85rem;">春天野餐局、冬天火锅局、圣诞节主题局</p>
+        </div>
+        <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:1.5rem; transition: all 0.3s ease;" onmouseover="this.style.borderColor='var(--accent-blue)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="font-size:1.8rem; margin-bottom:0.5rem;">🍸</div>
+          <h4 style="color:var(--accent-blue); font-size:0.95rem; margin-bottom:0.5rem;">饭后延伸</h4>
+          <p style="color:var(--text-secondary); font-size:0.85rem;">吃完饭可以选择AA一起去酒吧/电影院/展览（可选，不强制）</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- FOOTER: 信息来源                                              -->
+<!-- ============================================================ -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-title fade-in">附录 · 信息来源</div>
+
+    <ul class="sources-list fade-in">
+      <li>Timeleft官网 — timeleft.com/en</li>
+      <li>CBInsights Timeleft融资数据 — cbinsights.com</li>
+      <li>CompWorth Timeleft估值 — compworth.com</li>
+      <li>TechList.ai Timeleft分析 — techlist.ai</li>
+      <li>PitchBook Timeleft数据 — pitchbook.com</li>
+      <li>央视新闻《盲盒饭局：年轻人社交新玩法》— 2025.08.06</li>
+      <li>上观新闻《上海年轻人流行盲盒饭局》— shobserver.com</li>
+      <li>腾讯新闻/北京青年报《年轻人爱上盲盒饭局》— 2025.08.05</li>
+      <li>中国青年报 — qnzs.youth.cn — 2025.08.06</li>
+      <li>Wikipedia — Soul App</li>
+      <li>Wikipedia — Bumble</li>
+      <li>EatWith官网 — eatwith.com/about</li>
+      <li>Neighborhood Studios "Friendship-as-a-Service" — Medium, 2026.02</li>
+      <li>零点校园（校园盲盒饭局分析）— 0xiao.com</li>
+    </ul>
+
+    <div class="disclaimer fade-in">
+      <strong>报告说明：</strong>本报告基于2026年3月公开可获取的信息编写。部分公司数据（如CompWorth的收入估算）来自第三方推算，可能与实际数字存在偏差。建议对关键竞品进行更深入的一手调研（如实际体验Timeleft服务、访谈整点薯条团队等）。
+    </div>
+  </div>
+</footer>
+
+<!-- ============================================================ -->
+<!-- JavaScript: Scroll Animations                                 -->
+<!-- ============================================================ -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Intersection Observer for fade-in animations
+  const observerOptions = {
+    root: null,
+    rootMargin: '0px 0px -60px 0px',
+    threshold: 0.1
+  };
+
+  const observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, observerOptions);
+
+  // Observe all fade-in elements
+  document.querySelectorAll('.fade-in, .fade-in-left').forEach(function(el) {
+    observer.observe(el);
+  });
+
+  // Staggered animation for stat items within a grid
+  document.querySelectorAll('.stats-grid').forEach(function(grid) {
+    var items = grid.querySelectorAll('.stat-item');
+    items.forEach(function(item, index) {
+      item.style.transitionDelay = (index * 0.1) + 's';
+    });
+  });
+
+  // Smooth scroll for TOC links
+  document.querySelectorAll('.toc-list a').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      var targetId = this.getAttribute('href').substring(1);
+      var target = document.getElementById(targetId);
+      if (target) {
+        var offset = target.getBoundingClientRect().top + window.pageYOffset - 40;
+        window.scrollTo({ top: offset, behavior: 'smooth' });
+      }
+    });
+  });
+});
+</script>
+
+</body>
+</html>
