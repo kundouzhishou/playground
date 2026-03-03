@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>暗号 (Anhao) — 产品规格书</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Noto+Serif+SC:wght@400;600;700;900&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #12121a;
+  --bg-card: #1a1a26;
+  --bg-card-hover: #22222f;
+  --accent-gold: #d4a853;
+  --accent-gold-dim: rgba(212,168,83,0.15);
+  --accent-coral: #e8735a;
+  --accent-teal: #5ab8a8;
+  --accent-blue: #6889c4;
+  --accent-purple: #a07cca;
+  --text-primary: #e8e4dd;
+  --text-secondary: #9a9590;
+  --text-dim: #5a5650;
+  --border: rgba(212,168,83,0.12);
+  --border-strong: rgba(212,168,83,0.3);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; font-size: 16px; }
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'DM Sans', 'Noto Serif SC', sans-serif;
+  line-height: 1.8;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+::selection { background: var(--accent-gold); color: var(--bg-primary); }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--accent-gold-dim); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-gold); }
+
+/* ============ HERO ============ */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 4rem 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(ellipse at 30% 50%, rgba(212,168,83,0.06) 0%, transparent 50%),
+              radial-gradient(ellipse at 70% 50%, rgba(90,184,168,0.04) 0%, transparent 50%);
+  animation: heroGlow 12s ease-in-out infinite alternate;
+}
+
+@keyframes heroGlow {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(-3%, 2%) scale(1.05); }
+}
+
+.hero-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  margin-bottom: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-title {
+  font-family: 'Playfair Display', 'Noto Serif SC', serif;
+  font-size: clamp(3rem, 8vw, 7rem);
+  font-weight: 900;
+  line-height: 1.1;
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-gold) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-subtitle {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+  margin-top: 1.5rem;
+  max-width: 600px;
+  position: relative;
+  z-index: 1;
+  font-weight: 300;
+}
+
+.hero-tagline {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1rem;
+  color: var(--accent-gold);
+  margin-top: 1rem;
+  opacity: 0.8;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  margin-top: 3rem;
+  letter-spacing: 0.1em;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-scroll {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.hero-scroll::after {
+  content: '';
+  width: 1px;
+  height: 40px;
+  background: linear-gradient(to bottom, var(--accent-gold), transparent);
+  animation: scrollPulse 2s ease-in-out infinite;
+}
+
+@keyframes scrollPulse {
+  0%, 100% { opacity: 0.3; height: 40px; }
+  50% { opacity: 1; height: 60px; }
+}
+
+/* ============ LAYOUT ============ */
+.container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
+.section { padding: 5rem 0; position: relative; }
+.section-divider { width: 60px; height: 1px; background: var(--accent-gold); margin: 0 auto 4rem; }
+
+.section-number {
+  font-family: 'Playfair Display', serif;
+  font-size: 5rem;
+  font-weight: 900;
+  color: var(--accent-gold-dim);
+  line-height: 1;
+  margin-bottom: -0.5rem;
+}
+
+.section-title {
+  font-family: 'Playfair Display', 'Noto Serif SC', serif;
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 700;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.section-desc {
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  max-width: 640px;
+  margin-bottom: 3rem;
+  font-weight: 300;
+}
+
+/* ============ TOC ============ */
+.toc {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 3rem;
+  margin: -4rem auto 0;
+  max-width: 700px;
+  position: relative;
+  z-index: 2;
+}
+
+.toc-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  margin-bottom: 1.5rem;
+}
+
+.toc-list { list-style: none; counter-reset: toc-counter; }
+.toc-list li { counter-increment: toc-counter; border-bottom: 1px solid var(--border); }
+.toc-list li:last-child { border-bottom: none; }
+.toc-list a {
+  display: flex;
+  align-items: center;
+  padding: 0.8rem 0;
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  gap: 1rem;
+}
+.toc-list a::before {
+  content: counter(toc-counter, decimal-leading-zero);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--accent-gold);
+  min-width: 2rem;
+}
+.toc-list a:hover { color: var(--accent-gold); padding-left: 0.5rem; }
+
+/* ============ CARDS ============ */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  transition: all 0.4s ease;
+}
+.card:hover { background: var(--bg-card-hover); border-color: var(--border-strong); }
+
+.card-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  margin-bottom: 0.8rem;
+}
+
+.card-title {
+  font-family: 'Playfair Display', 'Noto Serif SC', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 0.8rem;
+}
+
+.card p, .card li {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.8;
+}
+
+.card ul { list-style: none; padding: 0; }
+.card ul li { padding: 0.3rem 0; padding-left: 1.2rem; position: relative; }
+.card ul li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.85rem;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-gold);
+  opacity: 0.5;
+}
+
+/* ============ TABLES ============ */
+.table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  text-align: left;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-strong);
+  white-space: nowrap;
+}
+td {
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+tr:hover td { background: rgba(212,168,83,0.03); }
+
+/* ============ FLOW ============ */
+.flow {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2.5rem;
+  margin: 2rem 0;
+  position: relative;
+}
+
+.flow-step {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.2rem 0;
+  border-bottom: 1px solid var(--border);
+  align-items: flex-start;
+}
+.flow-step:last-child { border-bottom: none; }
+
+.flow-number {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  min-width: 2.5rem;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.flow-content h4 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+
+.flow-content p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* ============ CIPHER DEMO ============ */
+.cipher-demo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+@media (max-width: 640px) {
+  .cipher-demo { grid-template-columns: 1fr; }
+}
+
+.cipher-phone {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.cipher-phone-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 1rem;
+}
+
+.cipher-phone-role {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 0.85rem;
+  color: var(--accent-gold);
+  margin-bottom: 1rem;
+}
+
+.cipher-phone-content {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.2rem;
+  color: var(--text-primary);
+  padding: 1.5rem;
+  background: var(--bg-card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.cipher-input {
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 0.8rem;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* ============ HIGHLIGHT BOX ============ */
+.highlight {
+  background: linear-gradient(135deg, rgba(212,168,83,0.08) 0%, rgba(90,184,168,0.05) 100%);
+  border-left: 3px solid var(--accent-gold);
+  border-radius: 0 12px 12px 0;
+  padding: 1.5rem 2rem;
+  margin: 2rem 0;
+}
+.highlight p { color: var(--text-secondary); font-size: 0.95rem; }
+.highlight strong { color: var(--accent-gold); }
+
+/* ============ TAG ============ */
+.tag {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  padding: 0.25rem 0.7rem;
+  border-radius: 4px;
+  margin: 0.2rem;
+}
+.tag-gold { background: var(--accent-gold-dim); color: var(--accent-gold); }
+.tag-teal { background: rgba(90,184,168,0.15); color: var(--accent-teal); }
+.tag-coral { background: rgba(232,115,90,0.15); color: var(--accent-coral); }
+.tag-blue { background: rgba(104,137,196,0.15); color: var(--accent-blue); }
+.tag-purple { background: rgba(160,124,202,0.15); color: var(--accent-purple); }
+
+/* ============ CODE BLOCK ============ */
+.code-block {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  line-height: 1.8;
+  color: var(--text-secondary);
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* ============ GRID ============ */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+}
+
+/* ============ MILESTONE ============ */
+.milestone {
+  position: relative;
+  padding-left: 3rem;
+  padding-bottom: 2.5rem;
+  border-left: 2px solid var(--border);
+}
+.milestone:last-child { border-left-color: transparent; padding-bottom: 0; }
+
+.milestone::before {
+  content: '';
+  position: absolute;
+  left: -7px;
+  top: 0.3rem;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent-gold);
+  box-shadow: 0 0 12px rgba(212,168,83,0.4);
+}
+
+.milestone-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: var(--accent-gold);
+  margin-bottom: 0.3rem;
+}
+
+.milestone-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 0.8rem;
+}
+
+.milestone ul { list-style: none; }
+.milestone li {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  padding: 0.25rem 0;
+  padding-left: 1.2rem;
+  position: relative;
+}
+.milestone li::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0.7rem;
+  width: 5px; height: 5px;
+  border: 1px solid var(--accent-gold);
+  border-radius: 2px;
+  opacity: 0.6;
+}
+
+/* ============ METRIC ============ */
+.metric-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.metric {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.2rem;
+  text-align: center;
+}
+.metric-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+}
+.metric-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 0.3rem;
+}
+
+/* ============ ARCH DIAGRAM ============ */
+.arch-layer {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  margin-bottom: 0.5rem;
+  position: relative;
+}
+.arch-layer-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  margin-bottom: 0.8rem;
+}
+.arch-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.arch-item {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+.arch-connector {
+  text-align: center;
+  padding: 0.5rem;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+}
+
+/* ============ FOOTER ============ */
+.footer {
+  text-align: center;
+  padding: 4rem 2rem;
+  border-top: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-label">Product Specification v1.0</div>
+  <h1 class="hero-title">暗号</h1>
+  <p class="hero-subtitle">匿名盲盒约饭平台——设好条件，等待惊喜，对上暗号，吃完散场，缘分留给下一次。</p>
+  <p class="hero-tagline">Anhao / Secret Code</p>
+  <div class="hero-meta">2026.03 &nbsp;·&nbsp; Hangzhou &nbsp;·&nbsp; Internal Document</div>
+  <div class="hero-scroll">Scroll</div>
+</section>
+
+<!-- TOC -->
+<div class="container">
+  <nav class="toc">
+    <div class="toc-title">Table of Contents</div>
+    <ol class="toc-list">
+      <li><a href="#positioning">产品定位</a></li>
+      <li><a href="#journey">核心用户旅程</a></li>
+      <li><a href="#cipher">暗号对接系统</a></li>
+      <li><a href="#reveal">渐进揭示系统</a></li>
+      <li><a href="#psychology">心理题与画像系统</a></li>
+      <li><a href="#matching">匹配算法设计</a></li>
+      <li><a href="#safety">安全体系</a></li>
+      <li><a href="#business">商业模式</a></li>
+      <li><a href="#features">功能清单</a></li>
+      <li><a href="#architecture">技术架构</a></li>
+      <li><a href="#bdd">BDD 开发流程</a></li>
+      <li><a href="#cicd">CI/CD 流水线</a></li>
+      <li><a href="#metrics">关键指标</a></li>
+      <li><a href="#milestones">MVP 里程碑</a></li>
+    </ol>
+  </nav>
+</div>
+
+<!-- 01 产品定位 -->
+<section class="section" id="positioning">
+  <div class="container">
+    <div class="section-divider"></div>
+    <div class="section-number">01</div>
+    <h2 class="section-title">产品定位</h2>
+    <p class="section-desc">不是约会App，不是Meetup式大活动，不是整点薯条。暗号是一个全新物种。</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-label">Target</div>
+        <div class="card-title">目标用户</div>
+        <ul>
+          <li>城市：杭州（冷启动）</li>
+          <li>人群：22-35岁，互联网/科技从业者</li>
+          <li>场景：工作日午餐搭子、周末晚餐社交、想认识新朋友但不想社恐</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-label">Not This</div>
+        <div class="card-title">不是什么</div>
+        <ul>
+          <li>不是约会App（降低心理门槛）</li>
+          <li>不是Meetup式大活动（保持亲密感）</li>
+          <li>不是整点薯条（不固定6人桌、不提前揭示身份）</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 0.5rem;">
+      <div class="card-label">Core Differentiators</div>
+      <div class="card-title">五大核心差异</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem;">
+        <span class="tag tag-gold">暗号对接仪式</span>
+        <span class="tag tag-teal">完全盲盒</span>
+        <span class="tag tag-coral">需求驱动匹配</span>
+        <span class="tag tag-blue">饭后保持神秘</span>
+        <span class="tag tag-purple">心理题社交游戏化</span>
+      </div>
+      <ul style="margin-top: 1rem;">
+        <li>每人拿半句暗号（谜面+提示），面对面合力解谜才能「开箱」</li>
+        <li>见面前不知道对方是谁，只有渐进式线索</li>
+        <li>用户定义"想吃什么、在哪吃、对方什么样"</li>
+        <li>饭后不交换信息，想再见只能通过暗号再次匹配</li>
+        <li>心理题既是画像工具，也是匹配入口</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 02 核心用户旅程 -->
+<section class="section" id="journey">
+  <div class="container">
+    <div class="section-divider"></div>
+    <div class="section-number">02</div>
+    <h2 class="section-title">核心用户旅程</h2>
+    <p class="section-desc">从注册到再次相遇，6步完整闭环。</p>
+
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-number">1</div>
+        <div class="flow-content">
+          <h4>注册</h4>
+          <p>手机号注册 → 选择口味标签 → 回答3道趣味心理题 → 进入首页。渐进实名：初期只需手机号，1v1约饭需身份认证。</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-number">2</div>
+        <div class="flow-content">
+          <h4>发出暗号</h4>
+          <p>填写约饭条件——想吃什么、什么时候、几公里内、桌型（1v1/2v2/4人）、对对方的期待（结构化标签 + 自由文本「惊喜期待」栏）。提交后进入双向匹配池，系统后台持续匹配。</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-number">3</div>
+        <div class="flow-content">
+          <h4>匹配成功 → 渐进揭示</h4>
+          <p>Push通知「有人接上了你的暗号！」→ 展示餐厅+时间。当天即时匹配，每30分钟揭示一条模糊线索。同时收到自己的半句暗号（谜面或提示）。</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-number">4</div>
+        <div class="flow-content">
+          <h4>赴约 — 暗号对接</h4>
+          <p>A念谜面、B念提示 → 合力猜谜底 → 双方输入答案 → 系统验证 →「暗号对上了！」→ 开箱揭示对方的一个秘密 → 自然破冰开聊 → AA结账。</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-number">5</div>
+        <div class="flow-content">
+          <h4>饭后</h4>
+          <p>打分（1-5星）+ 反馈标签 +「想再约」按钮。双方都点则进入缘分池（提高再次匹配概率，不保证）。不交换任何信息，不揭示真实身份。</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-number">6</div>
+        <div class="flow-content">
+          <h4>日常 — 每日暗号题</h4>
+          <p>一道趣味心理题 → 回答后看到「有247人选了和你一样的答案」→ 答同题的人匹配时优先配对。题目由AI批量生成，渐进构建6维画像向量。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 暗号对接系统 -->
+<section class="section" id="cipher">
+  <div class="container">
+    <div class="section-divider"></div>
+    <div class="section-number">03</div>
+    <h2 class="section-title">暗号对接系统</h2>
+    <p class="section-desc">产品名就叫暗号，用户每次见面都在「对暗号」——品牌即体验。</p>
+
+    <div class="cipher-demo">
+      <div class="cipher-phone">
+        <div class="cipher-phone-label">User A</div>
+        <div class="cipher-phone-role">你的暗号（谜面）</div>
+        <div class="cipher-phone-content">「什么东西越洗越脏？」</div>
+        <div class="cipher-input">找到你的饭搭子，合力解开谜底</div>
+      </div>
+      <div class="cipher-phone">
+        <div class="cipher-phone-label">User B</div>
+        <div class="cipher-phone-role">你的暗号（提示）</div>
+        <div class="cipher-phone-content">「和水有关，但不是喝的」</div>
+        <div class="cipher-input">找到你的饭搭子，合力解开谜底</div>
+      </div>
+    </div>
+
+    <div class="highlight">
+      <p>两人交流线索 → 猜出谜底「水」→ 双方输入 → <strong>「暗号对上了！」</strong> → 开箱：揭示对方的一个秘密（兴趣标签或心理题答案）→ 自然破冰</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-label">Riddle Library</div>
+        <div class="card-title">谜语库</div>
+        <ul>
+          <li>AI批量生成，人工审核入库</li>
+          <li>难度分级：简单 / 中等 / 趣味</li>
+          <li>分类：文字谜、脑筋急转弯、常识题、生活场景</li>
+          <li>3次错误后给额外提示，确保不卡住</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-label">Multi-Person</div>
+        <div class="card-title">多人局暗号</div>
+        <ul>
+          <li>2v2/4人局使用统一<strong style="color:var(--accent-gold)">主暗号词</strong></li>
+          <li>到场互报暗号词确认身份</li>
+          <li>不使用谜语（多人解谜效率低）</li>
+          <li>保持简单直接</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 渐进揭示 -->
+<section class="section" id="reveal">
+  <div class="container">
+    <div class="section-divider"></div>
+    <div class="section-number">04</div>
+    <h2 class="section-title">渐进揭示系统</h2>
+    <p class="section-desc">当天即时匹配，每30分钟一条线索，制造期待但不暴露身份。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>时间点</th><th>揭示内容</th><th>数据来源</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>匹配即时</td><td>餐厅名 + 时间 + 自己的半句暗号</td><td>匹配结果</td></tr>
+          <tr><td>+30min</td><td>「TA最近的回答：周末最想做的事是___」</td><td>心理题答案</td></tr>
+          <tr><td>+60min</td><td>「TA的一个标签：咖啡上瘾」</td><td>用户画像标签</td></tr>
+          <tr><td>+90min</td><td>「TA说了一句话：___」</td><td>惊喜期待栏</td></tr>
+          <tr><td>到达</td><td>暗号对接 → 开箱揭秘</td><td>对方画像</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="highlight">
+      <p><strong>线索规则：</strong>从对方画像中随机抽取，不透露姓名/公司/精确年龄。新用户画像不足时，用通用趣味描述（如"TA今天心情不错"）。每次匹配线索不重复。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 05 心理题与画像 -->
+<section class="section" id="psychology">
+  <div class="container">
+    <div class="section-divider"></div>
+    <div class="section-number">05</div>
+    <h2 class="section-title">心理题与画像系统</h2>
+    <p class="section-desc">让系统越来越懂用户，让答题本身成为社交入口。</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-label">Question Types</div>
+        <div class="card-title">4类题目</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>类型</th><th>示例</th></tr></thead>
+            <tbody>
+              <tr><td><span class="tag tag-gold">性格</span></td><td>「朋友迟到30分钟，你会？」</td></tr>
+              <tr><td><span class="tag tag-teal">价值观</span></td><td>「周末最理想的度过方式？」</td></tr>
+              <tr><td><span class="tag tag-coral">场景</span></td><td>「火锅必点的第一道菜？」</td></tr>
+              <tr><td><span class="tag tag-purple">趣味</span></td><td>「如果你是一道菜，你是什么？」</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">6-Dim Vector</div>
+        <div class="card-title">画像向量</div>
+        <ul>
+          <li>外向性 ←→ 内向性</li>
+          <li>冒险性 ←→ 稳定性</li>
+          <li>计划性 ←→ 随性</li>
+          <li>独立性 ←→ 合群性</li>
+          <li>感性 ←→ 理性</li>
+          <li>传统 ←→ 新潮</li>
+        </ul>
+        <p style="margin-top: 1rem;">余弦相似度匹配，"同频共振"策略。答同题的人优先配对。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 06 匹配算法 -->
+<section class="section" id="matching">
+  <div class="container">
+    <div class="section-divider"></div>
+    <div class="section-number">06</div>
+    <h2 class="section-title">匹配算法设计</h2>
+    <p class="section-desc">三层漏斗，从硬条件到软画像，服务端执行。</p>
+
+    <div class="card">
+      <div class="card-label">Layer 1 — Hard Filter</div>
+      <div class="card-title">硬条件过滤（必须全部满足）</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem;">
+        <span class="tag tag-coral">时间窗口重叠</span>
+        <span class="tag tag-coral">距离范围交集</span>
+        <span class="tag tag-coral">菜系偏好交集</span>
+        <span class="tag tag-coral">桌型一致</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Layer 2 — Tag Match</div>
+      <div class="card-title">标签匹配</div>
+      <ul>
+        <li>双方结构化标签互满足度（A对B的要求 + B对A的要求）</li>
+        <li>自由文本语义相似度（Phase 2，AI理解）</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Layer 3 — Soft Score</div>
+      <div class="card-title">画像匹配（加权评分）</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>指标</th><th>权重</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>心理题画像相似度</td><td style="color:var(--accent-gold)">40%</td><td>6维向量余弦相似度</td></tr>
+            <tr><td>信用分</td><td style="color:var(--accent-gold)">30%</td><td>失约/举报/好评积累</td></tr>
+            <tr><td>历史评价均分</td><td style="color:var(--accent-gold)">20%</td><td>饭后评价积累</td></tr>
+            <tr><td>缘分池加成</td><td style="color:var(--accent-gold)">+50%</td><td>双方互标「想再约」</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="highlight">
+      <p><strong>触发机制：</strong>每5分钟批处理扫描 + 新用户即时匹配。匹配成功后从池中移除，超时自动过期。<br><strong>缘分池：</strong>用户不知道对方是否点了「想再约」，下次同时在池中时匹配分 +50%，但不保证一定匹配上。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 07 安全体系 -->
+<section class="section" id="safety">
+  <div class="container">
+    <div class="section-divider"></div>
+    <div class="section-number">07</div>
+    <h2 class="section-title">安全体系</h2>
+    <p class="section-desc">安全是底线。从注册到饭后，全流程覆盖。</p>
+
+    <div class="card">
+      <div class="card-label">Progressive Verification</div>
+      <div class="card-title">渐进实名</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>层级</th><th>要求</th><th>解锁功能</th></tr></thead>
+          <tbody>
+            <tr><td><span class="tag tag-teal">L0</span></td><td>手机号注册</td><td>浏览暗号题、2v2/4人局</td></tr>
+            <tr><td><span class="tag tag-gold">L1</span></td><td>身份证认证</td><td>1v1约饭</td></tr>
+            <tr><td><span class="tag tag-coral">L2</span></td><td>人脸验证</td><td>高级筛选、优先匹配</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-label">Before</div>
+        <div class="card-title">赴约前</div>
+        <ul>
+          <li>出发前安全提醒推送</li>
+          <li>一键行程分享（微信）</li>
+          <li>仅限合作餐厅</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-label">During</div>
+        <div class="card-title">赴约中</div>
+        <ul>
+          <li><strong style="color:var(--accent-coral)">一键SOS</strong></li>
+          <li>实时位置+餐厅→紧急联系人</li>
+          <li>SOS按钮常驻界面</li>
+          <li>暗号对接 = 到场验证</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-label">After</div>
+        <div class="card-title">赴约后</div>
+        <ul>
+          <li>双向评价</li>
+          <li>一键举报（24h处理）</li>
+          <li>黑名单机制</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 0.5rem;">
+      <div class="card-label">Credit Score</div>
+      <div class="card-title">信用分体系</div>
+      <div class="metric-grid">
+        <div class="metric"><div class="metric-value">100</div><div class="metric-label">初始分</div></div>
+        <div class="metric"><div class="metric-value" style="color:var(--accent-coral)">-20</div><div class="metric-label">失约</div></div>
+        <div class="metric"><div class="metric-value" style="color:var(--accent-coral)">-30</div><div class="metric-label">被举报</div></div>
+        <div class="metric"><div class="metric-value" style="color:var(--accent-teal)">+2</div><div class="metric-label">正常赴约</div></div>
+        <div class="metric"><div class="metric-value" style="color:var(--accent-teal)">+5</div><div class="metric-label">好评</div></div>
+      </div>
+      <p style="color:var(--text-secondary); font-size:0.9rem; margin-top:1rem;">低于60分：匹配优先级大幅降低。低于30分：暂停匹配资格，需申诉恢复。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 08 商业模式 -->
+<section class="section" id="business">
+  <div class="container">
+    <div class="section-divider"></div>
+    <div class="section-number">08</div>
+    <h2 class="section-title">商业模式</h2>
+    <p class="section-desc">订阅制为核心，餐厅导流和品牌合作为延伸。</p>
+
+    <div class="grid-3">
+      <div class="card" style="text-align:center;">
+        <div class="card-label">Free</div>
+        <div style="font-family:'Playfair Display',serif; font-size:2.5rem; color:var(--text-dim); margin:1rem 0;">0</div>
+        <div class="card-title">免费用户</div>
+        <ul style="text-align:left;">
+          <li>每周1次匹配</li>
+          <li>基础标签筛选</li>
+        </ul>
+      </div>
+      <div class="card" style="text-align:center; border-color:var(--accent-gold);">
+        <div class="card-label">Monthly</div>
+        <div style="font-family:'Playfair Display',serif; font-size:2.5rem; color:var(--accent-gold); margin:1rem 0;">29.9<span style="font-size:1rem;">/月</span></div>
+        <div class="card-title">暗号月卡</div>
+        <ul style="text-align:left;">
+          <li>无限匹配</li>
+          <li>高级标签筛选</li>
+          <li>自由文本期待</li>
+        </ul>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div class="card-label">Quarterly</div>
+        <div style="font-family:'Playfair Display',serif; font-size:2.5rem; color:var(--accent-teal); margin:1rem 0;">69.9<span style="font-size:1rem;">/季</span></div>
+        <div class="card-title">暗号季卡</div>
+        <ul style="text-align:left;">
+          <li>月卡全部权益</li>
+          <li>优先匹配</li>
+          <li>专属暗号题</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 09 功能清单 -->
+<section class="section" id="features">
+  <div class="container">
+    <div class="section-divider"></div>
+    <div class="section-number">09</div>
+    <h2 class="section-title">功能清单</h2>
+    <p class="section-desc">MVP聚焦核心闭环，Phase 2/3逐步扩展。</p>
+
+    <div class="card">
+      <div class="card-label">MVP — Phase 1</div>
+      <div class="card-title">最小可行产品</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>功能</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>手机号注册/登录</td><td>短信验证码</td></tr>
+            <tr><td>基础画像</td><td>口味标签 + 3道初始心理题</td></tr>
+            <tr><td>发出暗号</td><td>填写约饭条件，进入匹配池</td></tr>
+            <tr><td>匹配算法</td><td>距离+时间+菜系+标签+画像，服务端运行</td></tr>
+            <tr><td>渐进揭示</td><td>匹配后即时开始，每30分钟一条线索</td></tr>
+            <tr><td>暗号对接</td><td>谜面+提示 → 猜谜底 → 验证 → 开箱揭秘</td></tr>
+            <tr><td>饭后评价</td><td>打分+标签+「想再约」缘分池</td></tr>
+            <tr><td>每日暗号题</td><td>AI生成，影响匹配权重</td></tr>
+            <tr><td>合作餐厅</td><td>杭州首批 10-20 家</td></tr>
+            <tr><td>订阅付费</td><td>免费1次/周，订阅无限次</td></tr>
+            <tr><td>一键SOS</td><td>通知紧急联系人（位置+餐厅）</td></tr>
+            <tr><td>行程分享</td><td>一键分享餐厅+时间给微信好友</td></tr>
+            <tr><td>信用分</td><td>失约扣分，低信用降低匹配优先级</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-label">Phase 2</div>
+        <div class="card-title">体验升级</div>
+        <ul>
+          <li>身份证+人脸认证（解锁1v1）</li>
+          <li>AI理解自由文本语义匹配</li>
+          <li>2v2 / 4人局（主暗号模式）</li>
+          <li>主题暗号（读书人/创业者饭局）</li>
+          <li>暗号成就体系</li>
+          <li>餐厅评分反馈闭环</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-label">Phase 3</div>
+        <div class="card-title">规模扩张</div>
+        <ul>
+          <li>城市扩张（上海/北京/深圳）</li>
+          <li>饭后延伸场景（酒吧/电影/展览）</li>
+          <li>品牌合作饭局</li>
+          <li>心理画像报告</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 技术架构 -->
+<section class="section" id="architecture">
+  <div class="container">
+    <div class="section-divider"></div>
+    <div class="section-number">10</div>
+    <h2 class="section-title">技术架构</h2>
+    <p class="section-desc">薄服务器，胖客户端。服务端只做6件事，其余全在客户端OTA更新。</p>
+
+    <!-- Architecture Diagram -->
+    <div class="arch-layer">
+      <div class="arch-layer-title">Client — Expo Managed + expo-router</div>
+      <div class="arch-items">
+        <span class="arch-item">暗号发起</span>
+        <span class="arch-item">暗号对接 UX</span>
+        <span class="arch-item">渐进揭示</span>
+        <span class="arch-item">暗号题</span>
+        <span class="arch-item">SOS模块</span>
+        <span class="arch-item">行程分享</span>
+        <span class="arch-item">Zustand</span>
+        <span class="arch-item">React Query</span>
+        <span class="arch-item">expo-updates (自建EAS)</span>
+        <span class="arch-item">expo-secure-store</span>
+      </div>
+    </div>
+    <div class="arch-connector">▼ HTTPS</div>
+    <div class="arch-layer">
+      <div class="arch-layer-title">Server — Cloudflare Edge (6 Responsibilities Only)</div>
+      <div class="arch-items">
+        <span class="arch-item">认证 (JWT)</span>
+        <span class="arch-item">数据 CRUD (D1)</span>
+        <span class="arch-item">匹配执行</span>
+        <span class="arch-item">暗号校验</span>
+        <span class="arch-item">支付验证</span>
+        <span class="arch-item">SOS落库</span>
+      </div>
+      <div style="margin-top:1rem;">
+        <div class="arch-items">
+          <span class="arch-item">D1 (SQL)</span>
+          <span class="arch-item">KV (配置/缓存)</span>
+          <span class="arch-item">Durable Objects</span>
+          <span class="arch-item">Queues</span>
+          <span class="arch-item">Workers AI</span>
+        </div>
+      </div>
+    </div>
+    <div class="arch-connector">▼</div>
+    <div class="arch-layer">
+      <div class="arch-layer-title">Third-Party Services</div>
+      <div class="arch-items">
+        <span class="arch-item">阿里云短信</span>
+        <span class="arch-item">APNs / FCM</span>
+        <span class="arch-item">IAP / 微信支付</span>
+        <span class="arch-item">高德地图</span>
+      </div>
+    </div>
+
+    <!-- Three-layer update -->
+    <h3 style="font-family:'Noto Serif SC',serif; margin: 3rem 0 1.5rem; font-size: 1.3rem;">三层更新机制</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>改什么</th><th>怎么更新</th><th>速度</th></tr></thead>
+        <tbody>
+          <tr><td>业务参数（权重/价格/规则）</td><td><span class="tag tag-gold">改 KV</span></td><td>秒级</td></tr>
+          <tr><td>UI / 流程逻辑</td><td><span class="tag tag-teal">OTA 推送</span></td><td>分钟级</td></tr>
+          <tr><td>原生能力（新SDK/权限）</td><td><span class="tag tag-coral">App Store 发版</span></td><td>天级</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Config sync -->
+    <h3 style="font-family:'Noto Serif SC',serif; margin: 3rem 0 1.5rem; font-size: 1.3rem;">配置下发机制</h3>
+    <div class="highlight">
+      <p><strong>登录时</strong>：GET /config → 完整配置 + 版本号 → 缓存本地<br><br>
+      <strong>日常</strong>：客户端每次API请求携带 <code style="color:var(--accent-gold)">X-Config-Version: 4</code>，服务端发现新版本 → 响应头通知 <code style="color:var(--accent-gold)">X-Config-Stale: true</code> → 客户端静默拉取新配置<br><br>
+      <strong>降级</strong>：本地缓存丢失/首次安装 → 客户端内置默认配置兜底</p>
+    </div>
+
+    <!-- Responsibility split -->
+    <h3 style="font-family:'Noto Serif SC',serif; margin: 3rem 0 1.5rem; font-size: 1.3rem;">客户端/服务端职责分割</h3>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-label">Server — Minimum</div>
+        <div class="card-title">不可缩减的最小集</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>职责</th><th>为什么</th></tr></thead>
+            <tbody>
+              <tr><td>认证</td><td>密钥不能暴露</td></tr>
+              <tr><td>数据CRUD</td><td>数据持久化</td></tr>
+              <tr><td>匹配执行</td><td>需全量池数据</td></tr>
+              <tr><td>暗号校验</td><td>防绕过对接</td></tr>
+              <tr><td>支付验证</td><td>防本地篡改</td></tr>
+              <tr><td>SOS落库</td><td>法律合规</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">Client — OTA Updatable</div>
+        <div class="card-title">OTA可即时更新</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>职责</th><th>更新场景</th></tr></thead>
+            <tbody>
+              <tr><td>匹配表单</td><td>新增筛选条件</td></tr>
+              <tr><td>心理题</td><td>换题型/展示逻辑</td></tr>
+              <tr><td>渐进揭示</td><td>调整节奏</td></tr>
+              <tr><td>暗号对接UX</td><td>改动画/交互</td></tr>
+              <tr><td>SOS</td><td>优化流程</td></tr>
+              <tr><td>功能开关</td><td>A/B测试</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="highlight">
+      <p><strong>信任边界：</strong>客户端计算的结果（如画像向量）仅用于展示，服务端收到原始数据后自行重算再落库，永远不信任客户端计算值。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 11 BDD -->
+<section class="section" id="bdd">
+  <div class="container">
+    <div class="section-divider"></div>
+    <div class="section-number">11</div>
+    <h2 class="section-title">BDD 开发流程</h2>
+    <p class="section-desc">先写行为规格，再写代码。Cucumber + Gherkin驱动。</p>
+
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-number">1</div>
+        <div class="flow-content"><h4>编写 .feature 文件 (Gherkin)</h4><p>用自然语言描述用户场景</p></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-number">2</div>
+        <div class="flow-content"><h4>运行测试</h4><p style="color:var(--accent-coral)">红 — 测试失败</p></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-number">3</div>
+        <div class="flow-content"><h4>实现 step definitions + 业务代码</h4><p>让测试通过</p></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-number">4</div>
+        <div class="flow-content"><h4>运行测试</h4><p style="color:var(--accent-teal)">绿 — 测试通过</p></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-number">5</div>
+        <div class="flow-content"><h4>重构 → 提交PR → CI自动测试 → 合并 → 自动部署</h4><p>全链路自动化</p></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 2rem;">
+      <div class="card-label">Gherkin Example</div>
+      <div class="card-title">暗号对接场景</div>
+      <div class="code-block">Feature: 暗号对接
+  作为匹配成功的用户
+  我想和对方对暗号
+  以便确认彼此身份并破冰
+
+  Background:
+    Given 用户 "A" 和用户 "B" 匹配成功
+    And 系统分配了谜语:
+      | 谜面              | 提示      | 谜底 |
+      | 什么东西越洗越脏？ | 和水有关  | 水   |
+
+  Scenario: 双方输入正确谜底
+    When 用户 "A" 输入谜底 "水"
+    And 用户 "B" 输入谜底 "水"
+    Then 系统提示 "暗号对上了！"
+    And 双方各自看到对方的一个秘密
+
+  Scenario: 输入不一致
+    When 用户 "A" 输入谜底 "水"
+    And 用户 "B" 输入谜底 "河"
+    Then 系统提示 "再想想，你们的答案不一样哦"</div>
+    </div>
+
+    <div class="table-wrap" style="margin-top: 2rem;">
+      <table>
+        <thead><tr><th>测试层级</th><th>工具</th><th>覆盖范围</th><th>运行时机</th></tr></thead>
+        <tbody>
+          <tr><td>BDD行为测试</td><td>Cucumber + Gherkin</td><td>用户场景 / 业务逻辑</td><td>每次PR</td></tr>
+          <tr><td>单元测试</td><td>Vitest</td><td>Workers服务函数 / 匹配算法</td><td>每次PR</td></tr>
+          <tr><td>组件测试</td><td>Jest + RTL</td><td>UI组件渲染和交互</td><td>每次PR</td></tr>
+          <tr><td>E2E测试</td><td>Maestro</td><td>完整用户流程</td><td>发版前 (Phase 2)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 12 CI/CD -->
+<section class="section" id="cicd">
+  <div class="container">
+    <div class="section-divider"></div>
+    <div class="section-number">12</div>
+    <h2 class="section-title">CI/CD 流水线</h2>
+    <p class="section-desc">GitHub Actions 全链路自动化。PR测试 → 合并部署。</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-label">PR Pipeline</div>
+        <div class="card-title">ci.yml</div>
+        <ul>
+          <li>pnpm install (缓存)</li>
+          <li>ESLint + Prettier</li>
+          <li>TypeScript 类型检查</li>
+          <li>BDD 测试 (Cucumber)</li>
+          <li>单元测试 (Vitest)</li>
+          <li>组件测试 (Jest)</li>
+        </ul>
+        <p style="margin-top:1rem;">全部通过 → 允许合并</p>
+      </div>
+      <div class="card">
+        <div class="card-label">Deploy Pipeline</div>
+        <div class="card-title">合并到 main</div>
+        <ul>
+          <li><code style="color:var(--accent-gold)">workers/</code> 变更 → wrangler deploy + D1 migrations + 烟雾测试</li>
+          <li><code style="color:var(--accent-teal)">apps/mobile/</code> 变更 → expo export → OTA推送到自建EAS</li>
+          <li><code style="color:var(--accent-coral)">packages/shared/</code> 变更 → 触发两者</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="highlight">
+      <p><strong>分支策略：</strong><code>main</code> 生产环境（保护分支）← <code>feat/xxx</code> 功能分支 / <code>fix/xxx</code> 修复分支，通过PR合并。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 13 关键指标 -->
+<section class="section" id="metrics">
+  <div class="container">
+    <div class="section-divider"></div>
+    <div class="section-number">13</div>
+    <h2 class="section-title">关键指标</h2>
+    <p class="section-desc">北极星指标：周成功赴约数（匹配成功 + 暗号对上 + 完成评价）。</p>
+
+    <div class="card">
+      <div class="card-label">Core Funnel</div>
+      <div class="card-title">核心漏斗</div>
+      <div class="code-block" style="text-align:center;">注册 → 完成画像 → 首次发出暗号 → 首次匹配成功 → 首次暗号对上 → 首次完成评价</div>
+    </div>
+
+    <div class="metric-grid">
+      <div class="metric"><div class="metric-value">&lt;2h</div><div class="metric-label">匹配等待时长</div></div>
+      <div class="metric"><div class="metric-value">&gt;80%</div><div class="metric-label">赴约率</div></div>
+      <div class="metric"><div class="metric-value">&gt;95%</div><div class="metric-label">暗号对接成功率</div></div>
+      <div class="metric"><div class="metric-value">&gt;70%</div><div class="metric-label">饭后评价率</div></div>
+      <div class="metric"><div class="metric-value">&gt;3.5</div><div class="metric-label">平均评分 /5</div></div>
+      <div class="metric"><div class="metric-value">&gt;30%</div><div class="metric-label">想再约率</div></div>
+      <div class="metric"><div class="metric-value">&gt;40%</div><div class="metric-label">7日留存</div></div>
+      <div class="metric"><div class="metric-value">&gt;2次</div><div class="metric-label">月均约饭频次</div></div>
+      <div class="metric"><div class="metric-value">&lt;0.1%</div><div class="metric-label">SOS触发率</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 14 MVP里程碑 -->
+<section class="section" id="milestones">
+  <div class="container">
+    <div class="section-divider"></div>
+    <div class="section-number">14</div>
+    <h2 class="section-title">MVP 里程碑</h2>
+    <p class="section-desc">12周，从零到杭州内测上线。</p>
+
+    <div class="milestone">
+      <div class="milestone-label">Week 1-2</div>
+      <div class="milestone-title">M1：基础骨架 + CI/CD</div>
+      <ul>
+        <li>Monorepo搭建 (pnpm workspaces)</li>
+        <li>Expo managed + expo-router + 基础UI</li>
+        <li>Cloudflare Workers + D1 schema</li>
+        <li>packages/shared (Zod + Types)</li>
+        <li>BDD环境 (Cucumber + Gherkin)</li>
+        <li>GitHub Actions CI/CD</li>
+        <li>手机号注册/登录</li>
+        <li>基础画像（标签 + 3道题）</li>
+      </ul>
+    </div>
+
+    <div class="milestone">
+      <div class="milestone-label">Week 3-5</div>
+      <div class="milestone-title">M2：核心匹配 + 暗号对接</div>
+      <ul>
+        <li>发出暗号（匹配池 CRUD）</li>
+        <li>匹配算法 v1</li>
+        <li>匹配成功推送通知</li>
+        <li>渐进揭示（每30分钟线索）</li>
+        <li>暗号对接界面（谜面/提示/输入/校验）</li>
+        <li>开箱揭秘动画</li>
+        <li>谜语库初始数据（AI生成100+条）</li>
+      </ul>
+    </div>
+
+    <div class="milestone">
+      <div class="milestone-label">Week 6-7</div>
+      <div class="milestone-title">M3：安全 + 评价</div>
+      <ul>
+        <li>一键SOS</li>
+        <li>行程分享（微信卡片）</li>
+        <li>出发前安全提醒</li>
+        <li>饭后评价 + 想再约</li>
+        <li>信用分系统</li>
+        <li>缘分池</li>
+      </ul>
+    </div>
+
+    <div class="milestone">
+      <div class="milestone-label">Week 8-9</div>
+      <div class="milestone-title">M4：商业化 + 暗号题</div>
+      <ul>
+        <li>订阅付费（IAP + 微信支付）</li>
+        <li>每日暗号题 + 画像更新</li>
+        <li>答题 → 匹配联动</li>
+        <li>合作餐厅管理</li>
+      </ul>
+    </div>
+
+    <div class="milestone">
+      <div class="milestone-label">Week 10-12</div>
+      <div class="milestone-title">M5：内测上线</div>
+      <ul>
+        <li>杭州首批10-15家合作餐厅签约</li>
+        <li>种子用户邀请（200-500人）</li>
+        <li>小红书KOC种草</li>
+        <li>Bug修复 + 体验迭代</li>
+        <li>性能优化 + 监控埋点</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <p>暗号 (Anhao) · Product Spec v1.0 · 2026.03</p>
+  <p style="margin-top:0.5rem; color:var(--text-dim);">设好条件，等待惊喜，对上暗号，吃完散场，缘分留给下一次。</p>
+</footer>
+
+</body>
+</html>
