@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>暗号 Anhao · 下载</title>
+  <meta name="description" content="暗号（Anhao）iOS 安装包下载页" />
+  <style>
+    :root{
+      --bg0:#070A10;--bg1:#0B1220;--card:#0F1A2E;--text:#EAF0FF;--muted:#A8B3CF;
+      --line:rgba(255,255,255,.10);--accent:#7C5CFF;--accent2:#2CE6A6;
+    }
+    *{box-sizing:border-box} html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--text);
+      background:
+        radial-gradient(1000px 600px at 20% 10%, rgba(124,92,255,.35), transparent 55%),
+        radial-gradient(900px 600px at 80% 30%, rgba(44,230,166,.22), transparent 55%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+    }
+    .wrap{max-width:980px;margin:0 auto;padding:28px 18px 60px}
+    .hero{display:flex;flex-direction:column;gap:14px;margin-top:8px}
+    .kicker{display:inline-flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
+    .dot{width:9px;height:9px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 0 22px rgba(124,92,255,.55)}
+    h1{margin:0;font-size:34px;letter-spacing:.2px}
+    .sub{margin:0;color:var(--muted);line-height:1.6;max-width:70ch}
+
+    .grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px;margin-top:18px}
+    @media (max-width:860px){.grid{grid-template-columns:1fr}}
+
+    .card{
+      border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border-radius:16px;
+      padding:18px;
+      box-shadow:0 16px 40px rgba(0,0,0,.35);
+      overflow:hidden;
+      position:relative;
+    }
+    .card:before{
+      content:"";position:absolute;inset:-1px;
+      background:radial-gradient(600px 240px at 20% 0%, rgba(124,92,255,.20), transparent 60%),
+                 radial-gradient(600px 240px at 80% 0%, rgba(44,230,166,.14), transparent 60%);
+      pointer-events:none;
+    }
+    .card>*{position:relative}
+
+    .btnRow{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+    a.btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:10px;
+      padding:12px 14px;border-radius:12px;
+      text-decoration:none;font-weight:650;
+      border:1px solid rgba(255,255,255,.14);
+      color:var(--text);
+      background:rgba(255,255,255,.05);
+      transition:transform .12s ease, background .12s ease, border-color .12s ease;
+      user-select:none;
+    }
+    a.btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.075);border-color:rgba(255,255,255,.22)}
+    a.primary{background:linear-gradient(135deg, rgba(124,92,255,.95), rgba(44,230,166,.55)); border-color:rgba(255,255,255,.28)}
+
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
+    .meta{margin-top:12px;color:var(--muted);font-size:13px;display:grid;gap:8px}
+    .meta .row{display:flex;justify-content:space-between;gap:10px;border-top:1px dashed rgba(255,255,255,.10);padding-top:10px}
+    .meta .row:first-child{border-top:none;padding-top:0}
+
+    .steps{margin-top:8px;color:var(--muted);font-size:13px;line-height:1.7}
+    .steps ol{margin:8px 0 0 18px;padding:0}
+    .steps li{margin:6px 0}
+
+    footer{margin-top:20px;color:rgba(168,179,207,.8);font-size:12px}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:rgba(0,0,0,.18)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div class="kicker"><span class="dot"></span><span>暗号 · Anhao</span><span class="pill mono">iOS .ipa</span></div>
+      <h1>下载页</h1>
+      <p class="sub">这里是暗号（Anhao）的 iOS 安装包下载入口。iPhone 上点击下载后，用 AirDrop/文件 App/企业分发工具等方式安装（取决于你的签名方式）。</p>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <h2 style="margin:0 0 6px;font-size:18px">最新安装包</h2>
+        <div class="btnRow">
+          <a class="btn primary" href="./files/anhao-latest.ipa" download>下载 anhao-latest.ipa</a>
+          <a class="btn" href="https://github.com/kundouzhishou/anhao" target="_blank" rel="noreferrer">查看代码仓库</a>
+        </div>
+        <div class="meta">
+          <div class="row"><span>文件</span><span class="mono">anhao-latest.ipa</span></div>
+          <div class="row"><span>备注</span><span>由 Otto 构建产物同步</span></div>
+        </div>
+      </section>
+
+      <aside class="card">
+        <h2 style="margin:0 0 6px;font-size:18px">安装提示</h2>
+        <div class="steps">
+          <ol>
+            <li>在 iPhone 上下载后，通常会进入「文件」App（或 Safari 下载列表）。</li>
+            <li>如果是 Ad Hoc/企业签名：确保设备 UDID 已包含（或信任证书）。</li>
+            <li>如果你用的是本地安装（如 Xcode/AltStore/自建分发），按你现有流程导入该 IPA。</li>
+          </ol>
+          <div style="margin-top:10px" class="mono">路径：/playground/anhao/install/</div>
+        </div>
+      </aside>
+    </div>
+
+    <footer>
+      <div style="margin-top:10px">如果你希望我把它改成「一键安装（itms-services）」的样式，也可以，但需要你提供 manifest.plist 所需字段（bundle id、version、display name、以及可公网访问的 ipa URL）。</div>
+    </footer>
+  </div>
+</body>
+</html>
