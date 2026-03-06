@@ -13,6 +13,12 @@
           <key>url</key>
           <string>https://kundouzhishou.github.io/playground/anhao/install/Anhao.ipa</string>
         </dict>
+        <dict>
+          <key>kind</key>
+          <string>display-image</string>
+          <key>url</key>
+          <string>https://kundouzhishou.github.io/playground/anhao/install/icon.png</string>
+        </dict>
       </array>
       <key>metadata</key>
       <dict>
